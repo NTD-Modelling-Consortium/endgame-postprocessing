@@ -2,3 +2,4 @@ country_code, country_measure, age_start, age_end, mean, 2.5_percentile, 5_perce
 NGA, prevalance, 1, 9, 0.2, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.3, 0.3, 0.3, 0.1, 0.2
 NGA, passed_prevalance_test, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
 ZAF, prevalance, 1, 9, 0.2, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.3, 0.3, 0.3, 0.1, 0.2
+ZAF, passed_prevalance_test, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
