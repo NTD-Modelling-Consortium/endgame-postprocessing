@@ -1,5 +1,9 @@
-country_code, country_measure, age_start, age_end, mean, 2.5_percentile, 5_percentile, 10_percentile, 25_percentile, 50_percentile, 75_percentile, 90_percentile, 95_percentile, 97.5_percentile, standard_deviation, median
-NGA, prevalance, 1, 9, 0.2, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.3, 0.3, 0.3, 0.1, 0.2
-NGA, passed_prevalance_test, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
-ZAF, prevalance, 1, 9, 0.2, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.3, 0.3, 0.3, 0.1, 0.2
-ZAF, passed_prevalance_test, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
+country_code, country_measure, year, age_start, age_end, mean, 2.5_percentile, 5_percentile, 10_percentile, 25_percentile, 50_percentile, 75_percentile, 90_percentile, 95_percentile, 97.5_percentile, standard_deviation, median
+NGA, prevalance, 1980, 1, 9, 0.2, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.3, 0.3, 0.3, 0.1, 0.2
+NGA, passed_prevalance_test, 1980, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
+NGA, prevalance, 1981, 1, 9, 0.2, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.3, 0.3, 0.3, 0.1, 0.2
+NGA, passed_prevalance_test, 1981, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
+ZAF, prevalance, 1980, 1, 9, 0.2, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.3, 0.3, 0.3, 0.1, 0.2
+ZAF, passed_prevalance_test, 1980, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
+ZAF, prevalance, 1981, 1, 9, 0.2, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.3, 0.3, 0.3, 0.1, 0.2
+ZAF, passed_prevalance_test, 1981, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA, NA
