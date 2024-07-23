@@ -1,0 +1,4 @@
+measure_name, description, has_age_band, required
+prevalance, The percentage prevalance amongst the specified age band, TRUE, TRUE
+num_surveys, The number of surveys conducted in that year, FALSE, FALSE
+passed_prevalance_test, Whether the disease-specific threshold for declaring a disease non-endemic has been reached, FALSE, TRUE

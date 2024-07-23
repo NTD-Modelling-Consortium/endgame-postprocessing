@@ -1,0 +1,3 @@
+measure_name, description, has_age_band, has_variance, required
+prevalance, The prevalance in specific age band across the country, TRUE, TRUE, TRUE
+passed_prevalance_test, What percentage of IUs in the country passed the disease specific endemicity test, FALSE, TRUE, TRUE

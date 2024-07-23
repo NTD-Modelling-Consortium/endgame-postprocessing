@@ -1,0 +1,7 @@
+year, simulation_measure, age_start, age_end, draw0, draw1, ..., draw199
+1980, prevalance, 1, 9, 0.2, 0.15, ..., 0.3
+1980, num_surveys, 1, 99, 1, 1, ..., 1
+1980, passed_prevalance_test, NA, NA, FALSE, FALSE, ..., FALSE
+1981, prevalance, 1, 9, 0.2, 0.15, ..., 0.3
+1981, num_surveys, 1, 99, 1, 1, ..., 1
+1980, passed_prevalance_test, NA, NA, TRUE, FALSE, ..., TRUE

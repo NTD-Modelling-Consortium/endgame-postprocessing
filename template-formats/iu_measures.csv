@@ -1,0 +1,3 @@
+measure_name, description, has_age_band, has_variance, required
+prevalance, The prevalance in specific age band, TRUE, TRUE, TRUE
+passed_prevalance_test, Whether 90% of the simulations passed the disease specific test for endemicity, FALSE, FALSE, TRUE

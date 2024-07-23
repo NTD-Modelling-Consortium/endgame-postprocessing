@@ -1,0 +1,3 @@
+continent_measure, age_start, age_end, mean, 2.5_percentile, 5_percentile, 10_percentile, 25_percentile, 50_percentile, 75_percentile, 90_percentile, 95_percentile, 97.5_percentile, standard_deviation, median
+prevalance, 1, 9, 0.2, 0.1, 0.1, 0.1, 0.1, 0.2, 0.3, 0.3, 0.3, 0.3, 0.1, 0.2
+passed_prevalance_test, NA, NA, 0.5
