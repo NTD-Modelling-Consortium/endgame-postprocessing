@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from .constants import (
-    PERCENTILES_TO_CALC, 
+    PERCENTILES_TO_CALC,
     AGGEGATE_DEFAULT_TYPING_MAP
 )
 

@@ -2,14 +2,14 @@ import numpy as np
 import pandas as pd
 from .constants import PERCENTILES_TO_CALC
 from .measures import (
-    build_summary, 
-    _calc_prob_under_threshold, 
-    _find_year_reaching_threshold, 
+    build_summary,
+    _calc_prob_under_threshold,
+    _find_year_reaching_threshold,
     measure_summary_float
 )
 
 def validate_measure_map(
-        measure_summary_map: dict, 
+        measure_summary_map: dict,
         prevalence_measure_name: str
 ) -> dict:
     """
@@ -23,7 +23,7 @@ def validate_measure_map(
         A map of measure names -> summary function with all keys having a callable function
     """
     if measure_summary_map is None:
-        return {prevalence_marker_name: measure_summary_float}
+        return {prevalence_measure_name: measure_summary_float}
     elif prevalence_measure_name not in measure_summary_map.keys():
         measure_summary_map[prevalence_measure_name] = measure_summary_float
     for key, func in measure_summary_map.items():
