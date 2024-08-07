@@ -1,11 +1,10 @@
-PERCENTILES_TO_CALC = [2.5, 5, 10, 25, 50, 75, 90, 95, 97.5]
 MEASURE_COLUMN_NAME = "measure"
 
 # Country Level Params
 COUNTRY_SUMMARY_COLUMNS = [
     "prevalence",
     "year_of_threshold_prevalence_avg",
-    "year_of_90_under_threshold",
+    "year_of_pct_runs_under_threshold",
 ]
 COUNTRY_SUMMARY_GROUP_COLUMNS = [
     "scenario",
@@ -17,11 +16,11 @@ COUNTRY_SUMMARY_GROUP_COLUMNS = [
 ]
 COUNTRY_THRESHOLD_SUMMARY_COLUMNS = [
     "year_of_threshold_prevalence_avg",
-    "year_of_90_under_threshold",
+    "year_of_pct_runs_under_threshold",
 ]
 COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS = ["scenario", "country_code", "measure"]
 COUNTRY_THRESHOLD_RENAME_MAP = {
-    "year_of_90_under_threshold": "pct_of_ius_passing_90pct_threshold",
+    "year_of_pct_runs_under_threshold": "pct_of_ius_passing_90pct_threshold",
     "year_of_threshold_prevalence_avg": "pct_of_ius_passing_avg_threshold",
 }
 

@@ -1,40 +1,44 @@
-from post_processing_code.general_functions.aggregation import (
+from post_processing.aggregation import (
     iu_lvl_aggregate,
     country_lvl_aggregate,
     africa_lvl_aggregate,
 )
-from post_processing_code.general_functions.general_post_processing import (
+from post_processing.single_file_post_processing import (
     process_single_file,
-    post_process_file_generator,
-    custom_progress_bar_update,
     measure_summary_float,
 )
-import post_processing_code.constants as constants
+from post_processing.file_util import (
+    post_process_file_generator,
+    custom_progress_bar_update,
+)
+import model_wrappers.constants as constants
 from tqdm import tqdm
 import pandas as pd
 
 
 lf_dir = "input-data/lf/"
 file_iter = post_process_file_generator(
-    file_directory=lf_dir, end_of_file="-raw_all_age_data.csv"
+    file_directory=lf_dir, end_of_file=".csv"
 )
 with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
-    for scenario_index, total_scenarios, scenario, country, iu, file_path in file_iter:
+    for file_info in file_iter:
         process_single_file(
-            raw_model_outputs=pd.read_csv(file_path),
-            scenario=scenario,
-            iuName=iu,
-            prevalence_marker_name="prevalence",
+            raw_model_outputs=pd.read_csv(file_info.file_path),
+            scenario=file_info.scenario,
+            iuName=file_info.iu,
+            prevalence_marker_name="sampled mf prevalence (all pop)",
             post_processing_start_time=1970,
-            measure_summary_map={"prevalence": measure_summary_float},
+            measure_summary_map={"sampled mf prevalence (all pop)": measure_summary_float,
+                                 "true mf prevalence (all pop)": measure_summary_float},
         ).to_csv(
-            "post-processed-outputs/oncho/" + scenario + "_" + iu + "post_processed.csv"
+            "post-processed-outputs/lf/" + file_info.scenario + "_" +
+            file_info.iu + "post_processed.csv"
         )
-        custom_progress_bar_update(pbar, scenario_index, total_scenarios)
+        custom_progress_bar_update(pbar, file_info.scenario_index, file_info.total_scenarios)
 
 
 aggregated_df = iu_lvl_aggregate("post-processed-outputs/lf")
-aggregated_df.to_csv("post-processed-outputs/aggregated/combined-oncho-iu-lvl-agg.csv")
+aggregated_df.to_csv("post-processed-outputs/aggregated/combined-lf-iu-lvl-agg.csv")
 country_lvl_data = country_lvl_aggregate(
     iu_lvl_data=aggregated_df,
     measure_column_name=constants.MEASURE_COLUMN_NAME,

@@ -3,28 +3,12 @@ import csv
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
-from post_processing_code.constants import PERCENTILES_TO_CALC
+from .constants import (
+    PERCENTILES_TO_CALC, 
+    AGGEGATE_DEFAULT_TYPING_MAP
+)
 
-AGGEGATE_DEFAULT_TYPING_MAP = {
-    "year_id": float,
-    "age_start": float,
-    "age_end": float,
-    "mean": float,
-    "2.5_percentile": float,
-    "5_percentile": float,
-    "10_percentile": float,
-    "25_percentile": float,
-    "50_percentile": float,
-    "75_percentile": float,
-    "90_percentile": float,
-    "95_percentile": float,
-    "97.5_percentile": float,
-    "median": float,
-    "standard_deviation": float,
-}
-
-
-def percentile(n):
+def _percentile(n):
     def percentile_(x):
         return np.percentile(x, n)
 
@@ -32,7 +16,7 @@ def percentile(n):
     return percentile_
 
 
-def calc_not_na(x):
+def _calc_not_na(x):
     return x.notnull().mean() * 100
 
 
@@ -170,7 +154,7 @@ def country_lvl_aggregate(
         .agg(
             {
                 "mean": ["mean"]
-                + [percentile(p) for p in PERCENTILES_TO_CALC]
+                + [_percentile(p) for p in PERCENTILES_TO_CALC]
                 + [np.std, "median"]
             }
         )
@@ -189,7 +173,7 @@ def country_lvl_aggregate(
     summarize_threshold = (
         iu_lvl_data[iu_lvl_data["measure"].isin(threshold_summary_cols)]
         .groupby(threshold_groupby_cols)
-        .agg({"mean": [("mean", calc_not_na)]})
+        .agg({"mean": [("mean", _calc_not_na)]})
         .reset_index()
     )
     summarize_threshold.columns = threshold_groupby_cols + ["mean"]
@@ -234,7 +218,7 @@ def africa_lvl_aggregate(
         .agg(
             {
                 "mean": ["mean"]
-                + [percentile(p) for p in PERCENTILES_TO_CALC]
+                + [_percentile(p) for p in PERCENTILES_TO_CALC]
                 + [np.std, "median"]
             }
         )
