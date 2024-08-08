@@ -1,18 +1,17 @@
 import pytest
 import numpy as np
 import pandas as pd
-from post_processing.constants import (
-    FINAL_COLUMNS,
-    PERCENTILES_TO_CALC
+from endgame_postprocessing.post_processing.constants import (
+    FINAL_COLUMNS
 )
-from post_processing.single_file_post_processing import (
+from endgame_postprocessing.post_processing.single_file_post_processing import (
     validate_measure_map,
     _filter_out_old_data,
     _calculate_probabilities_and_thresholds,
     _summarize_measures,
     process_single_file
 )
-from post_processing.measures import (
+from endgame_postprocessing.post_processing.measures import (
     measure_summary_float
 )
 
