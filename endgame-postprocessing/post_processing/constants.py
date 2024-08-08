@@ -17,3 +17,9 @@ AGGEGATE_DEFAULT_TYPING_MAP = {
     "median": float,
     "standard_deviation": float,
 }
+
+FINAL_COLUMNS = ([
+        "iu_name", "country_code", "scenario", "year_id", "age_start",
+        "age_end", "measure", "mean"] +
+        [str(p) + "_percentile" for p in PERCENTILES_TO_CALC] +
+        ["standard_deviation", "median"])

@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from .constants import PERCENTILES_TO_CALC
+from .constants import FINAL_COLUMNS, PERCENTILES_TO_CALC
 from .measures import (
     build_summary,
     _calc_prob_under_threshold,
@@ -113,7 +113,7 @@ def _calculate_probabilities_and_thresholds(
         year_id=filtered_model_outputs[prevalence_mask, year_column_loc],
         age_start=filtered_model_outputs[prevalence_mask, age_start_column_loc],
         age_end=filtered_model_outputs[prevalence_mask, age_end_column_loc],
-        measure_name=np.full(num_rows, "prob_under_1_prevalence"),
+        measure_name=np.full(num_rows, "prob_under_threshold_prevalence"),
         mean=prob_prevalence_under_threshold,
         percentiles_dict={k: none_array for k in PERCENTILES_TO_CALC},
         percentile_name_order=PERCENTILES_TO_CALC,
@@ -355,16 +355,5 @@ def process_single_file(
     # return a dataframe
     return pd.DataFrame(
         descriptor_output,
-        columns=[
-            "iu_name",
-            "country_code",
-            "scenario",
-            "year_id",
-            "age_start",
-            "age_end",
-            "measure",
-            "mean",
-        ]
-        + [str(p) + "_percentile" for p in PERCENTILES_TO_CALC]
-        + ["standard_deviation", "median"],
+        columns=FINAL_COLUMNS
     )
