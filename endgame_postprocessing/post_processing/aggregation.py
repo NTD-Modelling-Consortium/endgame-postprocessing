@@ -58,7 +58,6 @@ def aggregate_post_processed_files(
 
 def iu_lvl_aggregate(
     aggregated_data: pd.DataFrame,
-    measure_column_name: str = "measure",
     columns_to_replace_with_nan: list[str] = ["mean"],
     typing_map: dict = AGGEGATE_DEFAULT_TYPING_MAP,
 ) -> pd.DataFrame:
