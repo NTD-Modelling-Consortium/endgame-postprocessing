@@ -1,3 +1,6 @@
+from endgame_postprocessing.post_processing.aggregation import (
+    aggregate_post_processed_files,
+)
 from post_processing.aggregation import (
     iu_lvl_aggregate,
     country_lvl_aggregate,
@@ -36,9 +39,8 @@ with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
         )
         custom_progress_bar_update(pbar, file_info.scenario_index, file_info.total_scenarios)
 
-aggregated_df = iu_lvl_aggregate(
-    "post-processed-outputs/oncho",
-)
+combined_ius = aggregate_post_processed_files("post-processed-outputs/oncho")
+aggregated_df = iu_lvl_aggregate(combined_ius)
 aggregated_df.to_csv("post-processed-outputs/aggregated/combined-oncho-iu-lvl-agg.csv")
 country_lvl_data = country_lvl_aggregate(
     iu_lvl_data=aggregated_df,

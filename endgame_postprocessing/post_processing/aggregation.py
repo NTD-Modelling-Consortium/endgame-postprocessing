@@ -57,8 +57,7 @@ def aggregate_post_processed_files(
 
 
 def iu_lvl_aggregate(
-    path_to_files: str = ".",
-    specific_files: str = "*.csv",
+    aggregated_data: pd.DataFrame,
     filter_measures: list[str] = [],
     measure_column_name: str = "measure",
     columns_to_replace_with_nan: list[str] = ["mean"],
@@ -70,8 +69,7 @@ def iu_lvl_aggregate(
     filtered if requested.
 
     Args:
-        path_to_files (str): the top level folder where the output files are located.
-        specific_files (str): file name filter to only combine the files that are wanted.
+        aggregated_data: All the IU level data stacked into single DataFrame (See aggregate_post_processed_files)
         columns_to_replace_with_nan (list[str]): any columns that should be replaced with NaN rather
                                                     than None.
         typing_map (dict): a dictionary that maps column names to their dtype.
@@ -83,7 +81,6 @@ def iu_lvl_aggregate(
     Returns:
         A dataframe with all of the iu-lvl data, filtered or not
     """
-    aggregated_data = aggregate_post_processed_files(path_to_files, specific_files)
     # filter to use only the measures requested
     if len(filter_measures) > 0:
         aggregated_data.loc[
