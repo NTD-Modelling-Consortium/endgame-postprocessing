@@ -58,14 +58,13 @@ def aggregate_post_processed_files(
 
 def iu_lvl_aggregate(
     aggregated_data: pd.DataFrame,
-    filter_measures: list[str] = [],
     measure_column_name: str = "measure",
     columns_to_replace_with_nan: list[str] = ["mean"],
     typing_map: dict = AGGEGATE_DEFAULT_TYPING_MAP,
 ) -> pd.DataFrame:
     """
-    A wrapper function for aggregate_post_processed_files that takes in a path to where the data is
-    located, and returns aggregated iu-lvl data, with columns modified to the correct types, and
+    A wrapper function for aggregate_post_processed_files that takes stacked data of all
+    the IUs, and returns aggregated iu-lvl data, with columns modified to the correct types, and
     filtered if requested.
 
     Args:
@@ -74,19 +73,11 @@ def iu_lvl_aggregate(
                                                     than None.
         typing_map (dict): a dictionary that maps column names to their dtype.
         df (pd.Dataframe): the dataframe with all the iu-lvl data.
-        filter_measures (list[str]): a list contain the measures you want to filter.
-                                        If empty (default), then it will not filter anything.
         measure_column_name (list[str]): the name of the column where the measure names are located.
 
     Returns:
         A dataframe with all of the iu-lvl data, filtered or not
     """
-    # filter to use only the measures requested
-    if len(filter_measures) > 0:
-        aggregated_data.loc[
-            aggregated_data[measure_column_name].isin(filter_measures), :
-        ]
-
     # replace empty strings with nan/none where required, and properly type the columns
     aggregated_data.loc[:, columns_to_replace_with_nan] = aggregated_data.loc[
         :, columns_to_replace_with_nan
