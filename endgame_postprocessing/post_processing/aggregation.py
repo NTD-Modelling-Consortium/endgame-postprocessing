@@ -198,13 +198,13 @@ def africa_lvl_aggregate(
     Args:
         country_lvl_data (pd.Dataframe): the dataframe with country-level data.
         measure_column_name (str): the column where the measure names are located.
-                                                Examle: 'measure'.
+                                                Example: 'measure'.
         measures_to_summarize (list[str]): a list of measures that we want to generally summarize
                                             with mean, percentiles, std, and median.
-                                            Examle: ["prevalence"].
+                                            Example: ["prevalence"].
         columns_to_group_by (list[str]): a list of columns that we want to use
                                             to group the summaries by.
-                                            Examle: ["scenario", "year_id", "age_start",
+                                            Example: ["scenario", "year_id", "age_start",
                                             "age_end", "measure"].
 
     Returns:
