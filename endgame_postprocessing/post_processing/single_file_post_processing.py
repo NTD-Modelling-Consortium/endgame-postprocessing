@@ -3,8 +3,8 @@ import pandas as pd
 from .constants import FINAL_COLUMNS, PERCENTILES_TO_CALC
 from .measures import (
     build_summary,
-    _calc_prob_under_threshold,
-    _find_year_reaching_threshold,
+    calc_prob_under_threshold,
+    find_year_reaching_threshold,
     measure_summary_float
 )
 
@@ -102,7 +102,7 @@ def _calculate_probabilities_and_thresholds(
         float
     )
 
-    prob_prevalence_under_threshold = _calc_prob_under_threshold(
+    prob_prevalence_under_threshold = calc_prob_under_threshold(
         prevalence_vals, threshold
     )
     num_rows = len(prob_prevalence_under_threshold)
@@ -124,7 +124,7 @@ def _calculate_probabilities_and_thresholds(
     # find the rows where the proportion is >= pct_runs_under_threshold, select the top row as the
     # first index
     # todo: verify/dynamically select the lowest year
-    year_of_pct_runs_under_threshold = _find_year_reaching_threshold(
+    year_of_pct_runs_under_threshold = find_year_reaching_threshold(
         prob_prevalence_under_threshold,
         pct_runs_under_threshold,
         filtered_model_outputs[prevalence_mask, year_column_loc],
@@ -144,7 +144,7 @@ def _calculate_probabilities_and_thresholds(
     )
 
     # Calculating the year where the avg across all the runs has a prevalence < the threshold
-    year_of_threshold_prevalence_avg = _find_year_reaching_threshold(
+    year_of_threshold_prevalence_avg = find_year_reaching_threshold(
         np.mean(prevalence_vals, axis=1),
         threshold,
         filtered_model_outputs[prevalence_mask, year_column_loc],

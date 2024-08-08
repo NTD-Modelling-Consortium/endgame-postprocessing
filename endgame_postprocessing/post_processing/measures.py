@@ -96,7 +96,7 @@ def build_summary(
         )
     )
 
-def _calc_prob_under_threshold(
+def calc_prob_under_threshold(
     prevalence_vals: np.ndarray,
     threshold: float,
 ) -> np.ndarray:
@@ -120,7 +120,7 @@ def _calc_prob_under_threshold(
     # under the threshold. Results should be a Nx1 matrix (each row is the proportion for a year)
     return np.mean(prevalence_under_threshold_mask, axis=1)
 
-def _find_year_reaching_threshold(
+def find_year_reaching_threshold(
     comparison_prevalence_values: list[list[float]],
     threshold: float,
     year_ids: list[float],
