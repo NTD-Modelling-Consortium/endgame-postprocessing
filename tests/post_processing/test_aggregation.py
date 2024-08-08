@@ -1,6 +1,8 @@
+import numpy as np
 import pandas as pd
 import pandas.testing as pdt
 from pyfakefs.fake_filesystem import FakeFilesystem
+import pytest
 from endgame_postprocessing.post_processing import aggregation
 
 
@@ -82,3 +84,29 @@ def test_aggregate_post_processed_files_dir_containing_two_csvs_filter_set(
         actual.astype(dtype={"A": int, "B": int}),
         expected_combined_data,
     )
+
+
+def test_iu_lvl_aggregate_mean_replaced_with_nan():
+    df_with_mean = pd.DataFrame({"mean": ["", 1.0]})
+    iu_aggregate = aggregation.iu_lvl_aggregate(
+        df_with_mean, typing_map={"mean": float}
+    )
+    pdt.assert_frame_equal(iu_aggregate, pd.DataFrame({"mean": [np.nan, 1.0]}))
+
+
+def test_iu_lvl_aggregate_non_mean_replaced_with_none():
+    df_with_mean_and_other = pd.DataFrame({"other": ["", 1.0], "mean": [1.0, 2.0]})
+    iu_aggregate = aggregation.iu_lvl_aggregate(
+        df_with_mean_and_other, typing_map={"mean": float, "other": float}
+    )
+    pdt.assert_frame_equal(
+        iu_aggregate, pd.DataFrame({"other": [None, 1.0], "mean": [1.0, 2.0]})
+    )
+
+
+def test_iu_lvl_aggregate_incorrectly_typed_mean_raises_type_error():
+    iu_data_with_type_error = pd.DataFrame({"mean": ["wrong type"]})
+    with pytest.raises(ValueError):
+        aggregation.iu_lvl_aggregate(
+            iu_data_with_type_error, typing_map={"mean": float}
+        )
