@@ -110,3 +110,40 @@ def test_iu_lvl_aggregate_incorrectly_typed_mean_raises_type_error():
         aggregation.iu_lvl_aggregate(
             iu_data_with_type_error, typing_map={"mean": float}
         )
+
+# column containing an NA and a NaN
+
+
+def test_country_lvl_aggregate_aggregate_by_country_general_measures():
+    iu_data = pd.DataFrame(
+        {
+            "country": ["C1"] * 2 + ["C2"] * 2,
+            "measure": ["M1"] * 4,
+            "mean": [0.2, 0.4, 0.6, 0.8],
+        }
+    )
+    aggregate_data = aggregation.country_lvl_aggregate(
+        iu_data,
+        measure_column_name="measure",
+        general_summary_cols=["M1"],
+        general_groupby_cols=["country"],
+        threshold_cols_rename={},
+        threshold_groupby_cols=[],
+        threshold_summary_cols=[],
+    )
+    pdt.assert_frame_equal(
+        aggregate_data,
+        pd.DataFrame(
+            {"country": ["C1", "C2"], "measure": ["M1"] * 2, "mean": [0.3, 0.7]}
+        ),
+    )
+    # TODO: This fails I think because the code doesn't like no thresholds being provided
+    # Options:
+    # 1. Split this function up so can test the general separately
+    # 2. Fix whatever it doesn't like about the threshold stuff is empty
+    # 3. Change the test to provide some threshold summaries
+    # If doing (3) add error checking that these need to be non-empty
+    # and then this test can just check an exception is raised.
+
+
+# Test rename the measure column for summarize (I think there is a bug here)
