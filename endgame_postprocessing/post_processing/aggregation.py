@@ -1,5 +1,6 @@
 import glob
 import csv
+import os
 import pandas as pd
 import numpy as np
 from tqdm import tqdm
@@ -38,7 +39,11 @@ def aggregate_post_processed_files(
     rows = []
     columns = []
 
-    files_to_combine = glob.glob(path_to_files + "**/" + specific_files, recursive=True)
+    # To ensure path ends in a trailing slash
+    properly_terminated_path = os.path.join(path_to_files, "")
+    files_to_combine = glob.glob(
+        properly_terminated_path + "**/" + specific_files, recursive=True
+    )
     total_files = len(files_to_combine)
     for filename in tqdm(files_to_combine, total=total_files, desc="Processing files"):
         with open(filename, newline="") as f:
