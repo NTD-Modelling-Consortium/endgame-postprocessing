@@ -67,7 +67,8 @@ def iu_lvl_aggregate(
     filtered if requested.
 
     Args:
-        aggregated_data: All the IU level data stacked into single DataFrame (See aggregate_post_processed_files)
+        aggregated_data: All the IU level data stacked into single DataFrame
+                            (See aggregate_post_processed_files)
         columns_to_replace_with_nan (list[str]): any columns that should be replaced with NaN rather
                                                     than None.
         typing_map (dict): a dictionary that maps column names to their dtype.

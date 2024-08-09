@@ -33,7 +33,7 @@ def test_aggregate_post_processed_files_dir_containing_two_csvs_concatenated(
     )
 
 
-def test_aggregate_post_processed_files_dir_containing_two_csvs_with_mismatched_columns_concatenated(
+def test_aggregate_post_processed_files_dir_containing_two_csvs_w_mismatched_columns_concatenated(
     fs: FakeFilesystem,
 ):
     fs.create_file(

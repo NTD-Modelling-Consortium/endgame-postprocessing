@@ -1,6 +1,9 @@
 import numpy as np
 import pandas as pd
-from .constants import AGE_END_COLUMN_NAME, AGE_START_COLUMN_NAME, DRAW_COLUMNN_NAME_START, FINAL_COLUMNS, MEASURE_COLUMN_NAME, PERCENTILES_TO_CALC, YEAR_COLUMN_NAME
+from .constants import (
+    AGE_END_COLUMN_NAME, AGE_START_COLUMN_NAME, DRAW_COLUMNN_NAME_START,
+    FINAL_COLUMNS, MEASURE_COLUMN_NAME, PERCENTILES_TO_CALC, YEAR_COLUMN_NAME
+)
 from .measures import (
     build_summary,
     calc_prob_under_threshold,
