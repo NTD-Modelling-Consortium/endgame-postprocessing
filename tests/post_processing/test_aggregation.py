@@ -7,8 +7,10 @@ from endgame_postprocessing.post_processing import aggregation
 
 
 def test_aggregate_post_processed_files_empty_directory_empty_dataframe(fs):
+    empty_df = aggregation.aggregate_post_processed_files("empty_directory")
+    assert empty_df.empty
     pdt.assert_frame_equal(
-        aggregation.aggregate_post_processed_files("empty_directory"), pd.DataFrame()
+        aggregation.aggregate_post_processed_files("empty_directory"), pd.DataFrame([], columns=[])
     )
 
 
@@ -125,8 +127,8 @@ def test_country_lvl_aggregate_aggregate_by_country_general_measures():
     aggregate_data = aggregation.country_lvl_aggregate(
         iu_data,
         measure_column_name="measure",
-        general_summary_cols=["M1"],
-        general_groupby_cols=["country"],
+        general_summary_measure_names=["M1"],
+        general_groupby_cols=["country", "measure"],
         threshold_cols_rename={},
         threshold_groupby_cols=[],
         threshold_summary_cols=[],
@@ -134,16 +136,36 @@ def test_country_lvl_aggregate_aggregate_by_country_general_measures():
     pdt.assert_frame_equal(
         aggregate_data,
         pd.DataFrame(
-            {"country": ["C1", "C2"], "measure": ["M1"] * 2, "mean": [0.3, 0.7]}
+            {
+                "country": ["C1", "C2"], "measure": ["M1"] * 2,
+                "mean": [0.3, 0.7], "2.5_percentile": [0.205, 0.605], 
+                "5_percentile": [0.21, 0.61], "10_percentile": [0.22, 0.62],
+                "25_percentile": [0.25, 0.65], "50_percentile": [0.3, 0.7],
+                "75_percentile": [0.35, 0.75], "90_percentile": [0.38, 0.78],
+                "95_percentile": [0.39, 0.79], "97.5_percentile": [0.395, 0.795],
+                "standard_deviation": [np.std([0.2, 0.4], ddof=1),np.std([0.6, 0.8], ddof=1)],
+                "median": [np.median([0.2, 0.4]), np.median([0.6, 0.8])]
+             }
         ),
     )
-    # TODO: This fails I think because the code doesn't like no thresholds being provided
-    # Options:
-    # 1. Split this function up so can test the general separately
-    # 2. Fix whatever it doesn't like about the threshold stuff is empty
-    # 3. Change the test to provide some threshold summaries
-    # If doing (3) add error checking that these need to be non-empty
-    # and then this test can just check an exception is raised.
 
+def test_country_lvl_aggregate_aggregate_by_country_fail_threshold_measures():
+    iu_data = pd.DataFrame(
+        {
+            "country": ["C1"] * 2 + ["C2"] * 2,
+            "measure": ["M1"] * 4,
+            "mean": [0.2, 0.4, 0.6, 0.8],
+        }
+    )
+    with pytest.raises(ValueError):
+        aggregation.country_lvl_aggregate(
+            iu_data,
+            measure_column_name="measure",
+            general_summary_measure_names=["M1"],
+            general_groupby_cols=["country", "measure"],
+            threshold_cols_rename={},
+            threshold_groupby_cols=[],
+            threshold_summary_cols=["country"],
+        )
 
 # Test rename the measure column for summarize (I think there is a bug here)
