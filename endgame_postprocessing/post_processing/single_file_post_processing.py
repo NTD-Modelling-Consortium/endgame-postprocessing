@@ -132,7 +132,7 @@ def _calculate_probabilities_and_thresholds(
     )
 
     year_of_pct_runs_under_threshold_output = build_summary(
-        year_id=[""],
+        year_id=[None],
         age_start=[None],
         age_end=[None],
         measure_name=["year_of_pct_runs_under_threshold"],
@@ -151,7 +151,7 @@ def _calculate_probabilities_and_thresholds(
         np.less,
     )
     year_of_threshold_prevalence_avg_output = build_summary(
-        year_id=[""],
+        year_id=[None],
         age_start=[None],
         age_end=[None],
         measure_name=["year_of_threshold_prevalence_avg"],
