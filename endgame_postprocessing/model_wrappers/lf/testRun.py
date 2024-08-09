@@ -46,7 +46,7 @@ aggregated_df.to_csv("post-processed-outputs/aggregated/combined-lf-iu-lvl-agg.c
 country_lvl_data = country_lvl_aggregate(
     iu_lvl_data=aggregated_df,
     measure_column_name=constants.MEASURE_COLUMN_NAME,
-    general_summary_cols=[
+    general_summary_measure_names=[
         "sampled mf prevalence (all pop)",
         "year_of_threshold_prevalence_avg",
         "year_of_90_under_threshold",
