@@ -1,6 +1,6 @@
 import numpy as np
 import pandas as pd
-from .constants import FINAL_COLUMNS, PERCENTILES_TO_CALC
+from .constants import AGE_END_COLUMN_NAME, AGE_START_COLUMN_NAME, DRAW_COLUMNN_NAME_START, FINAL_COLUMNS, MEASURE_COLUMN_NAME, PERCENTILES_TO_CALC, YEAR_COLUMN_NAME
 from .measures import (
     build_summary,
     calc_prob_under_threshold,
@@ -253,11 +253,7 @@ def process_single_file(
     raw_model_outputs: pd.DataFrame,
     scenario: str,
     iuName: str,
-    year_column_name="year_id",
-    measure_column_name="measure",
-    age_start_column_name="age_start",
-    age_end_column_name="age_end",
-    draw_names: str = [f"draw_{i}" for i in range(0, 200)],
+    num_draws: int = 200,
     prevalence_marker_name: str = "prevalence",
     post_processing_start_time: int = 1970,
     threshold: float = 0.01,
@@ -279,10 +275,6 @@ def process_single_file(
                                             multiple runs of the model.
         iuName (str): A name to define the parameters used for the model, typically the name of the
                                             IU being simulated.
-        year_column_name (str): Name of the year column. Default is "year_id".
-        measure_column_name (str): Name of the measure column. Default is "measure".
-        age_start_column_name (str): Name of the age_start column. Default is "age_start".
-        age_end_column_name (str): Name of the age_end column. Default is "age_end".
         draw_names (str): Name of the draw columns. Default is [f'draw_{i}' for i in range(0, 200)],
         prevalence_marker_name (str): The name of the prevalence measure that is used to compare
                                     with the threhsold. Default is "prevalence".
@@ -303,10 +295,11 @@ def process_single_file(
     """
     column_names = raw_model_outputs.columns
 
-    measure_column_loc = column_names.get_loc(measure_column_name)
-    year_column_loc = column_names.get_loc(year_column_name)
-    age_start_column_loc = column_names.get_loc(age_start_column_name)
-    age_end_column_loc = column_names.get_loc(age_end_column_name)
+    measure_column_loc = column_names.get_loc(MEASURE_COLUMN_NAME)
+    year_column_loc = column_names.get_loc(YEAR_COLUMN_NAME)
+    age_start_column_loc = column_names.get_loc(AGE_START_COLUMN_NAME)
+    age_end_column_loc = column_names.get_loc(AGE_END_COLUMN_NAME)
+    draw_names = [f"{DRAW_COLUMNN_NAME_START}{i}" for i in range(0, num_draws)]
     draws_loc = [column_names.get_loc(name) for name in draw_names]
 
     # Making sure we start the calculations from where we want
