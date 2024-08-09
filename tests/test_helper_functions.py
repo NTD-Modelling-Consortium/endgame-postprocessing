@@ -28,11 +28,11 @@ def generate_test_input(min_year=1970, max_year=2040, num_draws=10):
 def generate_test_input_df(min_year=1970, max_year=2040, num_draws=10):
     matrix_input = generate_test_input(min_year, max_year, num_draws)["input"]
     return {
-        "draws": ["draws_" + str(i) for i in range(num_draws)],
+        "draws": ["draw_" + str(i) for i in range(num_draws)],
         "input_df": pd.DataFrame(
             matrix_input,
             columns = BASE_COLUMNS +
-            ["draws_" + str(i) for i in range(num_draws)]
+            ["draw_" + str(i) for i in range(num_draws)]
         )
     }
 

@@ -13,9 +13,8 @@ from endgame_postprocessing.post_processing.single_file_post_processing import (
 from endgame_postprocessing.post_processing.measures import (
     measure_summary_float
 )
-from .test_helper_functions import (
+from ..test_helper_functions import (
     PREV_MEASURE_NAME,
-    BASE_COLUMNS,
     generate_test_input,
     generate_test_input_df,
     check_if_columns_is_float
@@ -93,16 +92,13 @@ def test_process_single_file_success():
     start_year = 1970
     end_year = 2040
     cut_off = 2000
-    test_input = generate_test_input_df(start_year, end_year)
+    num_draws = 10
+    test_input = generate_test_input_df(start_year, end_year, num_draws)
     processed_file = process_single_file(
         raw_model_outputs=test_input["input_df"],
         scenario="test_scenario",
         iuName="test_iu",
-        year_column_name=BASE_COLUMNS[0],
-        measure_column_name=BASE_COLUMNS[3],
-        age_start_column_name=BASE_COLUMNS[1],
-        age_end_column_name=BASE_COLUMNS[2],
-        draw_names=test_input["draws"],
+        num_draws=num_draws,
         prevalence_marker_name=PREV_MEASURE_NAME,
         post_processing_start_time=cut_off,
         threshold=0.01,
