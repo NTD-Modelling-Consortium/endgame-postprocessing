@@ -1,20 +1,20 @@
 from endgame_postprocessing.post_processing.aggregation import (
     aggregate_post_processed_files,
 )
-from post_processing.aggregation import (
+from endgame_postprocessing.post_processing.aggregation import (
     iu_lvl_aggregate,
     country_lvl_aggregate,
     africa_lvl_aggregate,
 )
-from post_processing.single_file_post_processing import (
+from endgame_postprocessing.post_processing.single_file_post_processing import (
     process_single_file,
     measure_summary_float,
 )
-from post_processing.file_util import (
+from endgame_postprocessing.post_processing.file_util import (
     post_process_file_generator,
     custom_progress_bar_update,
 )
-import model_wrappers.constants as constants
+import endgame_postprocessing.model_wrappers.constants as constants
 from tqdm import tqdm
 import pandas as pd
 

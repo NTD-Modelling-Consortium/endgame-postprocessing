@@ -148,7 +148,7 @@ def country_lvl_aggregate(
             {
                 "mean": ["mean"]
                 + [_percentile(p) for p in PERCENTILES_TO_CALC]
-                + [np.std, "median"]
+                + ["std", "median"]
             }
         )
         .reset_index()
@@ -222,7 +222,7 @@ def africa_lvl_aggregate(
             {
                 "mean": ["mean"]
                 + [_percentile(p) for p in PERCENTILES_TO_CALC]
-                + [np.std, "median"]
+                + ["std", "median"]
             }
         )
         .reset_index()
