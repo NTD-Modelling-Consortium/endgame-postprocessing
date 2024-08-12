@@ -20,6 +20,11 @@ jobs:
         - name: Install
           run: poetry install
         - name: Run tests
-          run: poetry run pytest tests/
+          run: poetry run pytest tests/ --cov=./ --cov-report=xml
+        - name: Upload coverage reports to Codecov
+          uses: codecov/codecov-action@v4.0.1
+          with:
+            token: ${{ secrets.CODECOV_TOKEN }}
+            files: "coverage.xml"
         - name: Run ruff
           run: poetry run ruff check
