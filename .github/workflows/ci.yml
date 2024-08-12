@@ -17,6 +17,18 @@ jobs:
             python-version: 3.12
         - name: Setup Poetry
           uses: abatilo/actions-poetry@v2
+        - name: Setup a local virtual environment (required for caching)
+          run: |
+            poetry config virtualenvs.create true --local
+            poetry config virtualenvs.in-project true --local
+        - name: Load cached venv
+          id: cached-poetry-dependencies
+          uses: actions/cache@v2
+          with:
+            path: .venv
+            key: venv-${{ runner.os }}-${{ hashFiles('**/poetry.lock') }}
+            restore-keys: 
+              venv-${{ runner.os }}-
         - name: Install
           run: poetry install
         - name: Run tests
