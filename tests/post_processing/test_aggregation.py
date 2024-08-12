@@ -174,8 +174,8 @@ def test_country_lvl_aggregate_aggregate_by_country_fail_threshold_measures():
             general_summary_measure_names=["M1"],
             general_groupby_cols=["country", "measure"],
             threshold_cols_rename={},
-            threshold_groupby_cols=[],
-            threshold_summary_measure_names=["country"],
+            threshold_groupby_cols=["random_group_by"],
+            threshold_summary_measure_names=[],
         )
 
 

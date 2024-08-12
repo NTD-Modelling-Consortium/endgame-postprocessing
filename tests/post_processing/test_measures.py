@@ -98,6 +98,27 @@ def test_build_summary_fail_uneven_rows():
             median=np.random.rand(EXPECTED_ROWS),
         )
 
+def test_build_summary_fail_uneven_rows_percentiles():
+    min_year = 1970
+    max_year = min_year + EXPECTED_ROWS
+    percentiles_dict = {
+        PERCENTILES_TO_TEST[0]: np.random.rand(EXPECTED_ROWS-1),
+        PERCENTILES_TO_TEST[1]: np.random.rand(EXPECTED_ROWS-1),
+        PERCENTILES_TO_TEST[2]: np.random.rand(EXPECTED_ROWS-1),
+    }
+    with pytest.raises(ValueError):
+        measures.build_summary(
+            year_id=np.arange(min_year, max_year),
+            age_start=np.full(EXPECTED_ROWS, 5),
+            age_end=np.full(EXPECTED_ROWS, 80),
+            measure_name=np.full(EXPECTED_ROWS, "test_measure"),
+            mean=np.random.rand(EXPECTED_ROWS),
+            percentiles_dict=percentiles_dict,
+            percentile_name_order=PERCENTILES_TO_TEST,
+            standard_deviation=np.random.rand(EXPECTED_ROWS),
+            median=np.random.rand(EXPECTED_ROWS),
+        )
+
 
 def test_build_summary_fail_no_lists():
     min_year = 1970
@@ -143,6 +164,45 @@ def test_calc_prob_under_threshold_empty_array():
     )
     prob_outputs = measures.calc_prob_under_threshold(prev_values, 0.1)
     assert (prob_outputs == np.array([])).all()
+
+def test_find_year_reaching_threshold_success():
+    min_year = 1970
+    total_years = 40
+    years = np.arange(min_year, min_year + total_years)
+    prev_values = np.linspace(0.5, 0.01, total_years).reshape(total_years, 1)
+    year = measures.find_year_reaching_threshold(
+        comparison_prevalence_values=prev_values,
+        threshold=0.1,
+        year_ids=years,
+        comparitor_function=np.less
+    )
+    assert year == years[-8]
+
+def test_find_year_reaching_threshold_success_returns_nan():
+    min_year = 1970
+    total_years = 40
+    years = np.arange(min_year, min_year+total_years)
+    prev_values = np.linspace(0.02, 0.5, total_years).reshape(total_years, 1)
+    year = measures.find_year_reaching_threshold(
+        comparison_prevalence_values=prev_values,
+        threshold=0.01,
+        year_ids=years,
+        comparitor_function=np.less
+    )
+    assert np.isnan(year)
+
+def test_find_year_reaching_threshold_success_other_comparitor():
+    min_year = 1970
+    total_years = 40
+    years = np.arange(min_year, min_year+total_years)
+    prev_values = np.linspace(0.01, 0.5, total_years).reshape(total_years, 1)
+    year = measures.find_year_reaching_threshold(
+        comparison_prevalence_values=prev_values,
+        threshold=0.4,
+        year_ids=years,
+        comparitor_function=np.greater
+    )
+    assert year == years[-8]
 
 
 def test_measure_summary_float_success():

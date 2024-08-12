@@ -207,6 +207,35 @@ def test_summarize_measures_success():
     assert np.isin(PREV_MEASURE_NAME, summary_data[:, test_input["measure_loc"]])
     assert check_if_columns_is_float(summary_data, [test_input["measure_loc"]])
 
+def test_summarize_measures_multiple_measures_success():
+    test_input1 = generate_test_input()
+    test_input2 = generate_test_input()
+    test_input2["input"][:, 3] = "measure_2"
+    test_input = np.row_stack((test_input1["input"], test_input2["input"]))
+    summary_data = single_file_post_processing._summarize_measures(
+        raw_output_data=test_input,
+        year_column_loc=test_input1["year_loc"],
+        measure_column_loc=test_input1["measure_loc"],
+        age_start_column_loc=test_input1["age_start_loc"],
+        age_end_column_loc=test_input1["age_end_loc"],
+        draws_loc=test_input1["draws_loc"],
+        prevalence_marker_name=PREV_MEASURE_NAME,
+        measure_summary_map={
+            PREV_MEASURE_NAME: measures.measure_summary_float,
+            "measure_2": measures.measure_summary_float,
+        },
+    )
+    assert summary_data.shape[0] == test_input.shape[0]
+    assert summary_data.shape[1] == 16
+    assert (
+        np.concatenate((
+            np.full(test_input1["total_rows"], PREV_MEASURE_NAME),
+            np.full(test_input2["total_rows"], "measure_2")
+        )) ==
+        summary_data[:, test_input1["measure_loc"]]
+    ).all()
+    assert check_if_columns_is_float(summary_data, [test_input1["measure_loc"]])
+
 
 def test_summarize_measures_fail_invalid_input_string():
     num_draws = 10
