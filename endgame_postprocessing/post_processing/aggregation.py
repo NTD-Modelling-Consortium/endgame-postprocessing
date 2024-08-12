@@ -99,7 +99,7 @@ def country_lvl_aggregate(
     measure_column_name: str,
     general_summary_measure_names: list[str],
     general_groupby_cols: list[str],
-    threshold_summary_cols: list[str],
+    threshold_summary_measure_names: list[str],
     threshold_groupby_cols: list[str],
     threshold_cols_rename: dict,
 ) -> pd.DataFrame:
@@ -119,9 +119,10 @@ def country_lvl_aggregate(
                                             summaries by.
                                             Example: ["scenario", "country_code", "year_id",
                                             "age_start", "age_end", "measure"].
-        threshold_summary_cols (list[str]): a list of measures that we want to calculate the
-                                            threshold statistics for (number of IU's that reach a
-                                            threshold, calculated by the pct of non-null values).
+        threshold_summary_measure_names (list[str]): a list of measures names that we want to
+                                            calculate the threshold statistics for
+                                            (number of IU's that reach a threshold, calculated
+                                            by the pct of non-null values).
                                             Example:["year_of_1_mfp_avg", "year_of_90_under_1_mfp"].
         threshold_groupby_cols (list[str]): a list of measures that we want to use to group the
                                             threshold statistics by.
@@ -163,18 +164,19 @@ def country_lvl_aggregate(
         general_groupby_cols
     ].replace(-1, np.nan)
 
-    if (len(threshold_summary_cols) == 0):
+    if (len(threshold_summary_measure_names) == 0):
         if len(threshold_groupby_cols) > 0:
             raise ValueError(
-                f"The length of threshold_summary_cols is {len(threshold_summary_cols)} " +
+                "The length of threshold_summary_measure_names is "+
+                f"{len(threshold_summary_measure_names)} " +
                 f"while threshold_groupby_cols is of length {len(threshold_groupby_cols)}. " +
-                "threshold_summary_cols should be provided if the length of " +
+                "threshold_summary_measure_names should be provided if the length of " +
                 "threshold_groupby_cols is greater than 0."
             )
         return general_summary
 
     summarize_threshold = (
-        iu_lvl_data[iu_lvl_data["measure"].isin(threshold_summary_cols)]
+        iu_lvl_data[iu_lvl_data["measure"].isin(threshold_summary_measure_names)]
         .groupby(threshold_groupby_cols)
         .agg({"mean": [("mean", _calc_not_na)]})
         .reset_index()

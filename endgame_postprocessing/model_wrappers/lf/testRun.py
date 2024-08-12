@@ -52,7 +52,7 @@ country_lvl_data = country_lvl_aggregate(
         "year_of_90_under_threshold",
     ],
     general_groupby_cols=constants.COUNTRY_SUMMARY_GROUP_COLUMNS,
-    threshold_summary_cols=[
+    threshold_summary_measure_names=[
         "year_of_threshold_prevalence_avg",
         "year_of_90_under_threshold",
     ],

@@ -47,7 +47,7 @@ country_lvl_data = country_lvl_aggregate(
     measure_column_name=constants.MEASURE_COLUMN_NAME,
     general_summary_measure_names=constants.COUNTRY_SUMMARY_COLUMNS,
     general_groupby_cols=constants.COUNTRY_SUMMARY_GROUP_COLUMNS,
-    threshold_summary_cols=constants.COUNTRY_THRESHOLD_SUMMARY_COLUMNS,
+    threshold_summary_measure_names=constants.COUNTRY_THRESHOLD_SUMMARY_COLUMNS,
     threshold_groupby_cols=constants.COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS,
     threshold_cols_rename=constants.COUNTRY_THRESHOLD_RENAME_MAP,
 )
