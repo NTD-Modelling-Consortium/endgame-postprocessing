@@ -203,7 +203,7 @@ def test_country_lvl_aggregate_aggregate_by_country_rename():
         aggregate_data,
         pd.DataFrame(
             {
-                "country": ["C1", "C2", None],
+                "country": ["C1", "C2", np.nan],
                 "measure": ["M1"] * 2 + ["test"],
                 "mean": [0.3, 0.7, 50],
                 "2.5_percentile": [0.205, 0.605, None],
