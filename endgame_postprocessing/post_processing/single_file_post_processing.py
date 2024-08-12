@@ -219,13 +219,6 @@ def _summarize_measures(
     # provided function or the default one
     for key, func_to_summarize in measure_summary_map.items():
         tmp_measure_mask = raw_output_data[:, measure_column_loc] == key
-        if not (callable(func_to_summarize)):
-            raise ValueError(
-                f"Value for key {key} in measure_summary_map is not a callable."
-                + "function. Please provide a function, or set the value to None to "
-                + "use the default function"
-            )
-
         if measure_summaries_output is None:
             measure_summaries_output = func_to_summarize(
                 raw_output_data[tmp_measure_mask, :],
