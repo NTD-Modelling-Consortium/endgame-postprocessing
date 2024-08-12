@@ -44,7 +44,6 @@ aggregated_df = iu_lvl_aggregate(combined_ius)
 aggregated_df.to_csv("post-processed-outputs/aggregated/combined-oncho-iu-lvl-agg.csv")
 country_lvl_data = country_lvl_aggregate(
     iu_lvl_data=aggregated_df,
-    measure_column_name=constants.MEASURE_COLUMN_NAME,
     general_summary_measure_names=constants.COUNTRY_SUMMARY_COLUMNS,
     general_groupby_cols=constants.COUNTRY_SUMMARY_GROUP_COLUMNS,
     threshold_summary_measure_names=constants.COUNTRY_THRESHOLD_SUMMARY_COLUMNS,
@@ -56,7 +55,6 @@ country_lvl_data.to_csv(
 )
 africa_lvl_aggregate(
     country_lvl_data=country_lvl_data,
-    measure_column_name=constants.MEASURE_COLUMN_NAME,
     measures_to_summarize=constants.AFRICA_SUMMARY_MEASURES,
     columns_to_group_by=constants.AFRICA_LVL_GROUP_COLUMNS,
 ).to_csv("post-processed-outputs/aggregated/combined-oncho-africa-lvl-agg.csv")

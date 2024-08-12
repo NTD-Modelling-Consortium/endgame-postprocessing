@@ -128,7 +128,6 @@ def test_country_lvl_aggregate_aggregate_by_country_general_measures():
     )
     aggregate_data = aggregation.country_lvl_aggregate(
         iu_data,
-        measure_column_name="measure",
         general_summary_measure_names=["M1"],
         general_groupby_cols=["country", "measure"],
         threshold_cols_rename={},
@@ -172,7 +171,6 @@ def test_country_lvl_aggregate_aggregate_by_country_fail_threshold_measures():
     with pytest.raises(ValueError):
         aggregation.country_lvl_aggregate(
             iu_data,
-            measure_column_name="measure",
             general_summary_measure_names=["M1"],
             general_groupby_cols=["country", "measure"],
             threshold_cols_rename={},
@@ -192,7 +190,6 @@ def test_country_lvl_aggregate_aggregate_by_country_rename():
     )
     aggregate_data = aggregation.country_lvl_aggregate(
         iu_data,
-        measure_column_name="measure",
         general_summary_measure_names=["M1"],
         general_groupby_cols=["country", "measure"],
         threshold_cols_rename={"M2": "test", "M1": "should not rename"},
@@ -232,7 +229,6 @@ def test_africa_lvl_aggregate_empty_dataframe_failure():
     with pytest.raises(KeyError):
         aggregation.africa_lvl_aggregate(
             country_data,
-            measure_column_name="measure",
             measures_to_summarize=["M1"],
             columns_to_group_by=["measure"]
         )
@@ -243,7 +239,6 @@ def test_africa_lvl_aggregate_empty_dataframe_with_columns_success():
     ])
     africa_data = aggregation.africa_lvl_aggregate(
             country_data,
-            measure_column_name="measure",
             measures_to_summarize=["M1"],
             columns_to_group_by=["year_id","measure"]
         )
@@ -270,7 +265,6 @@ def test_africa_lvl_aggregate_success():
 
     africa_data = aggregation.africa_lvl_aggregate(
         country_data,
-        measure_column_name="measure",
         measures_to_summarize=["M1"],
         columns_to_group_by=["measure"]
     )

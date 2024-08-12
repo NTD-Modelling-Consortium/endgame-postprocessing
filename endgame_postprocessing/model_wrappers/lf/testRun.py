@@ -45,7 +45,6 @@ aggregated_df = iu_lvl_aggregate(combined_ius)
 aggregated_df.to_csv("post-processed-outputs/aggregated/combined-lf-iu-lvl-agg.csv")
 country_lvl_data = country_lvl_aggregate(
     iu_lvl_data=aggregated_df,
-    measure_column_name=constants.MEASURE_COLUMN_NAME,
     general_summary_measure_names=[
         "sampled mf prevalence (all pop)",
         "year_of_threshold_prevalence_avg",
@@ -64,7 +63,6 @@ country_lvl_data.to_csv(
 )
 africa_lvl_aggregate(
     country_lvl_data=country_lvl_data,
-    measure_column_name=constants.MEASURE_COLUMN_NAME,
     measures_to_summarize=["sampled mf prevalence (all pop)"],
     columns_to_group_by=constants.AFRICA_LVL_GROUP_COLUMNS,
 ).to_csv("post-processed-outputs/aggregated/combined-lf-africa-lvl-agg.csv")

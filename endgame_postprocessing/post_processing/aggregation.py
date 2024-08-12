@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from tqdm import tqdm
 from .constants import (
+    MEASURE_COLUMN_NAME,
     PERCENTILES_TO_CALC,
     AGGEGATE_DEFAULT_TYPING_MAP
 )
@@ -72,8 +73,6 @@ def iu_lvl_aggregate(
         columns_to_replace_with_nan (list[str]): any columns that should be replaced with NaN rather
                                                     than None.
         typing_map (dict): a dictionary that maps column names to their dtype.
-        df (pd.Dataframe): the dataframe with all the iu-lvl data.
-        measure_column_name (list[str]): the name of the column where the measure names are located.
 
     Returns:
         A dataframe with all of the iu-lvl data, filtered or not
@@ -96,7 +95,6 @@ def iu_lvl_aggregate(
 
 def country_lvl_aggregate(
     iu_lvl_data: pd.DataFrame,
-    measure_column_name: str,
     general_summary_measure_names: list[str],
     general_groupby_cols: list[str],
     threshold_summary_measure_names: list[str],
@@ -109,8 +107,6 @@ def country_lvl_aggregate(
     See constants.py for possible inputs to this function.
     Args:
         iu_lvl_data (pd.Dataframe): the dataframe with all the iu-lvl data.
-        measure_column_name (str): the column where the measure names are located.
-                                            Example: 'measure'.
         general_summary_measure_names (list[str]): a list of measures that we want to generally
                                             summarize with mean, percentiles, std, and median.
                                             Example: ["prevalence", "year_of_1_mfp_avg",
@@ -137,7 +133,7 @@ def country_lvl_aggregate(
         A dataframe with country-level metrics
     """
     general_summary_df = iu_lvl_data.loc[
-        iu_lvl_data[measure_column_name].isin(general_summary_measure_names), :
+        iu_lvl_data[MEASURE_COLUMN_NAME].isin(general_summary_measure_names), :
     ].copy()
     # group by doesn't work with NaN/null values
     general_summary_df[general_groupby_cols] = general_summary_df[
@@ -176,15 +172,15 @@ def country_lvl_aggregate(
         return general_summary
 
     summarize_threshold = (
-        iu_lvl_data[iu_lvl_data["measure"].isin(threshold_summary_measure_names)]
+        iu_lvl_data[iu_lvl_data[MEASURE_COLUMN_NAME].isin(threshold_summary_measure_names)]
         .groupby(threshold_groupby_cols)
         .agg({"mean": [("mean", _calc_not_na)]})
         .reset_index()
     )
     summarize_threshold.columns = threshold_groupby_cols + ["mean"]
-    summarize_threshold["measure"] = [
+    summarize_threshold[MEASURE_COLUMN_NAME] = [
         threshold_cols_rename[measure_val]
-        for measure_val in summarize_threshold["measure"]
+        for measure_val in summarize_threshold[MEASURE_COLUMN_NAME]
         if measure_val in threshold_cols_rename
     ]
     return pd.concat([general_summary, summarize_threshold], axis=0, ignore_index=True)
@@ -192,7 +188,6 @@ def country_lvl_aggregate(
 
 def africa_lvl_aggregate(
     country_lvl_data: pd.DataFrame,
-    measure_column_name: str,
     measures_to_summarize: list[str],
     columns_to_group_by: list[str],
 ) -> pd.DataFrame:
@@ -202,8 +197,6 @@ def africa_lvl_aggregate(
 
     Args:
         country_lvl_data (pd.Dataframe): the dataframe with country-level data.
-        measure_column_name (str): the column where the measure names are located.
-                                                Example: 'measure'.
         measures_to_summarize (list[str]): a list of measures that we want to generally summarize
                                             with mean, percentiles, std, and median.
                                             Example: ["prevalence"].
@@ -217,7 +210,7 @@ def africa_lvl_aggregate(
     """
     africa_summary = (
         country_lvl_data[
-            country_lvl_data[measure_column_name].isin(measures_to_summarize)
+            country_lvl_data[MEASURE_COLUMN_NAME].isin(measures_to_summarize)
         ]
         .groupby(columns_to_group_by)
         .agg(
