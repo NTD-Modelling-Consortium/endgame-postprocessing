@@ -27,3 +27,9 @@ COUNTRY_THRESHOLD_RENAME_MAP = {
 # Africa Level Params
 AFRICA_SUMMARY_MEASURES = ["prevalence"]
 AFRICA_LVL_GROUP_COLUMNS = ["scenario", "year_id", "age_start", "age_end", "measure"]
+
+# Disease Specifics
+ONCHO_MEASURES = ["APOD", "Atrophy", "Blindness", "CPOD", "Depigmentation", "HangingGroin",
+                  "OAE_prevalence", "RSDComplex", "RSDSimple", "SevereItching", "VisualImpairment",
+                  "intensity", "mean_worm_burden", "number", "pnc", "prevalence"
+]

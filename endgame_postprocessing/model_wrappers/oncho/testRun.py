@@ -32,7 +32,9 @@ with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
             iuName=file_info.iu,
             prevalence_marker_name="prevalence",
             post_processing_start_time=1970,
-            measure_summary_map={"prevalence": measure_summary_float},
+            measure_summary_map={
+            measure: measure_summary_float for measure in constants.ONCHO_MEASURES
+            },
         ).to_csv(
             "post-processed-outputs/oncho/" + file_info.scenario + "_" +
             file_info.iu + "post_processed.csv"
