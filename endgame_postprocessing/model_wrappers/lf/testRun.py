@@ -75,7 +75,7 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str):
                 pbar, file_info.scenario_index, file_info.total_scenarios
             )
 
-    combined_ius = aggregate_post_processed_files(output_dir)
+    combined_ius = aggregate_post_processed_files(output_iu_dir)
     aggregated_df = iu_lvl_aggregate(combined_ius)
     aggregated_df.to_csv(f"{output_aggregate_dir}/combined-lf-iu-lvl-agg.csv")
     country_lvl_data = country_lvl_aggregate(
