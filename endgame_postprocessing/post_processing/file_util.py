@@ -20,6 +20,14 @@ def custom_progress_bar_update(progress_bar, curr_index: int, total: int):
         progress_bar.refresh()
 
 
+def subdirectory_generator(directory: str):
+    files_and_folders = os.listdir(directory)
+    for file_or_folder in files_and_folders:
+        full_path = os.path.join(directory, file_or_folder)
+        if os.path.isdir(full_path):
+            yield full_path, file_or_folder
+
+
 def post_process_file_generator(
     file_directory: str,
     end_of_file: str = ".csv",
@@ -37,19 +45,13 @@ def post_process_file_generator(
         Yields a generator, which is a tuple, of form (scenario_index, total_scenarios, scenario,
         country, iu, full_file_path).
     """
-    total_scenarios = len(os.listdir(file_directory))
-    for scenario_index, scenario in enumerate(os.listdir(file_directory)):
-        scenario_dir_path = os.path.join(file_directory, scenario)
-        if not (os.path.isdir(scenario_dir_path)):
-            continue
-        for country in os.listdir(scenario_dir_path):
-            country_dir_path = os.path.join(file_directory, scenario, country)
-            if not (os.path.isdir(country_dir_path)):
-                continue
-            for iu in os.listdir(country_dir_path):
-                iu_dir_path = os.path.join(file_directory, scenario, country, iu)
-                if not (os.path.isdir(iu_dir_path)):
-                    continue
+    scenario_directories = [dir for dir in subdirectory_generator(file_directory)]
+    total_scenarios = len(scenario_directories)
+    for scenario_index, (scenario_dir_path, scenario) in enumerate(
+        scenario_directories
+    ):
+        for country_dir_path, country in subdirectory_generator(scenario_dir_path):
+            for iu_dir_path, iu in subdirectory_generator(country_dir_path):
                 for output_file in os.listdir(iu_dir_path):
                     if output_file.endswith(end_of_file):
                         yield CustomFileInfo(
