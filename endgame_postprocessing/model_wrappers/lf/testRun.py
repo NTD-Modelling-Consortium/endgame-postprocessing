@@ -35,9 +35,7 @@ with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
                 "sampled mf prevalence (all pop)": measure_summary_float,
                 "true mf prevalence (all pop)": measure_summary_float,
             },
-        ).to_csv(
-            output_dir + file_info.scenario + "_" + file_info.iu + "post_processed.csv"
-        )
+        ).to_csv(f"{output_dir}/{file_info.scenario}_{file_info.iu}_post_processed.csv")
         custom_progress_bar_update(pbar, file_info.scenario_index, file_info.total_scenarios)
 
 
