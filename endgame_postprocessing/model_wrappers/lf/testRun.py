@@ -23,7 +23,7 @@ import pandas as pd
 input_dir = "input-data/lf/"
 output_dir = "post-processed-outputs/lf/"
 
-output_iu_dir = output_dir
+output_iu_dir = f"{output_dir}/ius/"
 os.makedirs(output_iu_dir)
 output_aggregate_dir = f"{output_dir}/aggregated/"
 os.makedirs(output_aggregate_dir)
