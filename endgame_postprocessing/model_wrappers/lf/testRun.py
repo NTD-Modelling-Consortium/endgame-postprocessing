@@ -1,3 +1,4 @@
+import os
 from endgame_postprocessing.post_processing.aggregation import (
     aggregate_post_processed_files,
 )
@@ -23,7 +24,9 @@ input_dir = "input-data/lf/"
 output_dir = "post-processed-outputs/lf/"
 
 output_iu_dir = output_dir
+os.makedirs(output_iu_dir)
 output_aggregate_dir = f"{output_dir}/aggregated/"
+os.makedirs(output_aggregate_dir)
 
 file_iter = post_process_file_generator(file_directory=input_dir, end_of_file=".csv")
 with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
