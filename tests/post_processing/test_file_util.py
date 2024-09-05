@@ -1,3 +1,4 @@
+import pytest
 from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
 import endgame_postprocessing.post_processing.file_util as file_util
 
@@ -59,3 +60,8 @@ def test_post_process_file_generator_with_extra_file_in_scenario_dir(fs):
             "input-data/scenario1/country/iu1/data.csv",
         )
     ]
+
+
+def test_empty_directory_results_in_exception(fs):
+    with pytest.raises(Exception):
+        results = [f for f in file_util.post_process_file_generator("input-data")]
