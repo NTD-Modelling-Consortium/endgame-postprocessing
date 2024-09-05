@@ -19,10 +19,8 @@ from tqdm import tqdm
 import pandas as pd
 
 
-lf_dir = "input-data/lf/"
-file_iter = post_process_file_generator(
-    file_directory=lf_dir, end_of_file=".csv"
-)
+input_dir = "input-data/lf/"
+file_iter = post_process_file_generator(file_directory=input_dir, end_of_file=".csv")
 with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
     for file_info in file_iter:
         process_single_file(
