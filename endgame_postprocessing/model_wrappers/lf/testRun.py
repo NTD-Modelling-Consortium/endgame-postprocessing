@@ -22,6 +22,32 @@ import pandas as pd
 
 
 def run_postprocessing_pipeline(input_dir: str, output_dir: str):
+    """
+    Aggregates into standard format the input files found in input_dir.
+    input_dir must have the following substructure:
+        scenario1/
+            country1/
+                iu1/
+                    iu.csv
+        scenario2/
+
+    The output directory must be empty.
+    On completion the sub-structure will be:
+    output_dir/
+        ius/
+            a csv per IU with name format
+            scenario1_iu1_post_processed.csv
+        aggregated/
+            combined-lf-iu-lvl-agg.csv - all IUs in one csv
+                a aggregated by country csv
+            combined-lf-country-lvl-agg.csv - aggregate by country
+            combined-lf-africa-lvl-agg.csv - aggregated across Africa
+        ...
+    Arguments:
+        input_dir (str): The directory to search for input files.
+        output_dir (str): The directory to store the output files.
+
+    """
     output_iu_dir = f"{output_dir}/ius/"
     os.makedirs(output_iu_dir)
     output_aggregate_dir = f"{output_dir}/aggregated/"
