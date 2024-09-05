@@ -20,6 +20,8 @@ import pandas as pd
 
 
 input_dir = "input-data/lf/"
+output_dir = "post-processed-outputs/lf/"
+
 file_iter = post_process_file_generator(file_directory=input_dir, end_of_file=".csv")
 with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
     for file_info in file_iter:
@@ -29,18 +31,19 @@ with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
             iuName=file_info.iu,
             prevalence_marker_name="sampled mf prevalence (all pop)",
             post_processing_start_time=1970,
-            measure_summary_map={"sampled mf prevalence (all pop)": measure_summary_float,
-                                 "true mf prevalence (all pop)": measure_summary_float},
+            measure_summary_map={
+                "sampled mf prevalence (all pop)": measure_summary_float,
+                "true mf prevalence (all pop)": measure_summary_float,
+            },
         ).to_csv(
-            "post-processed-outputs/lf/" + file_info.scenario + "_" +
-            file_info.iu + "post_processed.csv"
+            output_dir + file_info.scenario + "_" + file_info.iu + "post_processed.csv"
         )
         custom_progress_bar_update(pbar, file_info.scenario_index, file_info.total_scenarios)
 
 
-combined_ius = aggregate_post_processed_files("post-processed-outputs/lf")
+combined_ius = aggregate_post_processed_files(output_dir)
 aggregated_df = iu_lvl_aggregate(combined_ius)
-aggregated_df.to_csv("post-processed-outputs/aggregated/combined-lf-iu-lvl-agg.csv")
+aggregated_df.to_csv(f"{output_dir}/aggregated/combined-lf-iu-lvl-agg.csv")
 country_lvl_data = country_lvl_aggregate(
     iu_lvl_data=aggregated_df,
     general_summary_measure_names=[
@@ -56,11 +59,9 @@ country_lvl_data = country_lvl_aggregate(
     threshold_groupby_cols=constants.COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS,
     threshold_cols_rename=constants.COUNTRY_THRESHOLD_RENAME_MAP,
 )
-country_lvl_data.to_csv(
-    "post-processed-outputs/aggregated/combined-lf-country-lvl-agg.csv"
-)
+country_lvl_data.to_csv(f"{output_dir}/aggregated/combined-lf-country-lvl-agg.csv")
 africa_lvl_aggregate(
     country_lvl_data=country_lvl_data,
     measures_to_summarize=["sampled mf prevalence (all pop)"],
     columns_to_group_by=constants.AFRICA_LVL_GROUP_COLUMNS,
-).to_csv("post-processed-outputs/aggregated/combined-lf-africa-lvl-agg.csv")
+).to_csv(f"{output_dir}/aggregated/combined-lf-africa-lvl-agg.csv")
