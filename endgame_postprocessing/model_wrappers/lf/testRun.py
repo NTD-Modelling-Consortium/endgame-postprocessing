@@ -1,6 +1,7 @@
 import os
 import shutil
 from joblib import Parallel, delayed
+from tqdm_joblib import tqdm_joblib
 from endgame_postprocessing.post_processing.aggregation import (
     aggregate_post_processed_files,
 )
@@ -40,27 +41,27 @@ def run_aggregate_runs_for_each_iu(input_dir: str, output_iu_dir: str, num_jobs=
     file_iter = post_process_file_generator(
         file_directory=input_dir, end_of_file=".csv"
     )
-    # with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
+    all_files = [file for file in file_iter]
+    total_ius = len(all_files)
 
-    def single_file(file_info):
-        process_single_file(
-            raw_model_outputs=pd.read_csv(file_info.file_path),
-            scenario=file_info.scenario,
-            iuName=file_info.iu,
-            prevalence_marker_name="sampled mf prevalence (all pop)",
-            post_processing_start_time=1970,
-            measure_summary_map={
-                "sampled mf prevalence (all pop)": measure_summary_float,
-                "true mf prevalence (all pop)": measure_summary_float,
-            },
-        ).to_csv(
-            f"{output_iu_dir}/{file_info.scenario}_{file_info.iu}_post_processed.csv"
-        )
-        # custom_progress_bar_update(
-        #     pbar, file_info.scenario_index, file_info.total_scenarios
-        # )
+    with tqdm_joblib(total=total_ius, desc="Post-processing Scenarios"):
 
-    Parallel(num_jobs)(delayed(single_file)(file_info) for file_info in file_iter)
+        def single_file(file_info):
+            process_single_file(
+                raw_model_outputs=pd.read_csv(file_info.file_path),
+                scenario=file_info.scenario,
+                iuName=file_info.iu,
+                prevalence_marker_name="sampled mf prevalence (all pop)",
+                post_processing_start_time=1970,
+                measure_summary_map={
+                    "sampled mf prevalence (all pop)": measure_summary_float,
+                    "true mf prevalence (all pop)": measure_summary_float,
+                },
+            ).to_csv(
+                f"{output_iu_dir}/{file_info.scenario}_{file_info.iu}_post_processed.csv"
+            )
+
+        Parallel(num_jobs)(delayed(single_file)(file_info) for file_info in all_files)
 
 
 def generate_aggregates_for_all_ius(processed_iu_dir: str, output_aggregate_dir: str):
@@ -107,7 +108,7 @@ def generate_aggregates_for_all_ius(processed_iu_dir: str, output_aggregate_dir:
     ).to_csv(f"{output_aggregate_dir}/combined-lf-africa-lvl-agg.csv")
 
 
-def run_postprocessing_pipeline(input_dir: str, output_dir: str):
+def run_postprocessing_pipeline(input_dir: str, output_dir: str, num_jobs: int):
     """
     Aggregates into standard format the input files found in input_dir.
     input_dir must have the following substructure:
@@ -134,7 +135,7 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str):
 
     """
     output_iu_dir = f"{output_dir}/ius/"
-    run_aggregate_runs_for_each_iu(input_dir, output_iu_dir)
+    run_aggregate_runs_for_each_iu(input_dir, output_iu_dir, num_jobs=num_jobs)
     output_aggregate_dir = f"{output_dir}/aggregated/"
     generate_aggregates_for_all_ius(output_iu_dir, output_aggregate_dir)
 
@@ -143,4 +144,4 @@ if __name__ == "__main__":
     output_dir = "post-processing-outputs/lf"
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
-    run_postprocessing_pipeline(input_dir="input-data/lf", output_dir=output_dir)
+    run_postprocessing_pipeline(input_dir="lf-csv", output_dir=output_dir, num_jobs=2)
