@@ -1,5 +1,6 @@
 import os
 import shutil
+from joblib import Parallel, delayed
 from endgame_postprocessing.post_processing.aggregation import (
     aggregate_post_processed_files,
 )
@@ -21,7 +22,7 @@ from tqdm import tqdm
 import pandas as pd
 
 
-def run_aggregate_runs_for_each_iu(input_dir: str, output_iu_dir: str):
+def run_aggregate_runs_for_each_iu(input_dir: str, output_iu_dir: str, num_jobs=-2):
     """
     Aggregates the stochastic runs (into mean etc)
     into standard format the input files found in input_dir.
@@ -41,24 +42,27 @@ def run_aggregate_runs_for_each_iu(input_dir: str, output_iu_dir: str):
     file_iter = post_process_file_generator(
         file_directory=input_dir, end_of_file=".csv"
     )
-    with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
-        for file_info in file_iter:
-            process_single_file(
-                raw_model_outputs=pd.read_csv(file_info.file_path),
-                scenario=file_info.scenario,
-                iuName=file_info.iu,
-                prevalence_marker_name="sampled mf prevalence (all pop)",
-                post_processing_start_time=1970,
-                measure_summary_map={
-                    "sampled mf prevalence (all pop)": measure_summary_float,
-                    "true mf prevalence (all pop)": measure_summary_float,
-                },
-            ).to_csv(
-                f"{output_iu_dir}/{file_info.scenario}_{file_info.iu}_post_processed.csv"
-            )
-            custom_progress_bar_update(
-                pbar, file_info.scenario_index, file_info.total_scenarios
-            )
+    # with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
+
+    def single_file(file_info):
+        process_single_file(
+            raw_model_outputs=pd.read_csv(file_info.file_path),
+            scenario=file_info.scenario,
+            iuName=file_info.iu,
+            prevalence_marker_name="sampled mf prevalence (all pop)",
+            post_processing_start_time=1970,
+            measure_summary_map={
+                "sampled mf prevalence (all pop)": measure_summary_float,
+                "true mf prevalence (all pop)": measure_summary_float,
+            },
+        ).to_csv(
+            f"{output_iu_dir}/{file_info.scenario}_{file_info.iu}_post_processed.csv"
+        )
+        # custom_progress_bar_update(
+        #     pbar, file_info.scenario_index, file_info.total_scenarios
+        # )
+
+    Parallel(num_jobs)(delayed(single_file)(file_info) for file_info in file_iter)
 
 
 def generate_aggregates_for_all_ius(processed_iu_dir: str, output_aggregate_dir: str):
