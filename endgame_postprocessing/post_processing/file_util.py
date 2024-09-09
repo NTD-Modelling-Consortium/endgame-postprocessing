@@ -58,7 +58,8 @@ def post_process_file_generator(
     ):
         for country_dir_path, country in subdirectory_generator(scenario_dir_path):
             for iu_dir_path, iu in subdirectory_generator(country_dir_path):
-                for output_file in os.listdir(iu_dir_path):
+                path, directories, files = next(os.walk(iu_dir_path))
+                for output_file in files:
                     if output_file.endswith(end_of_file):
                         yield CustomFileInfo(
                             scenario_index,
