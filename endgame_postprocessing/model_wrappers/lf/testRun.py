@@ -44,6 +44,11 @@ def run_aggregate_runs_for_each_iu(input_dir: str, output_iu_dir: str, num_jobs=
     all_files = [file for file in file_iter]
     total_ius = len(all_files)
 
+    if total_ius == 0:
+        raise Exception(
+            "No data for IUs found - see above warnings and check input directory"
+        )
+
     with tqdm_joblib(total=total_ius, desc="Post-processing Scenarios"):
 
         def single_file(file_info):
