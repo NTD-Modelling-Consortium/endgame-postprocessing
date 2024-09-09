@@ -149,4 +149,6 @@ if __name__ == "__main__":
     output_dir = "post-processing-outputs/lf"
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
-    run_postprocessing_pipeline(input_dir="lf-csv", output_dir=output_dir, num_jobs=2)
+        num_jobs=2,
+    )
+
