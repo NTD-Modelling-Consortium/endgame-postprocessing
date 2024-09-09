@@ -59,6 +59,10 @@ def post_process_file_generator(
         for country_dir_path, country in subdirectory_generator(scenario_dir_path):
             for iu_dir_path, iu in subdirectory_generator(country_dir_path):
                 path, directories, files = next(os.walk(iu_dir_path))
+                if len(directories) != 0:
+                    warnings.warn(
+                        f"{len(directories)} unexpected subdirectories in IU directory {path}, contents will be ignored"
+                    )
                 for output_file in files:
                     if output_file.endswith(end_of_file):
                         yield CustomFileInfo(
