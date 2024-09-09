@@ -71,3 +71,7 @@ def post_process_file_generator(
                                 file_directory, scenario, country, iu, output_file
                             ),
                         )
+                    else:
+                        warnings.warn(
+                            f"Unexpected file {output_file} in IUs directory {iu_dir_path}, expecting {end_of_file} only"
+                        )
