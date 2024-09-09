@@ -63,5 +63,7 @@ def test_post_process_file_generator_with_extra_file_in_scenario_dir(fs):
 
 
 def test_empty_directory_results_in_exception(fs):
-    with pytest.raises(Exception):
+    fs.create_dir("input-data")
+    with pytest.raises(Exception) as raised_exception:
         _ = [f for f in file_util.post_process_file_generator("input-data")]
+    assert str(raised_exception.value) == "No scenario directories found in input-data"
