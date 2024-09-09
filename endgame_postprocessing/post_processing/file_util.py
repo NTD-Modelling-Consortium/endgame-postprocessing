@@ -63,6 +63,10 @@ def post_process_file_generator(
                     warnings.warn(
                         f"{len(directories)} unexpected subdirectories in IU directory {path}, contents will be ignored"
                     )
+
+                if len(files) == 0:
+                    warnings.warn(f"No IU data files found for IU {path}")
+
                 for output_file in files:
                     if output_file.endswith(end_of_file):
                         yield CustomFileInfo(

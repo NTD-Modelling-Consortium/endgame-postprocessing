@@ -98,3 +98,12 @@ def test_directory_in_iu_raises_warning(fs):
         assert [str(warning.message) for warning in w] == [
             "1 unexpected subdirectories in IU directory input-data/scenario1/country/iu1, contents will be ignored"
         ]
+
+
+def test_no_csvs_in_iu_dir_raises_warning(fs):
+    fs.create_dir("input-data/scenario1/country/iu1/")
+    with warnings.catch_warnings(record=True) as w:
+        _ = [f for f in file_util.post_process_file_generator("input-data")]
+        assert [str(warning.message) for warning in w] == [
+            "No IU data files found for IU input-data/scenario1/country/iu1"
+        ]
