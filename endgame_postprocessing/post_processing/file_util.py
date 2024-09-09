@@ -1,3 +1,4 @@
+import warnings
 from .dataclasses import CustomFileInfo
 from typing import Generator
 import os
@@ -25,6 +26,8 @@ def subdirectory_generator(directory: str):
         full_path = os.path.join(directory, file_or_folder)
         if os.path.isdir(full_path):
             yield full_path, file_or_folder
+        else:
+            warnings.warn(f"Unexpected file {full_path} found in {directory}")
 
 
 def post_process_file_generator(
