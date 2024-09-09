@@ -46,6 +46,10 @@ def post_process_file_generator(
     """
     scenario_directories = [dir for dir in subdirectory_generator(file_directory)]
     total_scenarios = len(scenario_directories)
+
+    if total_scenarios == 0:
+        raise Exception(f"No scenario directories found in {file_directory}")
+
     for scenario_index, (scenario_dir_path, scenario) in enumerate(
         scenario_directories
     ):
