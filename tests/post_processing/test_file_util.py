@@ -1,3 +1,4 @@
+import warnings
 import pytest
 from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
 import endgame_postprocessing.post_processing.file_util as file_util
@@ -67,3 +68,13 @@ def test_empty_directory_results_in_exception(fs):
     with pytest.raises(Exception) as raised_exception:
         _ = [f for f in file_util.post_process_file_generator("input-data")]
     assert str(raised_exception.value) == "No scenario directories found in input-data"
+
+
+def test_file_in_scenario_dir_raises_warning(fs):
+    fs.create_file("input-data/extra_file.txt")
+    fs.create_file("input-data/scenario1/country/iu1/data.csv")
+    with warnings.catch_warnings(record=True) as w:
+        _ = [f for f in file_util.post_process_file_generator("input-data")]
+        assert [str(warning.message) for warning in w] == [
+            "Unexpected file input-data/extra_file.txt found in input-data"
+        ]
