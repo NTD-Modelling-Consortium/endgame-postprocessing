@@ -61,7 +61,8 @@ def post_process_file_generator(
                 path, directories, files = next(os.walk(iu_dir_path))
                 if len(directories) != 0:
                     warnings.warn(
-                        f"{len(directories)} unexpected subdirectories in IU directory {path}, contents will be ignored"
+                        f"{len(directories)} unexpected subdirectories in IU directory {path}, "
+                        "contents will be ignored"
                     )
 
                 if len(files) == 0:
@@ -81,5 +82,6 @@ def post_process_file_generator(
                         )
                     else:
                         warnings.warn(
-                            f"Unexpected file {output_file} in IUs directory {iu_dir_path}, expecting {end_of_file} only"
+                            f"Unexpected file {output_file} in IUs directory {iu_dir_path}, "
+                            f"expecting {end_of_file} only"
                         )
