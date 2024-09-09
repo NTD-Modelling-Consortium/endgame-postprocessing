@@ -88,3 +88,13 @@ def test_wrong_kind_of_file_in_iu_directory(fs):
         assert [str(warning.message) for warning in w] == [
             "Unexpected file extra_file.txt in IUs directory input-data/scenario1/country/iu1, expecting .csv only"
         ]
+
+
+def test_directory_in_iu_raises_warning(fs):
+    fs.create_dir("input-data/scenario1/country/iu1/extra_directory/")
+    fs.create_file("input-data/scenario1/country/iu1/data.csv")
+    with warnings.catch_warnings(record=True) as w:
+        _ = [f for f in file_util.post_process_file_generator("input-data")]
+        assert [str(warning.message) for warning in w] == [
+            "1 unexpected subdirectories in IU directory input-data/scenario1/country/iu1, contents will be ignored"
+        ]
