@@ -1,5 +1,7 @@
 import os
 import shutil
+import sys
+import warnings
 from joblib import Parallel, delayed
 from tqdm_joblib import tqdm_joblib
 from endgame_postprocessing.post_processing.aggregation import (
@@ -38,6 +40,12 @@ def run_aggregate_runs_for_each_iu(input_dir: str, output_iu_dir: str, num_jobs=
         scenario1_iu1_post_processed.csv
     """
     os.makedirs(output_iu_dir)
+
+    def less_verbose_warning(message, category, filename, lineno, file=None, line=None):
+        print(f"WARNING: {message}", file=sys.stderr)
+
+    warnings.showwarning = less_verbose_warning
+
     file_iter = post_process_file_generator(
         file_directory=input_dir, end_of_file=".csv"
     )
@@ -149,6 +157,8 @@ if __name__ == "__main__":
     output_dir = "post-processing-outputs/lf"
     if os.path.exists(output_dir):
         shutil.rmtree(output_dir)
+    run_postprocessing_pipeline(
+        input_dir="lf-ntdmc-csv-sample/lf-ntdmc-csv-sample/lf-ntdmc-csv/",
+        output_dir=output_dir,
         num_jobs=2,
     )
-
