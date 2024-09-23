@@ -276,7 +276,7 @@ def process_single_file(
     prevalence_marker_name: str = "prevalence",
     post_processing_start_time: int = 1970,
     threshold: float = 0.01,
-    pct_runs_under_threshold: float = 0.90,
+    pct_runs_under_threshold: list[float] = [0.90],
     measure_summary_map: dict = None,
 ) -> pd.DataFrame:
     """
