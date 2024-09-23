@@ -20,7 +20,6 @@ import pandas as pd
 
 
 oncho_dir = "input-data/oncho/"
-HelloWorld =     10
 file_iter = post_process_file_generator(
     file_directory=oncho_dir, end_of_file="-raw_all_age_data.csv"
 )
@@ -35,6 +34,7 @@ with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
             measure_summary_map={
             measure: measure_summary_float for measure in constants.ONCHO_MEASURES
             },
+            pct_runs_under_threshold=constants.THRESHOLDS
         ).to_csv(
             "post-processed-outputs/oncho/" + file_info.scenario + "_" +
             file_info.iu + "post_processed.csv"

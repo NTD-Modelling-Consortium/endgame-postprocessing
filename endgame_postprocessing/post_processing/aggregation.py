@@ -7,8 +7,9 @@ from tqdm import tqdm
 from .constants import (
     MEASURE_COLUMN_NAME,
     PERCENTILES_TO_CALC,
-    AGGEGATE_DEFAULT_TYPING_MAP
+    AGGEGATE_DEFAULT_TYPING_MAP,
 )
+
 
 def _percentile(n):
     def percentile_(x):
@@ -18,8 +19,12 @@ def _percentile(n):
     return percentile_
 
 
-def _calc_not_na(x):
+def _calc_prob_not_na(x):
     return x.notnull().mean() * 100
+
+
+def _calc_sum_not_na(x):
+    return x.notnull().sum()
 
 
 def aggregate_post_processed_files(
@@ -160,30 +165,52 @@ def country_lvl_aggregate(
         general_groupby_cols
     ].replace(-1, np.nan)
 
-    if (len(threshold_summary_measure_names) == 0):
+    if len(threshold_summary_measure_names) == 0:
         if len(threshold_groupby_cols) > 0:
             raise ValueError(
-                "The length of threshold_summary_measure_names is "+
-                f"{len(threshold_summary_measure_names)} " +
-                f"while threshold_groupby_cols is of length {len(threshold_groupby_cols)}. " +
-                "threshold_summary_measure_names should be provided if the length of " +
-                "threshold_groupby_cols is greater than 0."
+                "The length of threshold_summary_measure_names is "
+                + f"{len(threshold_summary_measure_names)} "
+                + f"while threshold_groupby_cols is of length {len(threshold_groupby_cols)}. "
+                + "threshold_summary_measure_names should be provided if the length of "
+                + "threshold_groupby_cols is greater than 0."
             )
         return general_summary
 
     summarize_threshold = (
-        iu_lvl_data[iu_lvl_data[MEASURE_COLUMN_NAME].isin(threshold_summary_measure_names)]
+        iu_lvl_data[
+            iu_lvl_data[MEASURE_COLUMN_NAME].isin(threshold_summary_measure_names)
+        ]
         .groupby(threshold_groupby_cols)
-        .agg({"mean": [("mean", _calc_not_na)]})
+        .agg({"mean": [("mean", _calc_prob_not_na)]})
         .reset_index()
     )
     summarize_threshold.columns = threshold_groupby_cols + ["mean"]
     summarize_threshold[MEASURE_COLUMN_NAME] = [
-        threshold_cols_rename[measure_val]
+        "pct_of_" + threshold_cols_rename[measure_val]
         for measure_val in summarize_threshold[MEASURE_COLUMN_NAME]
         if measure_val in threshold_cols_rename
     ]
-    return pd.concat([general_summary, summarize_threshold], axis=0, ignore_index=True)
+
+    summarize_threshold_counts = (
+        iu_lvl_data[
+            iu_lvl_data[MEASURE_COLUMN_NAME].isin(threshold_summary_measure_names)
+        ]
+        .groupby(threshold_groupby_cols)
+        .agg({"mean": [("mean", _calc_sum_not_na)]})
+        .reset_index()
+    )
+    summarize_threshold_counts.columns = threshold_groupby_cols + ["mean"]
+    summarize_threshold_counts[MEASURE_COLUMN_NAME] = [
+        "count_of_" + threshold_cols_rename[measure_val]
+        for measure_val in summarize_threshold_counts[MEASURE_COLUMN_NAME]
+        if measure_val in threshold_cols_rename
+    ]
+
+    return pd.concat(
+        [general_summary, summarize_threshold, summarize_threshold_counts],
+        axis=0,
+        ignore_index=True,
+    )
 
 
 def africa_lvl_aggregate(

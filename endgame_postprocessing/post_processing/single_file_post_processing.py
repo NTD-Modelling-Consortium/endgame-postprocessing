@@ -1,19 +1,24 @@
 import numpy as np
 import pandas as pd
 from .constants import (
-    AGE_END_COLUMN_NAME, AGE_START_COLUMN_NAME, DRAW_COLUMNN_NAME_START,
-    FINAL_COLUMNS, MEASURE_COLUMN_NAME, PERCENTILES_TO_CALC, YEAR_COLUMN_NAME
+    AGE_END_COLUMN_NAME,
+    AGE_START_COLUMN_NAME,
+    DRAW_COLUMNN_NAME_START,
+    FINAL_COLUMNS,
+    MEASURE_COLUMN_NAME,
+    PERCENTILES_TO_CALC,
+    YEAR_COLUMN_NAME,
 )
 from .measures import (
     build_summary,
     calc_prob_under_threshold,
     find_year_reaching_threshold,
-    measure_summary_float
+    measure_summary_float,
 )
 
+
 def validate_measure_map(
-        measure_summary_map: dict,
-        prevalence_measure_name: str
+    measure_summary_map: dict, prevalence_measure_name: str
 ) -> dict:
     """
     Returns a validated map of measures to summarize, that has, at minimum the prevalence marker.
@@ -30,12 +35,15 @@ def validate_measure_map(
     elif prevalence_measure_name not in measure_summary_map.keys():
         measure_summary_map[prevalence_measure_name] = measure_summary_float
     for key, func in measure_summary_map.items():
-        if (func is None):
+        if func is None:
             measure_summary_map[key] = measure_summary_float
-        elif not(callable(func)):
-            raise ValueError(f"Value for key '{key}'" +
-                             "in measure_summary_map is not callable and not None")
+        elif not (callable(func)):
+            raise ValueError(
+                f"Value for key '{key}'"
+                + "in measure_summary_map is not callable and not None"
+            )
     return measure_summary_map
+
 
 def _filter_out_old_data(
     raw_model_outputs: np.ndarray,
@@ -60,6 +68,7 @@ def _filter_out_old_data(
     )
     return raw_model_outputs[start_mask, :]
 
+
 def _calculate_probabilities_and_thresholds(
     filtered_model_outputs: np.array,
     year_column_loc: int,
@@ -69,7 +78,7 @@ def _calculate_probabilities_and_thresholds(
     draws_loc: list[int],
     prevalence_marker_name: str,
     threshold: float,
-    pct_runs_under_threshold: float,
+    pct_runs_under_threshold: list[float],
 ) -> np.ndarray:
     """
     A helper function that takes in filtered model outputs and generatres:
@@ -90,11 +99,15 @@ def _calculate_probabilities_and_thresholds(
                                         compare with the threhsold.
         threshold (float): the value of the threshold we compare prevalence values
                             to (value < threhsold).
-        pct_runs_under_threshold (float): the percent of runs that should reach the given threshold
+        pct_runs_under_threshold (list[float]): the percentages of runs that should reach the given threshold
                                             (pct_runs >= pct_runs_under_threshold).
     Returns:
         Returns a 2D Matrix with the post-processed metrics for the given input
     """
+    # for backwards compatibility
+    if not isinstance(pct_runs_under_threshold, list):
+        pct_runs_under_threshold = [pct_runs_under_threshold]
+
     # Selecting only the rows that have the given prevalence measure
     prevalence_mask = (
         filtered_model_outputs[:, measure_column_loc] == prevalence_marker_name
@@ -127,23 +140,31 @@ def _calculate_probabilities_and_thresholds(
     # find the rows where the proportion is >= pct_runs_under_threshold, select the top row as the
     # first index
     # todo: verify/dynamically select the lowest year
-    year_of_pct_runs_under_threshold = find_year_reaching_threshold(
-        prob_prevalence_under_threshold,
-        pct_runs_under_threshold,
-        filtered_model_outputs[prevalence_mask, year_column_loc],
-        np.greater_equal,
-    )
+    years_of_pct_runs_under_threshold = []
+    for pct in pct_runs_under_threshold:
+        years_of_pct_runs_under_threshold.append(
+            find_year_reaching_threshold(
+                prob_prevalence_under_threshold,
+                pct,
+                filtered_model_outputs[prevalence_mask, year_column_loc],
+                np.greater_equal,
+            )
+        )
 
+    none_array = np.full(len(years_of_pct_runs_under_threshold), None)
     year_of_pct_runs_under_threshold_output = build_summary(
-        year_id=[None],
-        age_start=[None],
-        age_end=[None],
-        measure_name=["year_of_pct_runs_under_threshold"],
-        mean=[year_of_pct_runs_under_threshold],
-        percentiles_dict={k: [None] for k in PERCENTILES_TO_CALC},
+        year_id=none_array,
+        age_start=none_array,
+        age_end=none_array,
+        measure_name=[
+            f"year_of_pct_runs_under_threshold_{int(pct*100)}"
+            for pct in pct_runs_under_threshold
+        ],
+        mean=years_of_pct_runs_under_threshold,
+        percentiles_dict={k: none_array for k in PERCENTILES_TO_CALC},
         percentile_name_order=PERCENTILES_TO_CALC,
-        standard_deviation=[None],
-        median=[None],
+        standard_deviation=none_array,
+        median=none_array,
     )
 
     # Calculating the year where the avg across all the runs has a prevalence < the threshold
@@ -213,7 +234,9 @@ def _summarize_measures(
     """
     # Summarizing all other outputs
     measure_summaries_output = None
-    measure_summary_map = validate_measure_map(measure_summary_map, prevalence_marker_name)
+    measure_summary_map = validate_measure_map(
+        measure_summary_map, prevalence_marker_name
+    )
 
     # loop through each measure key and calculate the summary for it independently, using either the
     # provided function or the default one
@@ -342,7 +365,4 @@ def process_single_file(
     )
 
     # return a dataframe
-    return pd.DataFrame(
-        descriptor_output,
-        columns=FINAL_COLUMNS
-    )
+    return pd.DataFrame(descriptor_output, columns=FINAL_COLUMNS)

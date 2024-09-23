@@ -99,7 +99,7 @@ def test_filter_out_old_data_fail_cutoff_not_numeric():
         )
 
 
-def test_calculate_probabilities_and_thresholds_success():
+def test_calculate_probabilities_and_thresholds_backwards_compatible_success():
     test_input = generate_test_input()
     prob_and_threshold_data = (
         single_file_post_processing._calculate_probabilities_and_thresholds(
@@ -121,12 +121,46 @@ def test_calculate_probabilities_and_thresholds_success():
                 np.full(test_input["total_rows"], "prob_under_threshold_prevalence"),
                 [
                     "year_of_threshold_prevalence_avg",
-                    "year_of_pct_runs_under_threshold",
+                    "year_of_pct_runs_under_threshold_90",
                 ],
             )
         )
     ).all()
     assert prob_and_threshold_data.shape[0] == test_input["input"].shape[0] + 2
+    assert prob_and_threshold_data.shape[1] == 16
+    assert check_if_columns_is_float(
+        prob_and_threshold_data, [test_input["measure_loc"]]
+    )
+
+def test_calculate_probabilities_and_thresholds_success():
+    test_input = generate_test_input()
+    prob_and_threshold_data = (
+        single_file_post_processing._calculate_probabilities_and_thresholds(
+            filtered_model_outputs=test_input["input"],
+            year_column_loc=test_input["year_loc"],
+            measure_column_loc=test_input["measure_loc"],
+            age_start_column_loc=test_input["age_start_loc"],
+            age_end_column_loc=test_input["age_end_loc"],
+            draws_loc=test_input["draws_loc"],
+            prevalence_marker_name=PREV_MEASURE_NAME,
+            threshold=0.1,
+            pct_runs_under_threshold=[0.8, 0.9],
+        )
+    )
+    assert (
+        prob_and_threshold_data[:, test_input["measure_loc"]]
+        == np.concatenate(
+            (
+                np.full(test_input["total_rows"], "prob_under_threshold_prevalence"),
+                [
+                    "year_of_threshold_prevalence_avg",
+                    "year_of_pct_runs_under_threshold_80",
+                    "year_of_pct_runs_under_threshold_90",
+                ],
+            )
+        )
+    ).all()
+    assert prob_and_threshold_data.shape[0] == test_input["input"].shape[0] + 3
     assert prob_and_threshold_data.shape[1] == 16
     assert check_if_columns_is_float(
         prob_and_threshold_data, [test_input["measure_loc"]]
@@ -147,7 +181,7 @@ def test_calculate_probabilities_and_thresholds_success_non_numeric_year():
             draws_loc=test_input["draws_loc"],
             prevalence_marker_name=PREV_MEASURE_NAME,
             threshold=0.1,
-            pct_runs_under_threshold=0.9,
+            pct_runs_under_threshold=[0.9],
         )
     )
     with pytest.raises(AssertionError):
@@ -166,7 +200,7 @@ def test_calculate_probabilities_and_thresholds_fail_no_year_column_exists():
             draws_loc=test_input["draws_loc"],
             prevalence_marker_name=PREV_MEASURE_NAME,
             threshold=0.1,
-            pct_runs_under_threshold=0.9,
+            pct_runs_under_threshold=[0.9],
         )
 
 
@@ -186,7 +220,7 @@ def test_calculate_probabilities_and_thresholds_fail_invalid_input_string():
             draws_loc=test_input["draws_loc"],
             prevalence_marker_name=PREV_MEASURE_NAME,
             threshold=0.1,
-            pct_runs_under_threshold=0.9,
+            pct_runs_under_threshold=[0.9],
         )
 
 

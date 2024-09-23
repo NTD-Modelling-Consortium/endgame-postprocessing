@@ -2,6 +2,7 @@ from .dataclasses import CustomFileInfo
 from typing import Generator
 import os
 
+
 def custom_progress_bar_update(progress_bar, curr_index: int, total: int):
     """
     Custom update for the progress bar to work with the `post_process_file_generator` below.
@@ -61,4 +62,3 @@ def post_process_file_generator(
                                 file_directory, scenario, country, iu, output_file
                             ),
                         )
-

@@ -200,24 +200,25 @@ def test_country_lvl_aggregate_aggregate_by_country_rename():
         aggregate_data,
         pd.DataFrame(
             {
-                "country": ["C1", "C2", np.nan],
-                "measure": ["M1"] * 2 + ["test"],
-                "mean": [0.3, 0.7, 50],
-                "2.5_percentile": [0.205, 0.605, None],
-                "5_percentile": [0.21, 0.61, None],
-                "10_percentile": [0.22, 0.62, None],
-                "25_percentile": [0.25, 0.65, None],
-                "50_percentile": [0.3, 0.7, None],
-                "75_percentile": [0.35, 0.75, None],
-                "90_percentile": [0.38, 0.78, None],
-                "95_percentile": [0.39, 0.79, None],
-                "97.5_percentile": [0.395, 0.795, None],
+                "country": ["C1", "C2", np.nan, np.nan],
+                "measure": ["M1"] * 2 + ["pct_of_test", "count_of_test"],
+                "mean": [0.3, 0.7, 50, 1],
+                "2.5_percentile": [0.205, 0.605, None, None],
+                "5_percentile": [0.21, 0.61, None, None],
+                "10_percentile": [0.22, 0.62, None, None],
+                "25_percentile": [0.25, 0.65, None, None],
+                "50_percentile": [0.3, 0.7, None, None],
+                "75_percentile": [0.35, 0.75, None, None],
+                "90_percentile": [0.38, 0.78, None, None],
+                "95_percentile": [0.39, 0.79, None, None],
+                "97.5_percentile": [0.395, 0.795, None, None],
                 "standard_deviation": [
                     np.std([0.2, 0.4], ddof=1),
                     np.std([0.6, 0.8], ddof=1),
+                    None,
                     None
                 ],
-                "median": [np.median([0.2, 0.4]), np.median([0.6, 0.8]), None],
+                "median": [np.median([0.2, 0.4]), np.median([0.6, 0.8]), None, None],
             }
         ),
     )

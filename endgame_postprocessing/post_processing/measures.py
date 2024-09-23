@@ -37,6 +37,7 @@ def _extract_percentiles(
         output_array[:, index] = percentiles_dict[percentile_name]
     return output_array
 
+
 def build_summary(
     year_id: list[int],
     age_start: list[int],
@@ -96,6 +97,7 @@ def build_summary(
         )
     )
 
+
 def calc_prob_under_threshold(
     prevalence_vals: np.ndarray,
     threshold: float,
@@ -119,6 +121,7 @@ def calc_prob_under_threshold(
     # Finding the mean of True/False values in a row, which returns the proportion of draws
     # under the threshold. Results should be a Nx1 matrix (each row is the proportion for a year)
     return np.mean(prevalence_under_threshold_mask, axis=1)
+
 
 def find_year_reaching_threshold(
     comparison_prevalence_values: list[list[float]],
@@ -145,6 +148,7 @@ def find_year_reaching_threshold(
     if indeces_of_meeting_threshold.size > 0:
         return year_ids[indeces_of_meeting_threshold[0]]
     return np.nan
+
 
 def measure_summary_float(
     data_to_summarize: np.ndarray,
