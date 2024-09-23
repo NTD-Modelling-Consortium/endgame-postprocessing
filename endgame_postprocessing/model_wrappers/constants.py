@@ -25,7 +25,8 @@ COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS = ["scenario", "country_code", "measure"
 COUNTRY_THRESHOLD_RENAME_MAP = {
     "year_of_threshold_prevalence_avg": "pct_of_ius_passing_avg_threshold",
 } | {
-    f"year_of_pct_runs_under_threshold_{int(thresh * 100)}": f"ius_passing_{int(thresh * 100)}pct_threshold"
+    f"year_of_pct_runs_under_threshold_{int(thresh * 100)}":
+    f"ius_passing_{int(thresh * 100)}pct_threshold"
     for thresh in THRESHOLDS
 }
 

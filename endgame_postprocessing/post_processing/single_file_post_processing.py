@@ -99,8 +99,8 @@ def _calculate_probabilities_and_thresholds(
                                         compare with the threhsold.
         threshold (float): the value of the threshold we compare prevalence values
                             to (value < threhsold).
-        pct_runs_under_threshold (list[float]): the percentages of runs that should reach the given threshold
-                                            (pct_runs >= pct_runs_under_threshold).
+        pct_runs_under_threshold (list[float]): the percentages of runs that should reach the given
+                                            threshold (pct_runs >= pct_runs_under_threshold).
     Returns:
         Returns a 2D Matrix with the post-processed metrics for the given input
     """
