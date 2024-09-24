@@ -1,3 +1,4 @@
+import warnings
 from .dataclasses import CustomFileInfo
 from typing import Generator
 import os
@@ -19,6 +20,16 @@ def custom_progress_bar_update(progress_bar, curr_index: int, total: int):
         progress_bar.refresh()
 
 
+def subdirectory_generator(directory: str):
+    files_and_folders = os.listdir(directory)
+    for file_or_folder in files_and_folders:
+        full_path = os.path.join(directory, file_or_folder)
+        if os.path.isdir(full_path):
+            yield full_path, file_or_folder
+        else:
+            warnings.warn(f"Unexpected file {full_path} found in {directory}")
+
+
 def post_process_file_generator(
     file_directory: str,
     end_of_file: str = ".csv",
@@ -36,20 +47,28 @@ def post_process_file_generator(
         Yields a generator, which is a tuple, of form (scenario_index, total_scenarios, scenario,
         country, iu, full_file_path).
     """
-    total_scenarios = len(os.listdir(file_directory))
-    for scenario_index, scenario in enumerate(os.listdir(file_directory)):
-        scenario_dir_path = os.path.join(file_directory, scenario)
-        if not (os.path.isdir(scenario_dir_path)):
-            continue
-        for country in os.listdir(scenario_dir_path):
-            country_dir_path = os.path.join(file_directory, scenario, country)
-            if not (os.path.isdir(country_dir_path)):
-                continue
-            for iu in os.listdir(country_dir_path):
-                iu_dir_path = os.path.join(file_directory, scenario, country, iu)
-                if not (os.path.isdir(iu_dir_path)):
-                    continue
-                for output_file in os.listdir(iu_dir_path):
+    scenario_directories = [dir for dir in subdirectory_generator(file_directory)]
+    total_scenarios = len(scenario_directories)
+
+    if total_scenarios == 0:
+        raise Exception(f"No scenario directories found in {file_directory}")
+
+    for scenario_index, (scenario_dir_path, scenario) in enumerate(
+        scenario_directories
+    ):
+        for country_dir_path, country in subdirectory_generator(scenario_dir_path):
+            for iu_dir_path, iu in subdirectory_generator(country_dir_path):
+                path, directories, files = next(os.walk(iu_dir_path))
+                if len(directories) != 0:
+                    warnings.warn(
+                        f"{len(directories)} unexpected subdirectories in IU directory {path}, "
+                        "contents will be ignored"
+                    )
+
+                if len(files) == 0:
+                    warnings.warn(f"No IU data files found for IU {path}")
+
+                for output_file in files:
                     if output_file.endswith(end_of_file):
                         yield CustomFileInfo(
                             scenario_index,
@@ -61,4 +80,8 @@ def post_process_file_generator(
                                 file_directory, scenario, country, iu, output_file
                             ),
                         )
-
+                    else:
+                        warnings.warn(
+                            f"Unexpected file {output_file} in IUs directory {iu_dir_path}, "
+                            f"expecting {end_of_file} only"
+                        )
