@@ -151,14 +151,3 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str, num_jobs: int):
     run_aggregate_runs_for_each_iu(input_dir, output_iu_dir, num_jobs=num_jobs)
     output_aggregate_dir = f"{output_dir}/aggregated/"
     generate_aggregates_for_all_ius(output_iu_dir, output_aggregate_dir)
-
-
-if __name__ == "__main__":
-    output_dir = "post-processing-outputs/lf"
-    if os.path.exists(output_dir):
-        shutil.rmtree(output_dir)
-    run_postprocessing_pipeline(
-        input_dir="lf-ntdmc-csv-sample/lf-ntdmc-csv-sample/lf-ntdmc-csv/",
-        output_dir=output_dir,
-        num_jobs=2,
-    )
