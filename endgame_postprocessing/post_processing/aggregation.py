@@ -61,8 +61,8 @@ def aggregate_post_processed_files(
 
     # To ensure path ends in a trailing slash
     properly_terminated_path = os.path.join(path_to_files, "")
-    files_to_combine = glob.glob(
-        properly_terminated_path + "**/" + specific_files, recursive=True
+    files_to_combine = sorted(
+        glob.glob(properly_terminated_path + "**/" + specific_files, recursive=True)
     )
     total_files = len(files_to_combine)
     for filename in tqdm(files_to_combine, total=total_files, desc="Processing files"):
