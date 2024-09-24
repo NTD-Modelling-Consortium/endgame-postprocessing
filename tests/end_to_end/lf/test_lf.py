@@ -10,7 +10,7 @@ def test_lf_end_to_end(snapshot):
     input_data = Path(__file__).parent / "example_input_data"
     output_path = Path(__file__).parent / "generated_data"
 
-    if output_path.exists:
+    if output_path.exists():
         shutil.rmtree(output_path)
 
     lf_runner.run_postprocessing_pipeline(
