@@ -8,6 +8,9 @@
 * **Processed prevalence** - the selected prevalence measure per model
 * **Protocol passed** - whether the processed prevalence is below the disease specific threshold
 * **Protocol Confidence** - the percentage of runs required to say the protocol has passed  
+* **Model Measures** - the measures derived from the model, currently just processed prevalence
+* **Protocol Measures** - the measures the post processing pipeline calculates, 
+  currently each of the protocol confidence levels and whether enough simulations for that IU passed. 
 
 #### File Types
 * **Raw** - the format that comes out of the model, multiple draws, many measures, non-standard names, per IU
