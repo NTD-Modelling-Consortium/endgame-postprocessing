@@ -29,6 +29,72 @@ flowchart TD
     IU_canonical --Count number of IUs that meet threshold--> Country_Agg_model_measures
 ```
 
+### The output specification:
+
+#### Directory structure:
+
+ - disease/
+  - aggregated/
+    - combined-{disease}-iu-lvl-agg.csv
+    - combined-{disease}-country-lvl-agg.csv
+    - combined-{disease}-africa-lvl-agg.csv
+   - ius/
+    - {scenario_N}\_{IU code}\_post_processed.csv
+    - ... for each IU, for each scenario
+  - iu_metadata.csv
+ - ... for each disease
+
+#### File Contents
+
+##### Per IU / combined IU level file :
+
+*Columns*
+
+- scenario
+- country_code
+- iu_name
+- year_id
+- measure
+- mean
+- 2.5_percentile
+- 97.5_percentile
+- standard_deviation
+- median
+
+*Measures*
+
+* processed_prevalence - the prevalence measure for that disease
+* year_of_Xpct_runs_under_threshold - the year X percentage of runs crossed the disease specific threshold
+
+##### Per Country file:
+
+*Columns*
+
+- scenario
+- country_code
+- measure
+- year_id
+- mean - _the primary value for the measure (may not be a mean)_
+- 2.5_percentile
+- 5_percentile
+- 10_percentile
+- 25_percentile
+- 50_percentile
+- 75_percentile
+- 90_percentile
+- 95_percentile
+- 97.5_percentile
+- standard_deviation
+- median
+
+**Measures**
+- processed_prevalence - the composite prevalence in country (percentage taken using ?? as population)
+- number_of_ius_Xpct_under_threshold - for each year, the number of IUs that in X percent of runs have gone under the threshold by this year
+- pct_modelled_ius_Xpct_under_threshold - for each year, the percentage of IUs, out of those modelled, who in X percent of runs have gone under the threshold by this year
+- pct_endemic_ius_Xpct_under_threshold - for each year, the percentage of IUs, out of those that are classified as endemic, who in X percent of runs have gone under the threshold by this year
+- year_X_pct_runs_in_all_ius - the year in X percent of runs all IUs have crossed the threshold. Note: year_id will be n/a for this.
+
+
 ## Tests
 
 To run the tests for this repo run:
