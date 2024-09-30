@@ -8,6 +8,7 @@ from .constants import (
     MEASURE_COLUMN_NAME,
     PERCENTILES_TO_CALC,
     YEAR_COLUMN_NAME,
+    DEFAULT_PREVALENCE_MEASURE_NAME,
 )
 from .measures import (
     build_summary,
@@ -104,10 +105,6 @@ def _calculate_probabilities_and_thresholds(
     Returns:
         Returns a 2D Matrix with the post-processed metrics for the given input
     """
-    # for backwards compatibility
-    if not isinstance(pct_runs_under_threshold, list):
-        pct_runs_under_threshold = [pct_runs_under_threshold]
-
     # Selecting only the rows that have the given prevalence measure
     prevalence_mask = (
         filtered_model_outputs[:, measure_column_loc] == prevalence_marker_name
@@ -157,7 +154,7 @@ def _calculate_probabilities_and_thresholds(
         age_start=none_array,
         age_end=none_array,
         measure_name=[
-            f"year_of_pct_runs_under_threshold_{int(pct*100)}"
+            f"year_of_{int(pct*100)}pct_runs_under_threshold"
             for pct in pct_runs_under_threshold
         ],
         mean=years_of_pct_runs_under_threshold,
@@ -167,30 +164,10 @@ def _calculate_probabilities_and_thresholds(
         median=none_array,
     )
 
-    # Calculating the year where the avg across all the runs has a prevalence < the threshold
-    year_of_threshold_prevalence_avg = find_year_reaching_threshold(
-        np.mean(prevalence_vals, axis=1),
-        threshold,
-        filtered_model_outputs[prevalence_mask, year_column_loc],
-        np.less,
-    )
-    year_of_threshold_prevalence_avg_output = build_summary(
-        year_id=[None],
-        age_start=[None],
-        age_end=[None],
-        measure_name=["year_of_threshold_prevalence_avg"],
-        mean=[year_of_threshold_prevalence_avg],
-        percentiles_dict={k: [None] for k in PERCENTILES_TO_CALC},
-        percentile_name_order=PERCENTILES_TO_CALC,
-        standard_deviation=[None],
-        median=[None],
-    )
     return np.row_stack(
         (
             # probability of X% prevalence for each year
             prob_under_threshold_prevalence_output,
-            # year that the avg prevalence is < X%
-            year_of_threshold_prevalence_avg_output,
             # year that the Y% of runs have < X% prev
             year_of_pct_runs_under_threshold_output,
         )
@@ -346,6 +323,12 @@ def process_single_file(
         draws_loc,
         prevalence_marker_name,
         measure_summary_map,
+    )
+
+    summarized_measure_outputs[:, 3] = np.where(
+        summarized_measure_outputs[:, 3] == prevalence_marker_name,
+        DEFAULT_PREVALENCE_MEASURE_NAME,
+        summarized_measure_outputs[:, 3]
     )
 
     # combine all the outputs together

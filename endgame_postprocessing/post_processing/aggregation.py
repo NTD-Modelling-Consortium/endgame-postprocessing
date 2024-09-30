@@ -2,12 +2,20 @@ import glob
 import csv
 import os
 import pandas as pd
+from endgame_postprocessing.model_wrappers.constants import COUNTRY_SUMMARY_GROUP_COLUMNS
+from endgame_postprocessing.post_processing.measures import measure_summary_float
 import numpy as np
 from tqdm import tqdm
 from .constants import (
+    AGE_END_COLUMN_NAME,
+    AGE_START_COLUMN_NAME,
+    DEFAULT_PREVALENCE_MEASURE_NAME,
+    DRAW_COLUMNN_NAME_START,
     MEASURE_COLUMN_NAME,
+    NUM_DRAWS,
     PERCENTILES_TO_CALC,
     AGGEGATE_DEFAULT_TYPING_MAP,
+    YEAR_COLUMN_NAME,
 )
 
 
@@ -26,6 +34,14 @@ def _calc_prob_not_na(x):
 def _calc_sum_not_na(x):
     return x.notnull().sum()
 
+def _calc_max_not_na(x):
+    return x.max()
+
+def add_scenario_and_country_to_raw_data(data, scenario_name, iu_name):
+    data["scenario_name"] = scenario_name
+    data["country_code"] = iu_name[:3]
+    data["iu_name"] = iu_name
+    return(data)
 
 def aggregate_post_processed_files(
     path_to_files: str,
@@ -97,14 +113,44 @@ def iu_lvl_aggregate(
 
     return aggregated_data
 
+def _group_country_pop(data, column_to_group_by):
+    grouped_data = data.groupby(["country_code", column_to_group_by]).agg(
+        country_pop=("population", "sum")
+    )
+
+    return grouped_data[grouped_data[column_to_group_by] is True].copy()
+
+def _threshold_summary_helper(
+        data,
+        summary_measure_names,
+        group_by_columns,
+        aggregate_function,
+        aggregate_prefix,
+        measure_rename_map
+    ):
+    summarize_threshold = (
+        data[data[MEASURE_COLUMN_NAME].isin(summary_measure_names)]
+        .groupby(group_by_columns)
+        .agg({"mean": [("mean", aggregate_function)]})
+        .reset_index()
+    )
+    summarize_threshold.columns = group_by_columns + ["mean"]
+    summarize_threshold[MEASURE_COLUMN_NAME] = [
+        aggregate_prefix + measure_rename_map[measure_val]
+        for measure_val in summarize_threshold[MEASURE_COLUMN_NAME]
+        if measure_val in measure_rename_map
+    ]
+    return summarize_threshold
 
 def country_lvl_aggregate(
-    iu_lvl_data: pd.DataFrame,
+    raw_iu_data: pd.DataFrame,
+    processed_iu_lvl_data: pd.DataFrame,
     general_summary_measure_names: list[str],
     general_groupby_cols: list[str],
     threshold_summary_measure_names: list[str],
     threshold_groupby_cols: list[str],
     threshold_cols_rename: dict,
+    path_to_population_data: str,
 ) -> pd.DataFrame:
     """
     Takes in an input dataframe of all the aggregated iu-lvl data and returns a summarized version
@@ -133,81 +179,123 @@ def country_lvl_aggregate(
                                     statistics. Example:
                                     {"year_of_90_under_1_mfp":"pct_of_ius_passing_90pct_threshold",
                                     "year_of_1_mfp_avg":"pct_of_ius_passing_avg_threshold"}
+        path_to_population_data (str): path to a population dataset that will contain the population
+                                    for each IU within the `iu_lvl_data`.
 
     Returns:
         A dataframe with country-level metrics
     """
-    general_summary_df = iu_lvl_data.loc[
-        iu_lvl_data[MEASURE_COLUMN_NAME].isin(general_summary_measure_names), :
-    ].copy()
-    # group by doesn't work with NaN/null values
-    general_summary_df[general_groupby_cols] = general_summary_df[
-        general_groupby_cols
-    ].fillna(-1)
-    general_summary = (
-        general_summary_df.groupby(general_groupby_cols)
-        .agg(
-            {
-                "mean": ["mean"]
-                + [_percentile(p) for p in PERCENTILES_TO_CALC]
-                + ["std", "median"]
-            }
-        )
-        .reset_index()
-    )
-    general_summary.columns = (
-        general_groupby_cols
-        + ["mean"]
-        + [str(p) + "_percentile" for p in PERCENTILES_TO_CALC]
-        + ["standard_deviation", "median"]
-    )
-    general_summary[general_groupby_cols] = general_summary[
-        general_groupby_cols
-    ].replace(-1, np.nan)
+    draw_names = [f"{DRAW_COLUMNN_NAME_START}{i}" for i in range(0, NUM_DRAWS)]
 
-    if len(threshold_summary_measure_names) == 0:
+    ### Uncomment below once actual population file is provided, most of this should be in the composite code
+    # population_data = pd.read_csv(
+    #     path_to_population_data,
+    #     usecols=["country_code", "iu_name", "population", "is_endemic", "is_modelled"]
+    # )
+
+    # grouped_population_data = _group_country_pop(population_data, "is_endemic")
+
+    # new_population_data = population_data.merge(
+    #     grouped_population_data,
+    #     how="inner",
+    #     on=["country_code"]
+    # )
+
+    # weighted_prevalence_data = raw_iu_data.merge(
+    #     new_population_data,
+    #     how="left",
+    #     left_on=["iu_name", "country_code"],
+    #     right_on=["iu_name", "country_code"]
+    # )
+
+    # to do: this should use DEFAULT_PREVALENCE_MEASURE_NAME for the composite file
+    weighted_prevalence_data = raw_iu_data.loc[
+        raw_iu_data[MEASURE_COLUMN_NAME] == "prevalence",
+        :
+    ].copy()
+    weighted_prevalence_data["population"] = 10000
+    weighted_prevalence_data["country_pop"] = 1000000
+
+    # weighting IU mean by population
+    population_array = weighted_prevalence_data["population"].values
+    country_pop_array = weighted_prevalence_data["country_pop"].values
+    draw_data = weighted_prevalence_data[draw_names].values
+
+    population_weight = population_array / country_pop_array
+    weighted_prevalence_data[draw_names] = draw_data * population_weight[:, np.newaxis]
+
+    weighted_prevalence_data_by_country = (
+        weighted_prevalence_data
+            .groupby(general_groupby_cols)[draw_names]
+            .sum()
+            .reset_index()
+    )
+
+    weighted_column_names = weighted_prevalence_data_by_country.columns
+    weighted_summarised_prevalence_data = pd.DataFrame(
+        np.column_stack((
+            weighted_prevalence_data_by_country[["scenario_name", "country_code"]].to_numpy(),
+            measure_summary_float(
+                data_to_summarize=weighted_prevalence_data_by_country.to_numpy(),
+                year_id_loc=weighted_column_names.get_loc(YEAR_COLUMN_NAME),
+                measure_column_loc=weighted_column_names.get_loc(MEASURE_COLUMN_NAME),
+                age_start_loc=weighted_column_names.get_loc(AGE_START_COLUMN_NAME),
+                age_end_loc=weighted_column_names.get_loc(AGE_END_COLUMN_NAME),
+                draws_loc=[weighted_column_names.get_loc(name) for name in draw_names]
+            )
+        )),
+        columns=(
+            general_groupby_cols +
+            ["mean"] +
+            [f"{p}_percentile" for p in PERCENTILES_TO_CALC] +
+            ["std", "median"]
+        )
+    )
+
+    if (len(threshold_summary_measure_names) == 0):
         if len(threshold_groupby_cols) > 0:
             raise ValueError(
-                "The length of threshold_summary_measure_names is "
-                + f"{len(threshold_summary_measure_names)} "
-                + f"while threshold_groupby_cols is of length {len(threshold_groupby_cols)}. "
-                + "threshold_summary_measure_names should be provided if the length of "
-                + "threshold_groupby_cols is greater than 0."
+                "The length of threshold_summary_measure_names is " +
+                f"{len(threshold_summary_measure_names)} " +
+                f"while threshold_groupby_cols is of length {len(threshold_groupby_cols)}. " +
+                "threshold_summary_measure_names should be provided if the length of " +
+                "threshold_groupby_cols is greater than 0."
             )
-        return general_summary
+        return weighted_summarised_prevalence_data
 
-    summarize_threshold = (
-        iu_lvl_data[
-            iu_lvl_data[MEASURE_COLUMN_NAME].isin(threshold_summary_measure_names)
-        ]
-        .groupby(threshold_groupby_cols)
-        .agg({"mean": [("mean", _calc_prob_not_na)]})
-        .reset_index()
+    summarize_threshold = _threshold_summary_helper(
+        processed_iu_lvl_data,
+        threshold_summary_measure_names,
+        threshold_groupby_cols,
+        _calc_prob_not_na,
+        "pct_of_",
+        threshold_cols_rename
     )
-    summarize_threshold.columns = threshold_groupby_cols + ["mean"]
-    summarize_threshold[MEASURE_COLUMN_NAME] = [
-        "pct_of_" + threshold_cols_rename[measure_val]
-        for measure_val in summarize_threshold[MEASURE_COLUMN_NAME]
-        if measure_val in threshold_cols_rename
-    ]
 
-    summarize_threshold_counts = (
-        iu_lvl_data[
-            iu_lvl_data[MEASURE_COLUMN_NAME].isin(threshold_summary_measure_names)
-        ]
-        .groupby(threshold_groupby_cols)
-        .agg({"mean": [("mean", _calc_sum_not_na)]})
-        .reset_index()
+    summarize_threshold_counts = _threshold_summary_helper(
+        processed_iu_lvl_data,
+        threshold_summary_measure_names,
+        threshold_groupby_cols,
+        _calc_sum_not_na,
+        "count_of_",
+        threshold_cols_rename
     )
-    summarize_threshold_counts.columns = threshold_groupby_cols + ["mean"]
-    summarize_threshold_counts[MEASURE_COLUMN_NAME] = [
-        "count_of_" + threshold_cols_rename[measure_val]
-        for measure_val in summarize_threshold_counts[MEASURE_COLUMN_NAME]
-        if measure_val in threshold_cols_rename
-    ]
+
+    summarize_threshold_year = _threshold_summary_helper(
+        processed_iu_lvl_data,
+        threshold_summary_measure_names,
+        threshold_groupby_cols,
+        _calc_max_not_na,
+        "year_of_",
+        threshold_cols_rename
+    )
+
+    # Summary stuff
+    summarize_threshold_year["mean"] = summarize_threshold_year["mean"] - 1
+    summarize_threshold_year["mean"] = summarize_threshold_year["mean"].fillna(-1)
 
     return pd.concat(
-        [general_summary, summarize_threshold, summarize_threshold_counts],
+        [weighted_summarised_prevalence_data, summarize_threshold, summarize_threshold_counts, summarize_threshold_year],
         axis=0,
         ignore_index=True,
     )

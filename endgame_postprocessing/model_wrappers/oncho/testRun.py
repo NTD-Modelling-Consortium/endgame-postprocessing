@@ -1,4 +1,5 @@
 from endgame_postprocessing.post_processing.aggregation import (
+    add_scenario_and_country_to_raw_data,
     aggregate_post_processed_files,
 )
 from endgame_postprocessing.post_processing.aggregation import (
@@ -32,28 +33,46 @@ with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
             prevalence_marker_name="prevalence",
             post_processing_start_time=1970,
             measure_summary_map={
-            measure: measure_summary_float for measure in constants.ONCHO_MEASURES
+            "prevalence": measure_summary_float
             },
-            pct_runs_under_threshold=constants.THRESHOLDS
+            pct_runs_under_threshold=constants.PCT_RUNS_UNDER_THRESHOLD
         ).to_csv(
             "post-processed-outputs/oncho/" + file_info.scenario + "_" +
             file_info.iu + "post_processed.csv"
         )
+        ### Used to add descriptors to raw data files
+        # add_scenario_and_country_to_raw_data(
+        #     pd.read_csv(file_info.file_path),
+        #     file_info.scenario,
+        #     file_info.iu
+        # ).to_csv(
+        #     "post-processed-outputs/oncho_with_scenario_country/" +
+        #     file_info.scenario + "_" +
+        #     file_info.iu + "_raw_with_descriptors.csv"
+        # )
+
         custom_progress_bar_update(pbar, file_info.scenario_index, file_info.total_scenarios)
 
 combined_ius = aggregate_post_processed_files("post-processed-outputs/oncho")
 aggregated_df = iu_lvl_aggregate(combined_ius)
 aggregated_df.to_csv("post-processed-outputs/aggregated/combined-oncho-iu-lvl-agg.csv")
+# aggregated_df = pd.read_csv("post-processed-outputs/aggregated/combined-oncho-iu-lvl-agg.csv")
+
+### Used to aggregate all the raw files
+# aggregate_post_processed_files("post-processed-outputs/oncho_with_scenario_country/", specific_files="*.csv").to_csv("post-processed-outputs/aggregated/combined-oncho-raw-iu-lvl-agg.csv")
+raw_agg_iu = pd.read_csv("post-processed-outputs/aggregated/combined-oncho-raw-iu-lvl-agg.csv")
 country_lvl_data = country_lvl_aggregate(
-    iu_lvl_data=aggregated_df,
+    raw_iu_data=raw_agg_iu,
+    processed_iu_lvl_data=aggregated_df,
     general_summary_measure_names=constants.COUNTRY_SUMMARY_COLUMNS,
     general_groupby_cols=constants.COUNTRY_SUMMARY_GROUP_COLUMNS,
     threshold_summary_measure_names=constants.COUNTRY_THRESHOLD_SUMMARY_COLUMNS,
     threshold_groupby_cols=constants.COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS,
     threshold_cols_rename=constants.COUNTRY_THRESHOLD_RENAME_MAP,
+    path_to_population_data=""
 )
 country_lvl_data.to_csv(
-    "post-processed-outputs/aggregated/combined-oncho-country-lvl-agg.csv"
+    "post-processed-outputs/aggregated/combined-oncho-country-lvl-agg_2.csv"
 )
 africa_lvl_aggregate(
     country_lvl_data=country_lvl_data,
