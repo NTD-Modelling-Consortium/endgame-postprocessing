@@ -84,7 +84,7 @@ flowchart TD
 - **number_of_ius_Xpct_under_threshold** - for each year, the number of IUs that in X percent of runs have gone under the threshold by this year
 - **pct_modelled_ius_Xpct_under_threshold** - for each year, the percentage of IUs, out of those modelled, who in X percent of runs have gone under the threshold by this year
 - **pct_endemic_ius_Xpct_under_threshold** - for each year, the percentage of IUs, out of those that are classified as endemic, who in X percent of runs have gone under the threshold by this year
-- **year_X_pct_runs_in_all_ius** - the year in X percent of runs all IUs have crossed the threshold. Note: year_id will be n/a for this.
+- **year_X_pct_runs_in_all_ius** - the year in X percent of runs all IUs have crossed the threshold. If any IU has not reached the threshold in X percent of runs, this will be -1. Note: column year_id will be n/a for this.
 
 
 ## Tests
