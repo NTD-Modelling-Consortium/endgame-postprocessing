@@ -60,7 +60,7 @@ def build_composite(input_dir):
     for country, ius_for_country in canoncial_ius_by_country:
         gathered_ius[country] += ius_for_country
 
-    for country, ius_for_country in gathered_ius.items():
+    for country, ius_for_country in tqdm(gathered_ius.items(), desc="Summarising"):
         composite_run.build_composite_run_multiple_scenarios(
             ius_for_country, {}
         ).to_csv(f"country-agg-{country}.csv")
