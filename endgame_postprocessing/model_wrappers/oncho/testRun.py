@@ -153,30 +153,3 @@ africa_composite(working_directory)
 all_country_aggregates = pd.concat(country_aggregates)
 
 all_country_aggregates.to_csv("country-lvl-agg.csv")
-
-combined_ius = aggregate_post_processed_files("post-processed-outputs/oncho")
-aggregated_df = iu_lvl_aggregate(combined_ius)
-aggregated_df.to_csv("post-processed-outputs/aggregated/combined-oncho-iu-lvl-agg.csv")
-# aggregated_df = pd.read_csv("post-processed-outputs/aggregated/combined-oncho-iu-lvl-agg.csv")
-
-### Used to aggregate all the raw files
-# aggregate_post_processed_files("post-processed-outputs/oncho_with_scenario_country/", specific_files="*.csv").to_csv("post-processed-outputs/aggregated/combined-oncho-raw-iu-lvl-agg.csv")
-raw_agg_iu = pd.read_csv("post-processed-outputs/aggregated/combined-oncho-raw-iu-lvl-agg.csv")
-country_lvl_data = country_lvl_aggregate(
-    raw_iu_data=raw_agg_iu,
-    processed_iu_lvl_data=aggregated_df,
-    general_summary_measure_names=constants.COUNTRY_SUMMARY_COLUMNS,
-    general_groupby_cols=constants.COUNTRY_SUMMARY_GROUP_COLUMNS,
-    threshold_summary_measure_names=constants.COUNTRY_THRESHOLD_SUMMARY_COLUMNS,
-    threshold_groupby_cols=constants.COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS,
-    threshold_cols_rename=constants.COUNTRY_THRESHOLD_RENAME_MAP,
-    path_to_population_data=""
-)
-country_lvl_data.to_csv(
-    "post-processed-outputs/aggregated/combined-oncho-country-lvl-agg_2.csv"
-)
-africa_lvl_aggregate(
-    country_lvl_data=country_lvl_data,
-    measures_to_summarize=constants.AFRICA_SUMMARY_MEASURES,
-    columns_to_group_by=constants.AFRICA_LVL_GROUP_COLUMNS,
-).to_csv("post-processed-outputs/aggregated/combined-oncho-africa-lvl-agg.csv")
