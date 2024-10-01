@@ -29,8 +29,16 @@ def build_composite_run(canonicial_iu_runs: list[pd.DataFrame], population_data)
         lambda left, right: left.add(right, fill_value=0), iu_case_numbers
     )
 
+    total_population = sum(
+        [
+            read_population_data(population_data, canconical_iu_run["iu_code"].iloc[0])
+            for canconical_iu_run in canonicial_iu_runs
+        ]
+    )
+    prevalence = summed_case_numbers / total_population
+
     return pd.concat(
-        [canonicial_iu_runs[0][["year_id", "scenario"]], summed_case_numbers], axis=1
+        [canonicial_iu_runs[0][["year_id", "scenario"]], prevalence], axis=1
     )
 
 

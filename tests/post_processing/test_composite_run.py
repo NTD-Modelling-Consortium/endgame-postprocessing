@@ -29,8 +29,8 @@ def test_build_composite_run_from_one_iu():
             {
                 "year_id": [2010, 2011],
                 "scenario": ["scenario_1"] * 2,
-                "draw_1": [20.0, 30.0],
-                "draw_2": [30.0, 40.0],
+                "draw_1": [0.2, 0.3],
+                "draw_2": [0.3, 0.4],
             }
         ),
     )
@@ -65,8 +65,8 @@ def test_build_composite_run_from_two_iu_but_second_iu_ignored():
             {
                 "year_id": [2010, 2011],
                 "scenario": ["scenario_1"] * 2,
-                "draw_1": [20.0, 30.0],
-                "draw_2": [30.0, 40.0],
+                "draw_1": [0.2, 0.3],
+                "draw_2": [0.3, 0.4],
             }
         ),
     )
@@ -101,8 +101,8 @@ def test_build_composite_run_from_two_equal_sized_ius():
             {
                 "year_id": [2010],
                 "scenario": ["scenario_1"],
-                "draw_1": [10.0],
-                "draw_2": [12.0],
+                "draw_1": [10.0 / 20.0],
+                "draw_2": [12.0 / 20.0],
             }
         ),
     )
@@ -137,8 +137,8 @@ def test_build_composite_run_retains_year_id():
             {
                 "year_id": [2010, 2011],
                 "scenario": ["scenario_1"] * 2,
-                "draw_1": [10.0] * 2,
-                "draw_2": [12.0] * 2,
+                "draw_1": [10.0 / 20.0] * 2,
+                "draw_2": [12.0 / 20.0] * 2,
             }
         ),
     )
@@ -173,8 +173,8 @@ def test_build_composite_multiple_scenarios():
             {
                 "year_id": [2010, 2011, 2010, 2011],
                 "scenario": ["scenario_1", "scenario_1", "scenario_2", "scenario_2"],
-                "draw_1": [2.0, 2.0, 8.0, 8.0],
-                "draw_2": [3.0, 3.0, 9.0, 9.0],
+                "draw_1": [0.2, 0.2, 0.8, 0.8],
+                "draw_2": [0.3, 0.3, 0.9, 0.9],
             }
         ),
     )
