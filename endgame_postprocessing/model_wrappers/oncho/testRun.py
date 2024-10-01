@@ -1,4 +1,8 @@
-from endgame_postprocessing.post_processing import canonicalise
+from endgame_postprocessing.post_processing import (
+    canoncical_columns,
+    canonicalise,
+    iu_aggregates,
+)
 from endgame_postprocessing.post_processing.aggregation import (
     add_scenario_and_country_to_raw_data,
     aggregate_post_processed_files,
@@ -37,41 +41,51 @@ def canonicalise_raw_oncho_results(input_dir, output_dir):
         canonicalise.write_canonical(output_dir, file_info, canonical_result)
 
 
-oncho_dir = "local_data/smoncho"
+def iu_statistical_aggregates(working_directory):
+    file_iter = post_process_file_generator(
+        file_directory=canonicalise.get_canonical_dir(working_directory),
+        end_of_file="_canonical.csv",
+    )
+    with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
+        for file_info in file_iter:
+            iu_statistical_aggregate = process_single_file(
+                raw_model_outputs=pd.read_csv(file_info.file_path),
+                scenario=file_info.scenario,
+                iuName=file_info.iu,
+                prevalence_marker_name=canoncical_columns.PROCESSED_PREVALENCE,
+                post_processing_start_time=1970,
+                measure_summary_map={
+                    canoncical_columns.PROCESSED_PREVALENCE: measure_summary_float
+                },
+                pct_runs_under_threshold=constants.PCT_RUNS_UNDER_THRESHOLD,
+            )
+
+            iu_aggregates.write_iu_aggregate(
+                working_directory, file_info, iu_statistical_aggregate
+            )
+
+            ### Used to add descriptors to raw data files
+            # add_scenario_and_country_to_raw_data(
+            #     pd.read_csv(file_info.file_path),
+            #     file_info.scenario,
+            #     file_info.iu
+            # ).to_csv(
+            #     "post-processed-outputs/oncho_with_scenario_country/" +
+            #     file_info.scenario + "_" +
+            #     file_info.iu + "_raw_with_descriptors.csv"
+            # )
+
+            custom_progress_bar_update(
+                pbar, file_info.scenario_index, file_info.total_scenarios
+            )
+
+
+oncho_dir = "local_data/small_by_scenario"
 
 canonicalise_raw_oncho_results(oncho_dir, "local_data/output")
-
-file_iter = post_process_file_generator(
-    file_directory=oncho_dir, end_of_file="-raw_all_age_data.csv"
+iu_statistical_aggregates(
+    "local_data/output",
 )
-with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
-    for file_info in file_iter:
-        process_single_file(
-            raw_model_outputs=pd.read_csv(file_info.file_path),
-            scenario=file_info.scenario,
-            iuName=file_info.iu,
-            prevalence_marker_name="prevalence",
-            post_processing_start_time=1970,
-            measure_summary_map={
-            "prevalence": measure_summary_float
-            },
-            pct_runs_under_threshold=constants.PCT_RUNS_UNDER_THRESHOLD
-        ).to_csv(
-            "post-processed-outputs/oncho/" + file_info.scenario + "_" +
-            file_info.iu + "post_processed.csv"
-        )
-        ### Used to add descriptors to raw data files
-        # add_scenario_and_country_to_raw_data(
-        #     pd.read_csv(file_info.file_path),
-        #     file_info.scenario,
-        #     file_info.iu
-        # ).to_csv(
-        #     "post-processed-outputs/oncho_with_scenario_country/" +
-        #     file_info.scenario + "_" +
-        #     file_info.iu + "_raw_with_descriptors.csv"
-        # )
-
-        custom_progress_bar_update(pbar, file_info.scenario_index, file_info.total_scenarios)
 
 combined_ius = aggregate_post_processed_files("post-processed-outputs/oncho")
 aggregated_df = iu_lvl_aggregate(combined_ius)
