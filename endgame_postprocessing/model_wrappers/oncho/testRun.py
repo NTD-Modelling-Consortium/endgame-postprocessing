@@ -64,17 +64,6 @@ def iu_statistical_aggregates(working_directory):
                 working_directory, file_info, iu_statistical_aggregate
             )
 
-            ### Used to add descriptors to raw data files
-            # add_scenario_and_country_to_raw_data(
-            #     pd.read_csv(file_info.file_path),
-            #     file_info.scenario,
-            #     file_info.iu
-            # ).to_csv(
-            #     "post-processed-outputs/oncho_with_scenario_country/" +
-            #     file_info.scenario + "_" +
-            #     file_info.iu + "_raw_with_descriptors.csv"
-            # )
-
             custom_progress_bar_update(
                 pbar, file_info.scenario_index, file_info.total_scenarios
             )
