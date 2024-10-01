@@ -45,7 +45,12 @@ def build_composite_run(canonicial_iu_runs: list[pd.DataFrame], population_data)
     return pd.concat(
         [
             canonicial_iu_runs[0][
-                [canoncical_columns.YEAR_ID, canoncical_columns.SCENARIO]
+                [
+                    canoncical_columns.YEAR_ID,
+                    canoncical_columns.SCENARIO,
+                    canoncical_columns.COUNTRY_CODE,
+                    canoncical_columns.MEASURE,
+                ]
             ],
             prevalence,
         ],
