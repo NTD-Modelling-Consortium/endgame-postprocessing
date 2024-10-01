@@ -99,26 +99,60 @@ def country_composite(working_directory):
                     for iu_for_country in ius_for_country
                 ]
             ),
-            {},
+            # TODO: provide the population data!
+            population_data={},
         )
         country_composite.to_csv(f"composite-country-agg-{country}.csv")
         yield country_composite
 
 
+def africa_composite(working_directory):
+    canonical_file_iter = post_process_file_generator(
+        file_directory=canonicalise.get_canonical_dir(working_directory),
+        end_of_file="_canonical.csv",
+    )
+
+    canonical_ius = list(canonical_file_iter)
+    africa_composite = composite_run.build_composite_run_multiple_scenarios(
+        list(
+            tqdm(
+                [pd.read_csv(iu_in_africa.file_path) for iu_in_africa in canonical_ius],
+                desc="Building Africa composite run",
+            )
+        ),
+        # TODO: provide the population data!
+        population_data={},
+    )
+    # Currently the composite thing sticks a column for country based on the first IU which
+    # isn't required for Africa, but this isn't a nice place to do this!
+    africa_composite.drop(columns=[canoncical_columns.COUNTRY_CODE], inplace=True)
+    africa_composite.to_csv(f"composite-africa.csv")
+
+
+def country_aggregate(country_composite):
+    country_statistical_aggregates = single_country_aggregate(country_composite)
+    # TODO: append the additional measures here
+    return country_statistical_aggregates
+
+
 oncho_dir = "local_data/oncho"
+working_directory = "local_data/output"
 
 canonicalise_raw_oncho_results(oncho_dir, "local_data/output")
 iu_statistical_aggregates(
     "local_data/output",
 )
 
-for country_composite_result in country_composite("local_data/output"):
-    country = country_composite_result[canoncical_columns.COUNTRY_CODE].iloc[0]
-    country_statistical_aggregates = single_country_aggregate(country_composite_result)
+country_aggregates = [
+    country_aggregate(country_composite)
+    for country_composite in country_composite(working_directory)
+]
 
-    # TODO: combine countries into single aggregate
+africa_composite(working_directory)
 
-    country_statistical_aggregates.to_csv(f"agg_{country}.csv")
+all_country_aggregates = pd.concat(country_aggregates)
+
+all_country_aggregates.to_csv("country-lvl-agg.csv")
 
 combined_ius = aggregate_post_processed_files("post-processed-outputs/oncho")
 aggregated_df = iu_lvl_aggregate(combined_ius)
