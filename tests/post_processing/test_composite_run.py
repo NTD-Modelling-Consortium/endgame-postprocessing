@@ -14,7 +14,7 @@ def test_build_iu_case_numbers():
 def test_build_composite_run_from_one_iu():
     canoncial_iu = pd.DataFrame(
         {
-            "iu_code": ["AAA00001"] * 2,
+            "iu_name": ["AAA00001"] * 2,
             "scenario": ["scenario_1"] * 2,
             "year_id": [2010, 2011],
             "draw_1": [0.2, 0.3],
@@ -41,7 +41,7 @@ def test_build_composite_run_from_two_iu_but_second_iu_ignored():
         {
             "year_id": [2010, 2011],
             "scenario": ["scenario_1"] * 2,
-            "iu_code": ["AAA00001"] * 2,
+            "iu_name": ["AAA00001"] * 2,
             "draw_1": [0.2, 0.3],
             "draw_2": [0.3, 0.4],
         }
@@ -50,7 +50,7 @@ def test_build_composite_run_from_two_iu_but_second_iu_ignored():
         {
             "year_id": [2010, 2011],
             "scenario": ["scenario_1"] * 2,
-            "iu_code": ["AAA00002"] * 2,
+            "iu_name": ["AAA00002"] * 2,
             "draw_1": [0.8, 0.9],
             "draw_2": [0.8, 0.9],
         }
@@ -77,7 +77,7 @@ def test_build_composite_run_from_two_equal_sized_ius():
         {
             "year_id": [2010],
             "scenario": ["scenario_1"],
-            "iu_code": ["AAA00001"],
+            "iu_name": ["AAA00001"],
             "draw_1": [0.2],
             "draw_2": [0.3],
         }
@@ -86,7 +86,7 @@ def test_build_composite_run_from_two_equal_sized_ius():
         {
             "year_id": [2010],
             "scenario": ["scenario_1"],
-            "iu_code": ["AAA00002"],
+            "iu_name": ["AAA00002"],
             "draw_1": [0.8],
             "draw_2": [0.9],
         }
@@ -111,7 +111,7 @@ def test_build_composite_run_from_two_equal_sized_ius():
 def test_build_composite_run_retains_year_id():
     canoncial_iu1 = pd.DataFrame(
         {
-            "iu_code": ["AAA00001"] * 2,
+            "iu_name": ["AAA00001"] * 2,
             "scenario": ["scenario_1"] * 2,
             "year_id": [2010, 2011],
             "draw_1": [0.2] * 2,
@@ -120,7 +120,7 @@ def test_build_composite_run_retains_year_id():
     )
     canoncial_iu2 = pd.DataFrame(
         {
-            "iu_code": ["AAA00002"] * 2,
+            "iu_name": ["AAA00002"] * 2,
             "scenario": ["scenario_1"] * 2,
             "year_id": [2010, 2011],
             "draw_1": [0.8] * 2,
@@ -147,7 +147,7 @@ def test_build_composite_run_retains_year_id():
 def test_build_composite_multiple_scenarios():
     canoncial_iu_scenario_1 = pd.DataFrame(
         {
-            "iu_code": ["AAA00001"] * 2,
+            "iu_name": ["AAA00001"] * 2,
             "scenario": ["scenario_1"] * 2,
             "year_id": [2010, 2011],
             "draw_1": [0.2] * 2,
@@ -156,7 +156,7 @@ def test_build_composite_multiple_scenarios():
     )
     canoncial_iu_scenario_2 = pd.DataFrame(
         {
-            "iu_code": ["AAA00001"] * 2,
+            "iu_name": ["AAA00001"] * 2,
             "scenario": ["scenario_2"] * 2,
             "year_id": [2010, 2011],
             "draw_1": [0.8] * 2,

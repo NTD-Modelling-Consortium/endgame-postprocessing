@@ -1,6 +1,9 @@
+from collections import defaultdict
+import itertools
 from endgame_postprocessing.post_processing import (
     canoncical_columns,
     canonicalise,
+    composite_run,
     iu_aggregates,
 )
 from endgame_postprocessing.post_processing.aggregation import (
@@ -69,12 +72,45 @@ def iu_statistical_aggregates(working_directory):
             )
 
 
+def country_composite(working_directory):
+    canonical_file_iter = post_process_file_generator(
+        file_directory=canonicalise.get_canonical_dir(working_directory),
+        end_of_file="_canonical.csv",
+    )
+
+    canonical_ius = list(canonical_file_iter)
+
+    canoncial_ius_by_country = itertools.groupby(
+        canonical_ius, lambda file_info: file_info.country
+    )
+
+    gathered_ius = defaultdict(list)
+
+    for country, file_info_for_canonical_iu in canoncial_ius_by_country:
+        gathered_ius[country] += file_info_for_canonical_iu
+
+    for country, ius_for_country in tqdm(
+        gathered_ius.items(), desc="Building country composites"
+    ):
+        composite_run.build_composite_run_multiple_scenarios(
+            list(
+                [
+                    pd.read_csv(iu_for_country.file_path)
+                    for iu_for_country in ius_for_country
+                ]
+            ),
+            {},
+        ).to_csv(f"composite-country-agg-{country}.csv")
+
+
 oncho_dir = "local_data/small_by_scenario"
 
 canonicalise_raw_oncho_results(oncho_dir, "local_data/output")
 iu_statistical_aggregates(
     "local_data/output",
 )
+
+country_composite("local_data/output")
 
 combined_ius = aggregate_post_processed_files("post-processed-outputs/oncho")
 aggregated_df = iu_lvl_aggregate(combined_ius)

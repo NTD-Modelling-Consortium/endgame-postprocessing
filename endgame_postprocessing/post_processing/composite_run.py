@@ -1,6 +1,7 @@
 from functools import reduce
 import itertools
 import pandas as pd
+from endgame_postprocessing.post_processing import canoncical_columns
 
 
 def build_iu_case_numbers(canonical_iu_run, population) -> pd.DataFrame:
@@ -20,7 +21,9 @@ def build_composite_run(canonicial_iu_runs: list[pd.DataFrame], population_data)
     iu_case_numbers = [
         build_iu_case_numbers(
             canconical_iu_run,
-            read_population_data(population_data, canconical_iu_run["iu_code"].iloc[0]),
+            read_population_data(
+                population_data, canconical_iu_run[canoncical_columns.IU_NAME].iloc[0]
+            ),
         )
         for canconical_iu_run in canonicial_iu_runs
     ]
@@ -31,14 +34,22 @@ def build_composite_run(canonicial_iu_runs: list[pd.DataFrame], population_data)
 
     total_population = sum(
         [
-            read_population_data(population_data, canconical_iu_run["iu_code"].iloc[0])
+            read_population_data(
+                population_data, canconical_iu_run[canoncical_columns.IU_NAME].iloc[0]
+            )
             for canconical_iu_run in canonicial_iu_runs
         ]
     )
     prevalence = summed_case_numbers / total_population
 
     return pd.concat(
-        [canonicial_iu_runs[0][["year_id", "scenario"]], prevalence], axis=1
+        [
+            canonicial_iu_runs[0][
+                [canoncical_columns.YEAR_ID, canoncical_columns.SCENARIO]
+            ],
+            prevalence,
+        ],
+        axis=1,
     )
 
 
