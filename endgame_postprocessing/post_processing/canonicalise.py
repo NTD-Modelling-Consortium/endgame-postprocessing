@@ -22,19 +22,3 @@ def canonicalise_raw(
         raise Exception(f"Could not find {canoncical_columns.MEASURE} column")
 
     return filtered_data.reset_index(drop=True)
-
-
-def write_canonical(
-    root_dir, file_info: CustomFileInfo, canonical_result: pd.DataFrame
-):
-    scenario = file_info.scenario
-    country = file_info.country
-    iu = file_info.iu
-    file_name = f"{iu}_canonical.csv"
-    path = Path(f"{get_canonical_dir(root_dir)}/{scenario}/{country}/{iu}/")
-    path.mkdir(parents=True, exist_ok=True)
-    canonical_result.to_csv(f"{path}/{file_name}")
-
-
-def get_canonical_dir(working_dir):
-    return f"{working_dir}/canonical_results/"

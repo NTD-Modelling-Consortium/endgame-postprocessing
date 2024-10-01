@@ -4,7 +4,7 @@ from endgame_postprocessing.post_processing import (
     canoncical_columns,
     canonicalise,
     composite_run,
-    iu_aggregates,
+    output_directory_structure,
 )
 from endgame_postprocessing.post_processing.aggregation import (
     aggregate_post_processed_files,
@@ -41,12 +41,14 @@ def canonicalise_raw_oncho_results(input_dir, output_dir):
         canonical_result = canonicalise.canonicalise_raw(
             raw_iu, file_info, "prevalence"
         )
-        canonicalise.write_canonical(output_dir, file_info, canonical_result)
+        output_directory_structure.write_canonical(
+            output_dir, file_info, canonical_result
+        )
 
 
 def iu_statistical_aggregates(working_directory):
     file_iter = post_process_file_generator(
-        file_directory=canonicalise.get_canonical_dir(working_directory),
+        file_directory=output_directory_structure.get_canonical_dir(working_directory),
         end_of_file="_canonical.csv",
     )
     with tqdm(total=1, desc="Post-processing Scenarios") as pbar:
@@ -63,7 +65,7 @@ def iu_statistical_aggregates(working_directory):
                 pct_runs_under_threshold=constants.PCT_RUNS_UNDER_THRESHOLD,
             )
 
-            iu_aggregates.write_iu_aggregate(
+            output_directory_structure.write_iu_stat_agg(
                 working_directory, file_info, iu_statistical_aggregate
             )
 
@@ -74,23 +76,23 @@ def iu_statistical_aggregates(working_directory):
 
 def country_composite(working_directory):
     canonical_file_iter = post_process_file_generator(
-        file_directory=canonicalise.get_canonical_dir(working_directory),
+        file_directory=output_directory_structure.get_canonical_dir(working_directory),
         end_of_file="_canonical.csv",
     )
 
     canonical_ius = list(canonical_file_iter)
 
-    canoncial_ius_by_country = itertools.groupby(
+    canoncial_ius_by_country_iter = itertools.groupby(
         canonical_ius, lambda file_info: file_info.country
     )
 
-    gathered_ius = defaultdict(list)
+    canonical_ius_by_country = defaultdict(list)
 
-    for country, file_info_for_canonical_iu in canoncial_ius_by_country:
-        gathered_ius[country] += file_info_for_canonical_iu
+    for country, file_info_for_canonical_iu in canoncial_ius_by_country_iter:
+        canonical_ius_by_country[country] += file_info_for_canonical_iu
 
     for country, ius_for_country in tqdm(
-        gathered_ius.items(), desc="Building country composites"
+        canonical_ius_by_country.items(), desc="Building country composites"
     ):
         country_composite = composite_run.build_composite_run_multiple_scenarios(
             list(
@@ -102,13 +104,15 @@ def country_composite(working_directory):
             # TODO: provide the population data!
             population_data={},
         )
-        country_composite.to_csv(f"composite-country-agg-{country}.csv")
+        output_directory_structure.write_country_composite(
+            working_directory, country, country_composite
+        )
         yield country_composite
 
 
 def africa_composite(working_directory):
     canonical_file_iter = post_process_file_generator(
-        file_directory=canonicalise.get_canonical_dir(working_directory),
+        file_directory=output_directory_structure.get_canonical_dir(working_directory),
         end_of_file="_canonical.csv",
     )
 
@@ -126,7 +130,9 @@ def africa_composite(working_directory):
     # Currently the composite thing sticks a column for country based on the first IU which
     # isn't required for Africa, but this isn't a nice place to do this!
     africa_composite.drop(columns=[canoncical_columns.COUNTRY_CODE], inplace=True)
-    africa_composite.to_csv(f"composite-africa.csv")
+    output_directory_structure.write_africa_composite(
+        working_directory, africa_composite
+    )
 
 
 def country_aggregate(country_composite):
@@ -148,8 +154,10 @@ country_aggregates = [
     for country_composite in country_composite(working_directory)
 ]
 
-africa_composite(working_directory)
 
 all_country_aggregates = pd.concat(country_aggregates)
+output_directory_structure.write_country_stat_agg(
+    working_directory, all_country_aggregates
+)
 
-all_country_aggregates.to_csv("country-lvl-agg.csv")
+africa_composite(working_directory)
