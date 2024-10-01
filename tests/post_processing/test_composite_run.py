@@ -74,17 +74,37 @@ def test_build_composite_run_from_two_iu_but_second_iu_ignored():
 
 def test_build_composite_run_from_two_equal_sized_ius():
     canoncial_iu1 = pd.DataFrame(
-        {"year_id": [2010], "iu_code": ["AAA00001"], "draw_1": [0.2], "draw_2": [0.3]}
+        {
+            "year_id": [2010],
+            "scenario": ["scenario_1"],
+            "iu_code": ["AAA00001"],
+            "draw_1": [0.2],
+            "draw_2": [0.3],
+        }
     )
     canoncial_iu2 = pd.DataFrame(
-        {"year_id": [2010], "iu_code": ["AAA00002"], "draw_1": [0.8], "draw_2": [0.9]}
+        {
+            "year_id": [2010],
+            "scenario": ["scenario_1"],
+            "iu_code": ["AAA00002"],
+            "draw_1": [0.8],
+            "draw_2": [0.9],
+        }
     )
     population_data = {"AAA00001": 10, "AAA00002": 10}
     result = composite_run.build_composite_run(
         [canoncial_iu1, canoncial_iu2], population_data
     )
     pdt.assert_frame_equal(
-        result, pd.DataFrame({"year_id": [2010], "draw_1": [10.0], "draw_2": [12.0]})
+        result,
+        pd.DataFrame(
+            {
+                "year_id": [2010],
+                "scenario": ["scenario_1"],
+                "draw_1": [10.0],
+                "draw_2": [12.0],
+            }
+        ),
     )
 
 
