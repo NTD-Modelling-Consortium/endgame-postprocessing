@@ -7,8 +7,8 @@ from endgame_postprocessing.post_processing import (
     iu_aggregates,
 )
 from endgame_postprocessing.post_processing.aggregation import (
-    add_scenario_and_country_to_raw_data,
     aggregate_post_processed_files,
+    single_country_aggregate,
 )
 from endgame_postprocessing.post_processing.aggregation import (
     iu_lvl_aggregate,
@@ -92,7 +92,7 @@ def country_composite(working_directory):
     for country, ius_for_country in tqdm(
         gathered_ius.items(), desc="Building country composites"
     ):
-        composite_run.build_composite_run_multiple_scenarios(
+        country_composite = composite_run.build_composite_run_multiple_scenarios(
             list(
                 [
                     pd.read_csv(iu_for_country.file_path)
@@ -100,17 +100,26 @@ def country_composite(working_directory):
                 ]
             ),
             {},
-        ).to_csv(f"composite-country-agg-{country}.csv")
+        )
+        country_composite.to_csv(f"composite-country-agg-{country}.csv")
+        yield country_composite
 
 
-oncho_dir = "local_data/small_by_scenario"
+oncho_dir = "local_data/oncho"
 
 canonicalise_raw_oncho_results(oncho_dir, "local_data/output")
 iu_statistical_aggregates(
     "local_data/output",
 )
 
-country_composite("local_data/output")
+for country_composite_result in country_composite("local_data/output"):
+    country = country_composite_result[canoncical_columns.COUNTRY_CODE].iloc[0]
+    country_statistical_aggregates = single_country_aggregate(country_composite_result)
+
+    # TODO: remove age columns
+    # TODO: combine countries into single aggregate
+
+    country_statistical_aggregates.to_csv(f"agg_{country}.csv")
 
 combined_ius = aggregate_post_processed_files("post-processed-outputs/oncho")
 aggregated_df = iu_lvl_aggregate(combined_ius)

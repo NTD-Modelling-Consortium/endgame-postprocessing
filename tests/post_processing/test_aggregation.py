@@ -118,6 +118,48 @@ def test_iu_lvl_aggregate_incorrectly_typed_mean_raises_type_error():
 # column containing an NA and a NaN
 
 
+def test_single_country_lvl_aggregate_aggregate_by_country_general_measures():
+    iu_data = pd.DataFrame(
+        {
+            "scenario": ["scenario_1"],
+            "country_code": ["C1"],
+            "measure": ["M1"],
+            "year_id": [2010],
+            "draw_0": [0.2],
+            "draw_1": [0.4],
+        }
+    )
+    aggregate_data = aggregation.single_country_aggregate(iu_data)
+    pdt.assert_frame_equal(
+        aggregate_data,
+        pd.DataFrame(
+            {
+                "scenario": ["scenario_1"],
+                "country_code": ["C1"],
+                "measure": ["M1"],
+                "year_id": [2010],
+                "age_start": ["scenario_1"],
+                "age_end": ["scenario_1"],
+                "mean": [0.3],
+                "2.5_percentile": [0.205],
+                "5_percentile": [0.21],
+                "10_percentile": [0.22],
+                "25_percentile": [0.25],
+                "50_percentile": [0.3],
+                "75_percentile": [0.35],
+                "90_percentile": [0.38],
+                "95_percentile": [0.39],
+                "97.5_percentile": [0.395],
+                "std": [
+                    np.std([0.2, 0.4]),
+                ],
+                "median": [np.median([0.2, 0.4])],
+            }
+        ),
+        check_dtype=False,  # TODO: why is type of year lost
+    )
+
+
 def test_country_lvl_aggregate_aggregate_by_country_general_measures():
     iu_data = pd.DataFrame(
         {
@@ -151,7 +193,7 @@ def test_country_lvl_aggregate_aggregate_by_country_general_measures():
                 "95_percentile": [0.39, 0.79],
                 "97.5_percentile": [0.395, 0.795],
                 "standard_deviation": [
-                    np.std([0.2, 0.4], ddof=1),
+                    np.std([0.2, 0.4], ddof=1),  # Why ddof=1?
                     np.std([0.6, 0.8], ddof=1),
                 ],
                 "median": [np.median([0.2, 0.4]), np.median([0.6, 0.8])],

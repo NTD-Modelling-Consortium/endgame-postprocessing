@@ -3,6 +3,7 @@ import csv
 import os
 import pandas as pd
 from endgame_postprocessing.model_wrappers.constants import COUNTRY_SUMMARY_GROUP_COLUMNS
+from endgame_postprocessing.post_processing import canoncical_columns
 from endgame_postprocessing.post_processing.measures import measure_summary_float
 import numpy as np
 from tqdm import tqdm
@@ -141,6 +142,58 @@ def _threshold_summary_helper(
         if measure_val in measure_rename_map
     ]
     return summarize_threshold
+
+
+def single_country_aggregate(composite_country_run: pd.DataFrame) -> pd.DataFrame:
+    draw_names = list(
+        [
+            draw_column
+            for draw_column in composite_country_run.columns
+            if draw_column.startswith(DRAW_COLUMNN_NAME_START)
+        ]
+    )
+    country_statistical_aggregate = measure_summary_float(
+        data_to_summarize=composite_country_run.to_numpy(),
+        year_id_loc=composite_country_run.columns.get_loc(canoncical_columns.YEAR_ID),
+        measure_column_loc=composite_country_run.columns.get_loc(
+            canoncical_columns.MEASURE
+        ),
+        age_start_loc=0,
+        age_end_loc=0,
+        draws_loc=[composite_country_run.columns.get_loc(name) for name in draw_names],
+    )
+    country_statistical_aggregates = pd.DataFrame(
+        country_statistical_aggregate,
+        columns=["year_id", "age_start", "age_end", "measure", "mean"]
+        + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
+        + ["std", "median"],
+    )
+
+    general_columns = composite_country_run[
+        [
+            canoncical_columns.SCENARIO,
+            canoncical_columns.COUNTRY_CODE,
+        ]
+    ]
+
+    country_aggregates_complete = pd.concat(
+        [general_columns, country_statistical_aggregates], axis=1
+    )
+    country_aggregates_complete = country_aggregates_complete[
+        [
+            canoncical_columns.SCENARIO,
+            canoncical_columns.COUNTRY_CODE,
+            canoncical_columns.MEASURE,
+            "year_id",
+            "age_start",
+            "age_end",
+            "mean",
+        ]
+        + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
+        + ["std", "median"]
+    ]
+    return country_aggregates_complete
+
 
 def country_lvl_aggregate(
     raw_iu_data: pd.DataFrame,
