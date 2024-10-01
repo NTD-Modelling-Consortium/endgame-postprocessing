@@ -1,3 +1,5 @@
+from collections import defaultdict
+import itertools
 from endgame_postprocessing.post_processing.aggregation import (
     aggregate_post_processed_files,
 )
@@ -23,7 +25,12 @@ from endgame_postprocessing.post_processing import composite_run
 
 def canonical(raw, file_info):
     raw.insert(1, "iu_code", file_info.iu)
-    return raw.query("measure == 'prevalence'").reindex()
+    raw.insert(2, "scenario", file_info.scenario)
+    return raw.query("measure == 'prevalence'").reset_index()
+
+
+def group_by_key(file_info):
+    return file_info.country
 
 
 def build_composite(input_dir):
@@ -32,17 +39,31 @@ def build_composite(input_dir):
     file_iter = post_process_file_generator(
         file_directory=input_dir, end_of_file="-raw_all_age_data.csv"
     )
-    all_files = [file for file in file_iter]
+    all_files = list([file for file in file_iter])
     total_ius = len(all_files)
 
-    raw_ius = list(
-        [
-            canonical(pd.read_csv(file_info.file_path), file_info)
-            for file_info in tqdm(all_files, desc="Post-processing Scenarios")
-        ]
-    )
+    tqdm_file_iterator = tqdm(all_files, total=total_ius, desc="All files")
 
-    composite_run.build_composite_run(raw_ius, {}).to_csv("composite.csv")
+    canoncial_ius_by_country = [
+        (
+            country,
+            [
+                canonical(pd.read_csv(file_info.file_path), file_info)
+                for file_info in file_infos
+            ],
+        )
+        for country, file_infos in itertools.groupby(tqdm_file_iterator, group_by_key)
+    ]
+
+    gathered_ius = defaultdict(list)
+
+    for country, ius_for_country in canoncial_ius_by_country:
+        gathered_ius[country] += ius_for_country
+
+    for country, ius_for_country in gathered_ius.items():
+        composite_run.build_composite_run_multiple_scenarios(
+            ius_for_country, {}
+        ).to_csv(f"country-agg-{country}.csv")
 
 
 build_composite("local_data/oncho")

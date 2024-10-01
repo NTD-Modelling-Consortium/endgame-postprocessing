@@ -1,4 +1,5 @@
 from functools import reduce
+import itertools
 import pandas as pd
 
 
@@ -15,6 +16,7 @@ def read_population_data(population_data, iu):
 def build_composite_run(canonicial_iu_runs: list[pd.DataFrame], population_data):
     # Assumptions: same number of draws in each IU run
     # Same year IDs in each one
+
     iu_case_numbers = [
         build_iu_case_numbers(
             canconical_iu_run,
@@ -26,5 +28,21 @@ def build_composite_run(canonicial_iu_runs: list[pd.DataFrame], population_data)
     summed_case_numbers = reduce(
         lambda left, right: left.add(right, fill_value=0), iu_case_numbers
     )
-    summed_case_numbers.insert(0, "year_id", canonicial_iu_runs[0]["year_id"])
-    return summed_case_numbers
+
+    return pd.concat(
+        [canonicial_iu_runs[0][["year_id", "scenario"]], summed_case_numbers], axis=1
+    )
+
+
+def build_composite_run_multiple_scenarios(
+    canonicial_iu_runs: list[pd.DataFrame], population_data
+):
+    ius_by_scenario = itertools.groupby(
+        canonicial_iu_runs, lambda run: run["scenario"].iloc[0]
+    )
+
+    scenario_results = [
+        build_composite_run(list(ius), population_data)
+        for scenario, ius in ius_by_scenario
+    ]
+    return pd.concat(scenario_results, ignore_index=True)
