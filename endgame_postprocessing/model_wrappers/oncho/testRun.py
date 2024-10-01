@@ -116,7 +116,6 @@ for country_composite_result in country_composite("local_data/output"):
     country = country_composite_result[canoncical_columns.COUNTRY_CODE].iloc[0]
     country_statistical_aggregates = single_country_aggregate(country_composite_result)
 
-    # TODO: remove age columns
     # TODO: combine countries into single aggregate
 
     country_statistical_aggregates.to_csv(f"agg_{country}.csv")

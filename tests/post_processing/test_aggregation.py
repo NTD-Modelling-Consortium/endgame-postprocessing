@@ -138,8 +138,6 @@ def test_single_country_lvl_aggregate_aggregate_by_country_general_measures():
                 "country_code": ["C1"],
                 "measure": ["M1"],
                 "year_id": [2010],
-                "age_start": ["scenario_1"],
-                "age_end": ["scenario_1"],
                 "mean": [0.3],
                 "2.5_percentile": [0.205],
                 "5_percentile": [0.21],

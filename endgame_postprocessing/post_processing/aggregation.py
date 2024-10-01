@@ -169,6 +169,10 @@ def single_country_aggregate(composite_country_run: pd.DataFrame) -> pd.DataFram
         + ["std", "median"],
     )
 
+    # TODO: these columns would be not even passed into and back out of measure_summary_float which
+    # ignores them
+    country_statistical_aggregates.drop(columns=["age_start", "age_end"], inplace=True)
+
     general_columns = composite_country_run[
         [
             canoncical_columns.SCENARIO,
@@ -185,8 +189,6 @@ def single_country_aggregate(composite_country_run: pd.DataFrame) -> pd.DataFram
             canoncical_columns.COUNTRY_CODE,
             canoncical_columns.MEASURE,
             "year_id",
-            "age_start",
-            "age_end",
             "mean",
         ]
         + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
