@@ -5,7 +5,7 @@ from endgame_postprocessing.post_processing import canoncical_columns
 
 
 def build_iu_case_numbers(canonical_iu_run, population) -> pd.DataFrame:
-    return canonical_iu_run.loc[:, "draw_1":] * population
+    return canonical_iu_run.loc[:, "draw_0":] * population
 
 
 def read_population_data(population_data, iu):
