@@ -1,0 +1,6 @@
+SCENARIO = "scenario"
+COUNTRY_CODE = "country_code"
+IU_NAME = "iu_name"
+YEAR_ID = "year_id"
+MEASURE = "measure"
+PROCESSED_PREVALENCE = "processed_prevalence"
