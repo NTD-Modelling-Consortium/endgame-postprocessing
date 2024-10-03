@@ -7,13 +7,13 @@ from endgame_postprocessing.post_processing import (
     output_directory_structure,
 )
 from endgame_postprocessing.post_processing.aggregation import (
+    africa_lvl_aggregate,
     aggregate_post_processed_files,
     single_country_aggregate,
 )
 from endgame_postprocessing.post_processing.aggregation import (
     iu_lvl_aggregate,
     country_lvl_aggregate,
-    africa_lvl_aggregate,
 )
 from endgame_postprocessing.post_processing.single_file_post_processing import (
     process_single_file,
@@ -37,7 +37,7 @@ def canonicalise_raw_oncho_results(input_dir, output_dir):
 
     for file_info in tqdm(all_files, desc="Canoncialise oncho results"):
         raw_iu = pd.read_csv(file_info.file_path)
-        raw_iu.drop(columns=["age_start", "age_end"])
+        raw_iu.drop(columns=["age_start", "age_end"]) # do we want to drop this?
         canonical_result = canonicalise.canonicalise_raw(
             raw_iu, file_info, "prevalence"
         )
@@ -59,6 +59,7 @@ def iu_statistical_aggregates(working_directory):
                 iuName=file_info.iu,
                 prevalence_marker_name=canoncical_columns.PROCESSED_PREVALENCE,
                 post_processing_start_time=1970,
+                post_processing_end_time=2041,
                 measure_summary_map={
                     canoncical_columns.PROCESSED_PREVALENCE: measure_summary_float
                 },
@@ -126,34 +127,42 @@ def africa_composite(working_directory):
         ),
         # TODO: provide the population data!
         population_data={},
+        is_africa = True,
     )
-    # Currently the composite thing sticks a column for country based on the first IU which
-    # isn't required for Africa, but this isn't a nice place to do this!
-    africa_composite.drop(columns=[canoncical_columns.COUNTRY_CODE], inplace=True)
+    # # Currently the composite thing sticks a column for country based on the first IU which
+    # # isn't required for Africa, but this isn't a nice place to do this!
+    # africa_composite.drop(columns=[canoncical_columns.COUNTRY_CODE], inplace=True)
     output_directory_structure.write_africa_composite(
         working_directory, africa_composite
     )
 
 
-def country_aggregate(country_composite):
+def country_aggregate(country_composite, iu_lvl_data, population_data, country_code):
     country_statistical_aggregates = single_country_aggregate(country_composite)
-    # TODO: append the additional measures here
-    return country_statistical_aggregates
+    country_iu_summary_aggregates = country_lvl_aggregate(
+        iu_lvl_data,
+        constants.COUNTRY_THRESHOLD_SUMMARY_COLUMNS,
+        constants.COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS,
+        constants.COUNTRY_THRESHOLD_RENAME_MAP,
+        composite_run.get_ius_per_country(pd.DataFrame(population_data, columns=["country_code", "iu_name", "is_endemic"]), country_code, "is_endemic")
+    )
+    return pd.concat([country_statistical_aggregates, country_iu_summary_aggregates])
+
+oncho_dir = "input-data/oncho"
+working_directory = "post-processed-outputs/oncho"
+
+# canonicalise_raw_oncho_results(oncho_dir, working_directory)
+# iu_statistical_aggregates(
+#     "post-processed-outputs/oncho",
+# )
 
 
-oncho_dir = "local_data/oncho"
-working_directory = "local_data/output"
-
-canonicalise_raw_oncho_results(oncho_dir, "local_data/output")
-iu_statistical_aggregates(
-    "local_data/output",
-)
-
+all_iu_data = iu_lvl_aggregate(aggregate_post_processed_files("post-processed-outputs/oncho/ius/"))
 country_aggregates = [
-    country_aggregate(country_composite)
+    # TODO: Add population data
+    country_aggregate(country_composite, all_iu_data[all_iu_data["country_code"] == country_composite["country_code"].values[0]], {}, country_composite["country_code"].values[0])
     for country_composite in country_composite(working_directory)
 ]
-
 
 all_country_aggregates = pd.concat(country_aggregates)
 output_directory_structure.write_country_stat_agg(
@@ -161,3 +170,7 @@ output_directory_structure.write_country_stat_agg(
 )
 
 africa_composite(working_directory)
+africa_aggregates = africa_lvl_aggregate(pd.read_csv(f"{working_directory}/composite/africa_composite.csv"))
+output_directory_structure.write_africa_stat_agg(
+    working_directory, africa_aggregates
+)

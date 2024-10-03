@@ -1,7 +1,6 @@
 import numpy as np
 from .constants import PERCENTILES_TO_CALC
 
-# todo: have the post processing be unique functions to call, or use a class with attributes
 def _extract_percentiles(
     percentiles_dict: dict[str : list[int]], percentile_names: list[str]
 ) -> np.ndarray:
