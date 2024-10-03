@@ -33,7 +33,7 @@ def write_iu_stat_agg(
 
 
 def write_country_stat_agg(root_dir, country_statistical_aggregate: pd.DataFrame):
-    file_name = f"combined-lf-country-lvl-agg.csv"
+    file_name = f"combined-country-lvl-agg.csv"
     path = Path(f"{root_dir}/aggregated/")
     path.mkdir(parents=True, exist_ok=True)
     country_statistical_aggregate.to_csv(f"{path}/{file_name}")
@@ -47,7 +47,13 @@ def write_country_composite(root_dir, country: str, country_composite: pd.DataFr
 
 
 def write_africa_composite(root_dir, country_composite: pd.DataFrame):
-    file_name = f"africa_composite.csv"
+    file_name = "africa_composite.csv"
     path = Path(f"{root_dir}/composite/")
     path.mkdir(parents=True, exist_ok=True)
     country_composite.to_csv(f"{path}/{file_name}")
+
+def write_africa_stat_agg(root_dir, africa_statistical_aggregate: pd.DataFrame):
+    file_name = "combined-africa-lvl-agg.csv"
+    path = Path(f"{root_dir}/aggregated/")
+    path.mkdir(parents=True, exist_ok=True)
+    africa_statistical_aggregate.to_csv(f"{path}/{file_name}")
