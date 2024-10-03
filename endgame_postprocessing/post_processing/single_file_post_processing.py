@@ -49,7 +49,8 @@ def validate_measure_map(
 def _filter_out_old_data(
     raw_model_outputs: np.ndarray,
     year_column_loc: int,
-    post_processing_start_time: float,
+    post_processing_start_time: int,
+    post_processing_end_time: int
 ) -> np.ndarray:
     """
     Returns a filtered version of the input data where the time is after a certain start year.
@@ -57,15 +58,17 @@ def _filter_out_old_data(
     Args:
         raw_model_outputs (np.ndarray): The original model data, in the format of a 2D array.
         year_column_loc (int): The location of the year_id column.
-        post_processing_start_time (float): The start time after which you want the data to be used.
+        post_processing_start_time (int): The start time after which you want the data to be used.
 
     Returns:
         A filtered 2D matrix with the output data.
     """
     # Making sure we start the calculations from where we want
-    start_mask = (
+    start_mask = np.logical_and(
         raw_model_outputs[:, year_column_loc].astype(float)
-        >= post_processing_start_time
+        >= post_processing_start_time,
+        raw_model_outputs[:, year_column_loc].astype(float)
+        <= post_processing_end_time
     )
     return raw_model_outputs[start_mask, :]
 
@@ -252,6 +255,7 @@ def process_single_file(
     num_draws: int = 200,
     prevalence_marker_name: str = "prevalence",
     post_processing_start_time: int = 1970,
+    post_processing_end_time: int = 2041,
     threshold: float = 0.01,
     pct_runs_under_threshold: list[float] = [0.90],
     measure_summary_map: dict = None,
@@ -300,7 +304,7 @@ def process_single_file(
 
     # Making sure we start the calculations from where we want
     filtered_model_outputs = _filter_out_old_data(
-        raw_model_outputs.to_numpy(), year_column_loc, post_processing_start_time
+        raw_model_outputs.to_numpy(), year_column_loc, post_processing_start_time, post_processing_end_time
     )
     probabilities_and_threshold_outputs = _calculate_probabilities_and_thresholds(
         filtered_model_outputs,
