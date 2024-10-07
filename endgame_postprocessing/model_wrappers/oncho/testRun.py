@@ -28,7 +28,7 @@ from tqdm import tqdm
 import pandas as pd
 
 
-def canonicalise_raw_oncho_results(input_dir, output_dir):
+def canonicalise_raw_oncho_results(input_dir, output_dir, start_year=1970, stop_year=2041):
     file_iter = post_process_file_generator(
         file_directory=input_dir, end_of_file="-raw_all_age_data.csv"
     )
@@ -38,6 +38,7 @@ def canonicalise_raw_oncho_results(input_dir, output_dir):
     for file_info in tqdm(all_files, desc="Canoncialise oncho results"):
         raw_iu = pd.read_csv(file_info.file_path)
         raw_iu.drop(columns=["age_start", "age_end"]) # do we want to drop this?
+        raw_iu = raw_iu[(raw_iu['year_id'] >= start_year) & (raw_iu['year_id'] <= stop_year)]
         canonical_result = canonicalise.canonicalise_raw(
             raw_iu, file_info, "prevalence"
         )
@@ -144,6 +145,7 @@ def country_aggregate(country_composite, iu_lvl_data, population_data, country_c
         constants.COUNTRY_THRESHOLD_SUMMARY_COLUMNS,
         constants.COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS,
         constants.COUNTRY_THRESHOLD_RENAME_MAP,
+        # TODO: filter population data to be for a given country
         composite_run.get_ius_per_country(pd.DataFrame(population_data, columns=["country_code", "iu_name", "is_endemic"]), country_code, "is_endemic")
     )
     return pd.concat([country_statistical_aggregates, country_iu_summary_aggregates])
@@ -151,10 +153,10 @@ def country_aggregate(country_composite, iu_lvl_data, population_data, country_c
 oncho_dir = "input-data/oncho"
 working_directory = "post-processed-outputs/oncho"
 
-# canonicalise_raw_oncho_results(oncho_dir, working_directory)
-# iu_statistical_aggregates(
-#     "post-processed-outputs/oncho",
-# )
+canonicalise_raw_oncho_results(oncho_dir, working_directory, 1970, 2041)
+iu_statistical_aggregates(
+    "post-processed-outputs/oncho",
+)
 
 
 all_iu_data = iu_lvl_aggregate(aggregate_post_processed_files("post-processed-outputs/oncho/ius/"))
