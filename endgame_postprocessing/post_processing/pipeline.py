@@ -146,6 +146,7 @@ def pipeline(working_directory, disease):
         iu_lvl_aggregate(aggregate_post_processed_files(f"{working_directory}/ius/"))
         .sort_values(["scenario", "country_code", "iu_name", "year_id"])
         .reset_index(drop=True)
+        .convert_dtypes()  # attempt to reconstruct the types (TODO: why are they lost)
     )
 
     output_directory_structure.write_combined_iu_stat_agg(
@@ -170,6 +171,7 @@ def pipeline(working_directory, disease):
         pd.concat(country_aggregates)
         .sort_values(["scenario", "country_code", "year_id"])
         .reset_index(drop=True)
+        .convert_dtypes()  # attempt to reconstruct the types (TODO: why are they lost)
     )
     output_directory_structure.write_country_stat_agg(
         working_directory, all_country_aggregates, disease
@@ -182,6 +184,7 @@ def pipeline(working_directory, disease):
         )
         .sort_values(["scenario", "year_id"])
         .reset_index(drop=True)
+        .convert_dtypes()  # attempt to reconstruct the types (TODO: why are they lost)
     )
     output_directory_structure.write_africa_stat_agg(
         working_directory, africa_aggregates, disease
