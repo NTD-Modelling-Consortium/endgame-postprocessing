@@ -137,7 +137,7 @@ def country_aggregate(country_composite, iu_lvl_data, population_data, country_c
     return pd.concat([country_statistical_aggregates, country_iu_summary_aggregates])
 
 
-def pipeline(working_directory):
+def pipeline(working_directory, disease):
     iu_statistical_aggregates(
         working_directory,
     )
@@ -161,7 +161,7 @@ def pipeline(working_directory):
 
     all_country_aggregates = pd.concat(country_aggregates)
     output_directory_structure.write_country_stat_agg(
-        working_directory, all_country_aggregates
+        working_directory, all_country_aggregates, disease
     )
 
     africa_composite(working_directory)
@@ -169,5 +169,5 @@ def pipeline(working_directory):
         pd.read_csv(f"{working_directory}/composite/africa_composite.csv")
     )
     output_directory_structure.write_africa_stat_agg(
-        working_directory, africa_aggregates
+        working_directory, africa_aggregates, disease
     )

@@ -33,4 +33,4 @@ oncho_dir = "local_data/oncho"
 working_directory = "local_data/output"
 
 canonicalise_raw_oncho_results(oncho_dir, working_directory, 1970, 2041)
-pipeline.pipeline(working_directory)
+pipeline.pipeline(working_directory, disease="oncho")
