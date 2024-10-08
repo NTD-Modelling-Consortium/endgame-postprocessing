@@ -23,6 +23,10 @@ def test_lf_end_to_end(snapshot):
         input_dir=input_data, output_dir=output_path, num_jobs=1
     )
 
+    # Composite data is not part of the interface so don't check
+    composite_path = output_path / "composite"
+    shutil.rmtree(composite_path)
+
     results = sorted(generate_flat_snapshot_set(output_path))
     expected_results = sorted(
         generate_flat_snapshot_set(Path(__file__).parent / "known_good_output")
