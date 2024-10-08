@@ -145,6 +145,11 @@ def pipeline(working_directory, disease):
     all_iu_data = iu_lvl_aggregate(
         aggregate_post_processed_files(f"{working_directory}/ius/")
     )
+
+    output_directory_structure.write_combined_iu_stat_agg(
+        working_directory, all_iu_data, disease
+    )
+
     country_aggregates = [
         # TODO: Add population data
         country_aggregate(

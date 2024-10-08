@@ -32,6 +32,13 @@ def write_iu_stat_agg(
     iu_statistical_aggregate.to_csv(f"{path}/{file_name}")
 
 
+def write_combined_iu_stat_agg(root_dir, all_ius_stat_agg: pd.DataFrame, disease):
+    file_name = f"combined-{disease}-iu-lvl-agg.csv"
+    path = Path(f"{root_dir}/aggregated/")
+    path.mkdir(parents=True, exist_ok=True)
+    all_ius_stat_agg.to_csv(f"{path}/{file_name}")
+
+
 def write_country_stat_agg(
     root_dir, country_statistical_aggregate: pd.DataFrame, disease
 ):
