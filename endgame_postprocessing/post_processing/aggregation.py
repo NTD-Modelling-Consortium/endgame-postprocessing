@@ -23,8 +23,9 @@ def _percentile(n):
     return percentile_
 
 
-def _calc_sum_not_na(x, denominator_val = 1):
-    return (x.notnull().sum() / denominator_val)
+def _calc_count_of_non_na_or_negative(x, denominator_val=1):
+    return x[x != -1].notnull().sum() / denominator_val
+
 
 def _calc_max_not_na(x):
     return x.max()
@@ -262,18 +263,18 @@ def country_lvl_aggregate(
         processed_iu_lvl_data,
         threshold_summary_measure_names,
         threshold_groupby_cols,
-        partial(_calc_sum_not_na, denominator_val = denominator_to_use),
+        partial(_calc_count_of_non_na_or_negative, denominator_val=denominator_to_use),
         "pct_of_",
-        threshold_cols_rename
+        threshold_cols_rename,
     )
 
     summarize_threshold_counts = _threshold_summary_helper(
         processed_iu_lvl_data,
         threshold_summary_measure_names,
         threshold_groupby_cols,
-        _calc_sum_not_na,
+        _calc_count_of_non_na_or_negative,
         "count_of_",
-        threshold_cols_rename
+        threshold_cols_rename,
     )
 
     summarize_threshold_year = _threshold_summary_helper(

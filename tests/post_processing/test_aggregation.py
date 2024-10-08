@@ -1,4 +1,5 @@
 import numpy as np
+import numpy.testing as npt
 import pandas as pd
 import pandas.testing as pdt
 from pyfakefs.fake_filesystem import FakeFilesystem
@@ -242,3 +243,20 @@ def test_africa_lvl_aggregate_success():
         ),
         check_dtype=False,
     )
+
+
+def test_calc_sum_not_na_or_negative_excludes_minus_one():
+    result = aggregation._calc_count_of_non_na_or_negative(pd.Series([-1, 1, 4]))
+    npt.assert_equal(result, 2)
+
+
+def test_calc_sum_not_na_or_negative_excludes_nas():
+    result = aggregation._calc_count_of_non_na_or_negative(pd.Series([np.nan, 1, 4]))
+    npt.assert_equal(result, 2)
+
+
+def test_calc_sum_not_na_or_negative_excludes_minus_one_with_divisor():
+    result = aggregation._calc_count_of_non_na_or_negative(
+        pd.Series([np.nan, 1, 4]), denominator_val=2
+    )
+    npt.assert_equal(result, 1.0)
