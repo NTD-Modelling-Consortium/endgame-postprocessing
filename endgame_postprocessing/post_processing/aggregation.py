@@ -163,7 +163,7 @@ def aggregate_draws(composite_data: pd.DataFrame) -> pd.DataFrame:
         statistical_aggregate,
         columns=["year_id", "age_start", "age_end", "measure", "mean"]
         + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
-        + ["std", "median"],
+        + ["standard_deviation", "median"],
     )
 
     # TODO: these columns would be not even passed into and back out of measure_summary_float which
@@ -191,7 +191,7 @@ def africa_lvl_aggregate(composite_africa_runs: pd.DataFrame) -> pd.DataFrame:
             "mean",
         ]
         + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
-        + ["std", "median"]
+        + ["standard_deviation", "median"]
     ]
 
 
@@ -217,7 +217,7 @@ def single_country_aggregate(composite_country_run: pd.DataFrame) -> pd.DataFram
             "mean",
         ]
         + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
-        + ["std", "median"]
+        + ["standard_deviation", "median"]
     ]
 
 
