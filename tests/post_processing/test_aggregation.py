@@ -148,7 +148,7 @@ def test_single_country_lvl_aggregate_aggregate_by_country_general_measures():
                 "90_percentile": [0.38],
                 "95_percentile": [0.39],
                 "97.5_percentile": [0.395],
-                "std": [
+                "standard_deviation": [
                     np.std([0.2, 0.4]),
                 ],
                 "median": [np.median([0.2, 0.4])],
@@ -158,64 +158,21 @@ def test_single_country_lvl_aggregate_aggregate_by_country_general_measures():
     )
 
 
-def test_country_lvl_aggregate_aggregate_by_country_general_measures():
+def test_country_lvl_aggregate_raises_error_if_provided_groupby_without_any_measures_for_threshold():
     iu_data = pd.DataFrame(
         {
-            "country": ["C1"] * 2 + ["C2"] * 2,
-            "measure": ["M1"] * 4,
-            "mean": [0.2, 0.4, 0.6, 0.8],
-        }
-    )
-    aggregate_data = aggregation.country_lvl_aggregate(
-        iu_data,
-        general_summary_measure_names=["M1"],
-        general_groupby_cols=["country", "measure"],
-        threshold_cols_rename={},
-        threshold_groupby_cols=[],
-        threshold_summary_measure_names=[],
-    )
-    pdt.assert_frame_equal(
-        aggregate_data,
-        pd.DataFrame(
-            {
-                "country": ["C1", "C2"],
-                "measure": ["M1"] * 2,
-                "mean": [0.3, 0.7],
-                "2.5_percentile": [0.205, 0.605],
-                "5_percentile": [0.21, 0.61],
-                "10_percentile": [0.22, 0.62],
-                "25_percentile": [0.25, 0.65],
-                "50_percentile": [0.3, 0.7],
-                "75_percentile": [0.35, 0.75],
-                "90_percentile": [0.38, 0.78],
-                "95_percentile": [0.39, 0.79],
-                "97.5_percentile": [0.395, 0.795],
-                "standard_deviation": [
-                    np.std([0.2, 0.4], ddof=1),  # Why ddof=1?
-                    np.std([0.6, 0.8], ddof=1),
-                ],
-                "median": [np.median([0.2, 0.4]), np.median([0.6, 0.8])],
-            }
-        ),
-    )
-
-
-def test_country_lvl_aggregate_aggregate_by_country_fail_threshold_measures():
-    iu_data = pd.DataFrame(
-        {
-            "country": ["C1"] * 2 + ["C2"] * 2,
-            "measure": ["M1"] * 4,
-            "mean": [0.2, 0.4, 0.6, 0.8],
+            "country": ["C1"] * 2,
+            "measure": ["M1"] * 2,
+            "mean": [0.2, 0.4],
         }
     )
     with pytest.raises(ValueError):
         aggregation.country_lvl_aggregate(
             iu_data,
-            general_summary_measure_names=["M1"],
-            general_groupby_cols=["country", "measure"],
             threshold_cols_rename={},
             threshold_groupby_cols=["random_group_by"],
             threshold_summary_measure_names=[],
+            denominator_to_use=1,
         )
 
 
@@ -223,97 +180,52 @@ def test_country_lvl_aggregate_aggregate_by_country_fail_threshold_measures():
 def test_country_lvl_aggregate_aggregate_by_country_rename():
     iu_data = pd.DataFrame(
         {
-            "country": ["C1"] * 3 + ["C2"] * 3,
-            "measure": ["M1", "M1", "M2"] * 2,
-            "mean": [0.2, 0.4, None, 0.6, 0.8, 12],
+            "country": ["C1"] + ["C2"],
+            "measure": ["M2"] * 2,
+            "mean": [None, 12],
         }
     )
     aggregate_data = aggregation.country_lvl_aggregate(
         iu_data,
-        general_summary_measure_names=["M1"],
-        general_groupby_cols=["country", "measure"],
         threshold_cols_rename={"M2": "test", "M1": "should not rename"},
         threshold_groupby_cols=["measure"],
         threshold_summary_measure_names=["M2"],
+        denominator_to_use=2,
     )
     pdt.assert_frame_equal(
         aggregate_data,
         pd.DataFrame(
             {
-                "country": ["C1", "C2", np.nan, np.nan],
-                "measure": ["M1"] * 2 + ["pct_of_test", "count_of_test"],
-                "mean": [0.3, 0.7, 50, 1],
-                "2.5_percentile": [0.205, 0.605, None, None],
-                "5_percentile": [0.21, 0.61, None, None],
-                "10_percentile": [0.22, 0.62, None, None],
-                "25_percentile": [0.25, 0.65, None, None],
-                "50_percentile": [0.3, 0.7, None, None],
-                "75_percentile": [0.35, 0.75, None, None],
-                "90_percentile": [0.38, 0.78, None, None],
-                "95_percentile": [0.39, 0.79, None, None],
-                "97.5_percentile": [0.395, 0.795, None, None],
-                "standard_deviation": [
-                    np.std([0.2, 0.4], ddof=1),
-                    np.std([0.6, 0.8], ddof=1),
-                    None,
-                    None
-                ],
-                "median": [np.median([0.2, 0.4]), np.median([0.6, 0.8]), None, None],
+                "measure": ["pct_of_test", "count_of_test", "year_of_test"],
+                "mean": [0.5, 1.0, 12.0],
             }
         ),
     )
 
 
-def test_africa_lvl_aggregate_empty_dataframe_failure():
-    country_data = pd.DataFrame()
-
-    with pytest.raises(KeyError):
-        aggregation.africa_lvl_aggregate(
-            country_data,
-            measures_to_summarize=["M1"],
-            columns_to_group_by=["measure"]
-        )
-
-def test_africa_lvl_aggregate_empty_dataframe_with_columns_success():
-    country_data = pd.DataFrame(columns=[
-        "year_id", "country", "measure", "mean"
-    ])
-    africa_data = aggregation.africa_lvl_aggregate(
-            country_data,
-            measures_to_summarize=["M1"],
-            columns_to_group_by=["year_id","measure"]
-        )
-    correct_df = pd.DataFrame(columns=[
-        "year_id", "measure", "mean", "2.5_percentile",
-        "5_percentile", "10_percentile", "25_percentile", "50_percentile",
-        "75_percentile", "90_percentile", "95_percentile", "97.5_percentile",
-        "standard_deviation", "median"
-    ])
-    pdt.assert_frame_equal(
-        africa_data,
-        correct_df.astype({"standard_deviation": float})
-    )
-
-
 def test_africa_lvl_aggregate_success():
-    country_data = pd.DataFrame(
+    composite_africa_data = pd.DataFrame(
         {
-            "country": ["C1"] * 3 + ["C2"] * 3,
-            "measure": ["M1", "M1", "M2"] * 2,
-            "mean": [0.2, 0.4, None, 0.6, 0.8, 12],
+            "year_id": [2010],
+            "scenario": ["scenario_1"],
+            "measure": ["M1"],
+            "draw_0": [0.2],
+            "draw_1": [0.6],
+            "draw_2": [0.4],
+            "draw_3": [0.8],
         }
     )
 
     africa_data = aggregation.africa_lvl_aggregate(
-        country_data,
-        measures_to_summarize=["M1"],
-        columns_to_group_by=["measure"]
+        composite_africa_data,
     )
     pdt.assert_frame_equal(
         africa_data,
         pd.DataFrame(
             {
+                "scenario": ["scenario_1"],
                 "measure": ["M1"],
+                "year_id": [2010],
                 "mean": [0.5],
                 "2.5_percentile": [0.215],
                 "5_percentile": [0.23],
@@ -324,10 +236,9 @@ def test_africa_lvl_aggregate_success():
                 "90_percentile": [0.74],
                 "95_percentile": [0.77],
                 "97.5_percentile": [0.785],
-                "standard_deviation": [
-                    np.std([0.2, 0.4, 0.6, 0.8], ddof=1)
-                ],
+                "standard_deviation": [np.std([0.2, 0.4, 0.6, 0.8])],
                 "median": [0.5],
             }
         ),
+        check_dtype=False,
     )
