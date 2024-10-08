@@ -2,22 +2,16 @@ import glob
 import csv
 import os
 import pandas as pd
-from endgame_postprocessing.model_wrappers.constants import COUNTRY_SUMMARY_GROUP_COLUMNS
 from endgame_postprocessing.post_processing import canoncical_columns
 from endgame_postprocessing.post_processing.measures import measure_summary_float
 from functools import partial
 import numpy as np
 from tqdm import tqdm
 from .constants import (
-    AGE_END_COLUMN_NAME,
-    AGE_START_COLUMN_NAME,
-    DEFAULT_PREVALENCE_MEASURE_NAME,
     DRAW_COLUMNN_NAME_START,
     MEASURE_COLUMN_NAME,
-    NUM_DRAWS,
     PERCENTILES_TO_CALC,
     AGGEGATE_DEFAULT_TYPING_MAP,
-    YEAR_COLUMN_NAME,
 )
 
 
@@ -152,10 +146,9 @@ def aggregate_draws(composite_data: pd.DataFrame) -> pd.DataFrame:
     statistical_aggregate = measure_summary_float(
         data_to_summarize=composite_data.to_numpy(),
         year_id_loc=composite_data.columns.get_loc(canoncical_columns.YEAR_ID),
-        measure_column_loc=composite_data.columns.get_loc(
-            canoncical_columns.MEASURE
-        ),
-        age_start_loc=0, # I think we should keep this as the prevalence values have different age starts / age ends
+        measure_column_loc=composite_data.columns.get_loc(canoncical_columns.MEASURE),
+        # I think we should keep this as the prevalence values have different age starts / age ends
+        age_start_loc=0,
         age_end_loc=0,
         draws_loc=[composite_data.columns.get_loc(name) for name in draw_names],
     )

@@ -304,7 +304,10 @@ def process_single_file(
 
     # Making sure we start the calculations from where we want
     filtered_model_outputs = _filter_out_old_data(
-        raw_model_outputs.to_numpy(), year_column_loc, post_processing_start_time, post_processing_end_time
+        raw_model_outputs.to_numpy(),
+        year_column_loc,
+        post_processing_start_time,
+        post_processing_end_time,
     )
     probabilities_and_threshold_outputs = _calculate_probabilities_and_thresholds(
         filtered_model_outputs,

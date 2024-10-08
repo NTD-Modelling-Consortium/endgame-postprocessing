@@ -3,7 +3,10 @@ MEASURE_COLUMN_NAME = "measure"
 PCT_RUNS_UNDER_THRESHOLD = [0.50, 0.75, 0.85, 0.90, 0.95]
 
 # Country Level Params
-COUNTRY_SUMMARY_COLUMNS = [f"year_of_{int(pct * 100)}pct_runs_under_threshold" for pct in PCT_RUNS_UNDER_THRESHOLD]
+COUNTRY_SUMMARY_COLUMNS = [
+    f"year_of_{int(pct * 100)}pct_runs_under_threshold"
+    for pct in PCT_RUNS_UNDER_THRESHOLD
+]
 
 COUNTRY_SUMMARY_GROUP_COLUMNS = [
     "scenario_name",
@@ -14,7 +17,10 @@ COUNTRY_SUMMARY_GROUP_COLUMNS = [
     "measure",
 ]
 
-COUNTRY_THRESHOLD_SUMMARY_COLUMNS = [f"year_of_{int(pct * 100)}pct_runs_under_threshold" for pct in PCT_RUNS_UNDER_THRESHOLD]
+COUNTRY_THRESHOLD_SUMMARY_COLUMNS = [
+    f"year_of_{int(pct * 100)}pct_runs_under_threshold"
+    for pct in PCT_RUNS_UNDER_THRESHOLD
+]
 
 COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS = ["scenario", "country_code", "measure"]
 

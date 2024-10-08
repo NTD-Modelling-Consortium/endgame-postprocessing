@@ -158,7 +158,7 @@ def test_single_country_lvl_aggregate_aggregate_by_country_general_measures():
     )
 
 
-def test_country_lvl_aggregate_raises_error_if_provided_groupby_without_any_measures_for_threshold():
+def test_country_lvl_aggregate_raises_error_if_provided_groupby_without_any_measures_for_threshold():  # noqa: E501
     iu_data = pd.DataFrame(
         {
             "country": ["C1"] * 2,

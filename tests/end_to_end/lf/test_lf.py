@@ -38,6 +38,8 @@ def test_lf_end_to_end(snapshot):
         snapshot.assert_match_dir(
             generate_snapshot_dictionary(output_path), "known_good_output"
         )
+        # If updating we want to stop here
+        return
 
     for actual_file_path, expected_file_path in zip(results, expected_results):
         assert actual_file_path == expected_file_path
