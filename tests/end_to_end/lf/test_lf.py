@@ -1,4 +1,5 @@
 import shutil
+import sys
 import endgame_postprocessing.model_wrappers.lf.testRun as lf_runner
 
 from pathlib import Path
@@ -45,9 +46,13 @@ def test_lf_end_to_end(snapshot):
         expected_csv = pd.read_csv(full_expected_file_path)
 
         try:
-            pdt.assert_frame_equal(actual_csv, expected_csv)
+            pdt.assert_frame_equal(
+                actual_csv,
+                expected_csv,
+            )
         except AssertionError as pandas_error:
-            print(pandas_error)
+            print(f"Mismatch in file {actual_file_path}:", file=sys.stderr)
+            print(pandas_error, file=sys.stderr)
             snapshot.assert_match_dir(
                 generate_snapshot_dictionary(output_path), "known_good_output"
             )
