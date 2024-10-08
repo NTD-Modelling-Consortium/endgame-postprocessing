@@ -14,7 +14,7 @@ def write_canonical(
     file_name = f"{iu}_canonical.csv"
     path = Path(f"{get_canonical_dir(root_dir)}/{scenario}/{country}/{iu}/")
     path.mkdir(parents=True, exist_ok=True)
-    canonical_result.to_csv(f"{path}/{file_name}")
+    canonical_result.to_csv(f"{path}/{file_name}", index=False)
 
 
 def get_canonical_dir(working_dir):
@@ -29,14 +29,14 @@ def write_iu_stat_agg(
     file_name = f"{scenario}_{iu}_post_processed.csv"
     path = Path(f"{root_dir}/ius/")
     path.mkdir(parents=True, exist_ok=True)
-    iu_statistical_aggregate.to_csv(f"{path}/{file_name}")
+    iu_statistical_aggregate.to_csv(f"{path}/{file_name}", index=False)
 
 
 def write_combined_iu_stat_agg(root_dir, all_ius_stat_agg: pd.DataFrame, disease):
     file_name = f"combined-{disease}-iu-lvl-agg.csv"
     path = Path(f"{root_dir}/aggregated/")
     path.mkdir(parents=True, exist_ok=True)
-    all_ius_stat_agg.to_csv(f"{path}/{file_name}")
+    all_ius_stat_agg.to_csv(f"{path}/{file_name}", index=False)
 
 
 def write_country_stat_agg(
@@ -45,21 +45,21 @@ def write_country_stat_agg(
     file_name = f"combined-{disease}-country-lvl-agg.csv"
     path = Path(f"{root_dir}/aggregated/")
     path.mkdir(parents=True, exist_ok=True)
-    country_statistical_aggregate.to_csv(f"{path}/{file_name}")
+    country_statistical_aggregate.to_csv(f"{path}/{file_name}", index=False)
 
 
 def write_country_composite(root_dir, country: str, country_composite: pd.DataFrame):
     file_name = f"{country}_composite.csv"
     path = Path(f"{root_dir}/composite/")
     path.mkdir(parents=True, exist_ok=True)
-    country_composite.to_csv(f"{path}/{file_name}")
+    country_composite.to_csv(f"{path}/{file_name}", index=False)
 
 
 def write_africa_composite(root_dir, country_composite: pd.DataFrame):
     file_name = "africa_composite.csv"
     path = Path(f"{root_dir}/composite/")
     path.mkdir(parents=True, exist_ok=True)
-    country_composite.to_csv(f"{path}/{file_name}")
+    country_composite.to_csv(f"{path}/{file_name}", index=False)
 
 
 def write_africa_stat_agg(
@@ -68,4 +68,4 @@ def write_africa_stat_agg(
     file_name = f"combined-{disease}-africa-lvl-agg.csv"
     path = Path(f"{root_dir}/aggregated/")
     path.mkdir(parents=True, exist_ok=True)
-    africa_statistical_aggregate.to_csv(f"{path}/{file_name}")
+    africa_statistical_aggregate.to_csv(f"{path}/{file_name}", index=False)
