@@ -22,3 +22,8 @@ def generate_snapshot_dictionary(path):
         results[subdir] = generate_snapshot_dictionary(root_path / Path(subdir))
 
     return results
+
+
+def generate_flat_snapshot_set(path):
+    """ """
+    return {p.relative_to(path).as_posix() for p in path.rglob("*") if p.is_file()}
