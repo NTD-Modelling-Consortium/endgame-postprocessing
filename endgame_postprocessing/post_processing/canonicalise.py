@@ -13,6 +13,10 @@ def canonicalise_raw(
     raw.insert(1, canoncical_columns.COUNTRY_CODE, file_info.country)
     raw.insert(2, canoncical_columns.IU_NAME, file_info.iu)
     filtered_data = raw.query(f"measure == '{processed_prevalence_name}'")
+    if len(filtered_data) == 0:
+        raise Exception(
+            f"No rows in {file_info.file_path} with measure {processed_prevalence_name}"
+        )
     filtered_data.loc[:, "measure"] = canoncical_columns.PROCESSED_PREVALENCE
 
     if canoncical_columns.YEAR_ID not in raw.columns:
