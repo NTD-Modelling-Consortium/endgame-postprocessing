@@ -144,7 +144,7 @@ def pipeline(working_directory, disease):
 
     all_iu_data = iu_lvl_aggregate(
         aggregate_post_processed_files(f"{working_directory}/ius/")
-    )
+    ).sort_values(["scenario", "country_code", "iu_name", "year_id"])
 
     output_directory_structure.write_combined_iu_stat_agg(
         working_directory, all_iu_data, disease
@@ -164,7 +164,9 @@ def pipeline(working_directory, disease):
         for country_composite in country_composite(working_directory)
     ]
 
-    all_country_aggregates = pd.concat(country_aggregates)
+    all_country_aggregates = pd.concat(country_aggregates).sort_values(
+        ["scenario", "country_code", "year_id"]
+    )
     output_directory_structure.write_country_stat_agg(
         working_directory, all_country_aggregates, disease
     )
@@ -172,7 +174,7 @@ def pipeline(working_directory, disease):
     africa_composite(working_directory)
     africa_aggregates = africa_lvl_aggregate(
         pd.read_csv(f"{working_directory}/composite/africa_composite.csv")
-    )
+    ).sort_values(["scenario", "year_id"])
     output_directory_structure.write_africa_stat_agg(
         working_directory, africa_aggregates, disease
     )
