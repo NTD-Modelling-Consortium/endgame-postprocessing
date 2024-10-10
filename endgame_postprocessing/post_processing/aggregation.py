@@ -24,7 +24,7 @@ def _percentile(n):
 
 
 def _is_invalid_year(year):
-    return year.isin([-1, pd.NA])
+    return year.isin([-1, pd.NA, np.nan])
 
 
 def year_all_ius_reach_threshold(years_iu_reach_threshold):
@@ -34,7 +34,7 @@ def year_all_ius_reach_threshold(years_iu_reach_threshold):
 
 
 def _calc_count_of_non_na_or_negative(x, denominator_val=1):
-    return x[x != -1].notnull().sum() / denominator_val
+    return len(x[~_is_invalid_year(x)]) / denominator_val
 
 
 def add_scenario_and_country_to_raw_data(data, scenario_name, iu_name):
