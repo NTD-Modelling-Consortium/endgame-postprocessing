@@ -74,7 +74,7 @@ flowchart TD
 ###### Measures
 
 * **processed_prevalence** - the prevalence measure for that disease
-* **prob_under_threshold_prevalence** - The percentage of runs which the protocol threshold was reached
+* **prob_under_threshold_prevalence** - The percentage of runs which the protocol threshold was reached by this year
 * **year_of_Xpct_runs_under_threshold** - the year X percentage of runs crossed the disease specific threshold (-1 if it never reaches the threshold in at least X percent of runs)
 
 ##### Per Country file:
