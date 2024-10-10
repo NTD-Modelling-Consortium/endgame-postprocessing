@@ -9,6 +9,7 @@ from .constants import (
     PERCENTILES_TO_CALC,
     YEAR_COLUMN_NAME,
     DEFAULT_PREVALENCE_MEASURE_NAME,
+    PROB_UNDER_THRESHOLD_MEASURE_NAME
 )
 from .measures import (
     build_summary,
@@ -129,7 +130,7 @@ def _calculate_probabilities_and_thresholds(
         year_id=filtered_model_outputs[prevalence_mask, year_column_loc],
         age_start=filtered_model_outputs[prevalence_mask, age_start_column_loc],
         age_end=filtered_model_outputs[prevalence_mask, age_end_column_loc],
-        measure_name=np.full(num_rows, "prob_under_threshold_prevalence"),
+        measure_name=np.full(num_rows, PROB_UNDER_THRESHOLD_MEASURE_NAME),
         mean=prob_prevalence_under_threshold,
         percentiles_dict={k: none_array for k in PERCENTILES_TO_CALC},
         percentile_name_order=PERCENTILES_TO_CALC,
