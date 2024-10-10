@@ -25,7 +25,9 @@ def test_build_composite_run_from_one_iu():
         }
     )
     population_data = IUData(
-        pd.DataFrame({"IU_CODE": ["AAA00001"], "population": [100]})
+        pd.DataFrame(
+            {"IU_CODE": ["AAA00001"], "ADMIN0ISO3": ["AAA"], "population": [100]}
+        )
     )
     result = composite_run.build_composite_run([canoncial_iu], population_data)
     pdt.assert_frame_equal(
@@ -67,7 +69,13 @@ def test_build_composite_run_from_two_iu_but_second_iu_ignored():
         }
     )
     population_data = IUData(
-        pd.DataFrame({"IU_CODE": ["AAA00001", "AAA00002"], "population": [100, 0]})
+        pd.DataFrame(
+            {
+                "IU_CODE": ["AAA00001", "AAA00002"],
+                "ADMIN0ISO3": ["AAA"] * 2,
+                "population": [100, 0],
+            }
+        )
     )
     result = composite_run.build_composite_run(
         [canoncial_iu1, canoncial_iu2], population_data
@@ -111,7 +119,13 @@ def test_build_composite_run_from_two_equal_sized_ius():
         }
     )
     population_data = IUData(
-        pd.DataFrame({"IU_CODE": ["AAA00001", "AAA00002"], "population": [10, 10]})
+        pd.DataFrame(
+            {
+                "IU_CODE": ["AAA00001", "AAA00002"],
+                "ADMIN0ISO3": ["AAA"] * 2,
+                "population": [10, 10],
+            }
+        )
     )
     result = composite_run.build_composite_run(
         [canoncial_iu1, canoncial_iu2], population_data
@@ -155,7 +169,13 @@ def test_build_composite_run_retains_year_id():
         }
     )
     population_data = IUData(
-        pd.DataFrame({"IU_CODE": ["AAA00001", "AAA00002"], "population": [10, 10]})
+        pd.DataFrame(
+            {
+                "IU_CODE": ["AAA00001", "AAA00002"],
+                "ADMIN0ISO3": ["AAA"] * 2,
+                "population": [10, 10],
+            }
+        )
     )
     result = composite_run.build_composite_run(
         [canoncial_iu1, canoncial_iu2], population_data
@@ -199,7 +219,9 @@ def test_build_composite_multiple_scenarios():
         }
     )
     population_data = IUData(
-        pd.DataFrame({"IU_CODE": ["AAA00001"], "population": [10]})
+        pd.DataFrame(
+            {"IU_CODE": ["AAA00001"], "ADMIN0ISO3": ["AAA"], "population": [10]}
+        )
     )
     result = composite_run.build_composite_run_multiple_scenarios(
         [canoncial_iu_scenario_1, canoncial_iu_scenario_2], population_data

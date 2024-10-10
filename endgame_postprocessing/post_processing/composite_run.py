@@ -28,15 +28,12 @@ def build_composite_run(
     summed_case_numbers = reduce(
         lambda left, right: left.add(right, fill_value=0), iu_case_numbers
     )
-
-    total_population = sum(
-        [
-            iu_data.get_priority_population_for_IU(
-                canconical_iu_run[canoncical_columns.IU_NAME].iloc[0]
-            )
-            for canconical_iu_run in canonicial_iu_runs
-        ]
-    )
+    if is_africa:
+        total_population = iu_data.get_priority_population_for_africa()
+    else:
+        total_population = iu_data.get_priority_population_for_country(
+            canonicial_iu_runs[0][canoncical_columns.COUNTRY_CODE].iloc[0]
+        )
     prevalence = summed_case_numbers / total_population
     columns_to_use = [
         canoncical_columns.YEAR_ID,

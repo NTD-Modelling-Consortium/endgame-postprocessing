@@ -67,3 +67,18 @@ def test_iu_data_get_ius_in_country_many_iu_many_country():
         ).get_total_ius_in_country("AAA")
         == 3
     )
+
+
+def test_get_population_for_country():
+    assert (
+        IUData(
+            pd.DataFrame(
+                {
+                    "ADMIN0ISO3": ["AAA"] * 3 + ["BBB"],
+                    "population": [100, 200, 300, 400],
+                    "IU_CODE": ["AAA00001", "AAA00002", "AAA00003", "BBB00001"],
+                }
+            )
+        ).get_priority_population_for_country("AAA")
+        == 600
+    )

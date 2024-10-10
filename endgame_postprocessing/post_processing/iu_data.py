@@ -27,6 +27,17 @@ class IUData:
         # TODO: use disease specific column
         return iu["population"].iat[0]
 
+    def get_priority_population_for_country(self, country_code):
+        iu_codes = self._get_iu_codes_for_country(country_code)
+
+        return sum(self.get_priority_population_for_IU(iu_code) for iu_code in iu_codes)
+
+    def get_priority_population_for_africa(self):
+        sum(
+            self.get_priority_population_for_IU(iu_code)
+            for iu_code in self.input_data["IU_CODE"]
+        )
+
     def get_total_ius_in_country(self, country_code):
         num = len(self._get_iu_codes_for_country(country_code))
         if num == 0:
