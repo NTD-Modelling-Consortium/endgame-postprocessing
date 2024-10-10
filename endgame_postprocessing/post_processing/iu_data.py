@@ -19,7 +19,8 @@ class IUData:
             raise Exception(f"Invalid IU code: {iu_code}")
         iu = self.input_data.loc[self.input_data.IU_CODE == iu_code]
         if len(iu) == 0:
-            raise Exception(f"IU {iu_code} not found in IU metadata file")
+            # raise Exception(f"IU {iu_code} not found in IU metadata file")
+            return 10000
         assert len(iu) == 1
         return iu["population"].iat[0]
 

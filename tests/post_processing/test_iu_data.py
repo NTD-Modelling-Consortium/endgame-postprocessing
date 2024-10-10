@@ -3,9 +3,12 @@ import pytest
 from endgame_postprocessing.post_processing.iu_data import IUData, InvalidIUDataFile
 
 
-def test_iu_data_get_priority_population_iu_missing_raises_exception():
-    with pytest.raises(Exception):
+def test_iu_data_get_priority_population_iu_missing_returns_10000():
+    # with pytest.raises(Exception):
+    assert (
         IUData(pd.DataFrame({"IU_CODE": []})).get_priority_population_for_IU("AAA00001")
+        == 10000
+    )
 
 
 def test_iu_data_get_priority_population_invalid_iu_raises_exception():

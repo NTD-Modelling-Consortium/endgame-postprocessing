@@ -85,7 +85,7 @@ def country_composite(working_directory):
                 ]
             ),
             # TODO: provide the population data!
-            iu_data=IUData({}),
+            iu_data=IUData(pd.DataFrame({"IU_CODE": []})),
         )
         output_directory_structure.write_country_composite(
             working_directory, country, country_composite
@@ -108,7 +108,7 @@ def africa_composite(working_directory):
             )
         ),
         # TODO: provide the population data!
-        iu_data=IUData({}),
+        iu_data=IUData(pd.DataFrame({"IU_CODE": []})),
         is_africa=True,
     )
     # # Currently the composite thing sticks a column for country based on the first IU which

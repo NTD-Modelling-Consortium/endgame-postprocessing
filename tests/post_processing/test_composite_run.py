@@ -24,7 +24,9 @@ def test_build_composite_run_from_one_iu():
             "draw_1": [0.3, 0.4],
         }
     )
-    population_data = IUData({"AAA00001": 100})
+    population_data = IUData(
+        pd.DataFrame({"IU_CODE": ["AAA00001"], "population": [100]})
+    )
     result = composite_run.build_composite_run([canoncial_iu], population_data)
     pdt.assert_frame_equal(
         result,
@@ -64,7 +66,9 @@ def test_build_composite_run_from_two_iu_but_second_iu_ignored():
             "draw_1": [0.8, 0.9],
         }
     )
-    population_data = IUData({"AAA00001": 100, "AAA00002": 0})
+    population_data = IUData(
+        pd.DataFrame({"IU_CODE": ["AAA00001", "AAA00002"], "population": [100, 0]})
+    )
     result = composite_run.build_composite_run(
         [canoncial_iu1, canoncial_iu2], population_data
     )
@@ -106,7 +110,9 @@ def test_build_composite_run_from_two_equal_sized_ius():
             "draw_1": [0.9],
         }
     )
-    population_data = IUData({"AAA00001": 10, "AAA00002": 10})
+    population_data = IUData(
+        pd.DataFrame({"IU_CODE": ["AAA00001", "AAA00002"], "population": [10, 10]})
+    )
     result = composite_run.build_composite_run(
         [canoncial_iu1, canoncial_iu2], population_data
     )
@@ -148,7 +154,9 @@ def test_build_composite_run_retains_year_id():
             "draw_1": [0.9] * 2,
         }
     )
-    population_data = IUData({"AAA00001": 10, "AAA00002": 10})
+    population_data = IUData(
+        pd.DataFrame({"IU_CODE": ["AAA00001", "AAA00002"], "population": [10, 10]})
+    )
     result = composite_run.build_composite_run(
         [canoncial_iu1, canoncial_iu2], population_data
     )
@@ -190,7 +198,9 @@ def test_build_composite_multiple_scenarios():
             "draw_1": [0.9] * 2,
         }
     )
-    population_data = IUData({"AAA00001": 10})
+    population_data = IUData(
+        pd.DataFrame({"IU_CODE": ["AAA00001"], "population": [10]})
+    )
     result = composite_run.build_composite_run_multiple_scenarios(
         [canoncial_iu_scenario_1, canoncial_iu_scenario_2], population_data
     )
