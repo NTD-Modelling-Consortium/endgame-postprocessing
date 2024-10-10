@@ -92,9 +92,9 @@ flowchart TD
 
 
 ###### Measures
-- **processed_prevalence** - the composite prevalence in country (percentage taken assuming each IU has a priority population of 10000 !TODO!)
+- **processed_prevalence** - the composite prevalence in country. The prevalence for a specific draw is worked out by taking the prevalence for each IU we have results for, multiplying it by its priority population (TODO currently assumed 10000), summing across the IUs, then dividing by the priority population of all included IUs (TODO currently divided by the population of all the IUs we have data for)
 - **count_of_ius_passing_Xpct_under_threshold** - for each year, the number of IUs that in X percent of runs have gone under the threshold by this year (TODO currently by 2040 only)
-- **pct_of_ius_passing_Xpct_under_threshold** - for each year, the percentage of IUs, out of 100 (TODO 100 is arbitrary here), who in X percent of runs have gone under the threshold by this year (TODO currently by 2040 only)
+- **pct_of_ius_passing_Xpct_under_threshold** - for each year, the percentage of included IUs  (TODO currently assume there are 100 included IUs), who in X percent of runs have gone under the threshold by this year (TODO currently by 2040 only)
 - **year_of_ius_passing_Xpct_under_threshold** - the year in X percent of runs all IUs have crossed the threshold. If any IU has not reached the threshold in X percent of runs, this will be -1. Note: column year_id will be n/a for this.
 
 
