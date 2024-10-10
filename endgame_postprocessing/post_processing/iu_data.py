@@ -24,6 +24,15 @@ class IUData:
         assert len(iu) == 1
         return iu["population"].iat[0]
 
+    def get_total_ius_in_country(self, country_code):
+        num = len(self._get_ius_for_country(country_code))
+        if num == 0:
+            return 100
+        return num
+
+    def _get_ius_for_country(self, country_code):
+        return self.input_data[self.input_data["ADMIN0ISO3"] == country_code]["IU_CODE"]
+
 
 class InvalidIUDataFile(Exception):
     pass

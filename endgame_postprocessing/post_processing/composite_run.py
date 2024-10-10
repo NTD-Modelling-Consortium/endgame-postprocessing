@@ -8,15 +8,6 @@ from endgame_postprocessing.post_processing.iu_data import IUData
 def build_iu_case_numbers(canonical_iu_run, population) -> pd.DataFrame:
     return canonical_iu_run.loc[:, "draw_0":] * population
 
-def get_ius_per_country(population_data, country_code, filter_measure):
-    if country_code in population_data["country_code"].unique():
-        return (population_data
-            .iloc[(population_data["country_code"] == country_code)]
-            .query(f"{filter_measure} == 'True'")["iu_name"]
-            .nunique()
-        )
-    return 100
-
 
 def build_composite_run(
     canonicial_iu_runs: list[pd.DataFrame], iu_data: IUData, is_africa=False

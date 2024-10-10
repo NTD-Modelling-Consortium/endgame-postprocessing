@@ -57,7 +57,7 @@ def iu_statistical_aggregates(working_directory):
             )
 
 
-def country_composite(working_directory):
+def country_composite(working_directory, iu_meta_data):
     canonical_file_iter = post_process_file_generator(
         file_directory=output_directory_structure.get_canonical_dir(working_directory),
         end_of_file="_canonical.csv",
@@ -84,8 +84,7 @@ def country_composite(working_directory):
                     for iu_for_country in ius_for_country
                 ]
             ),
-            # TODO: provide the population data!
-            iu_data=IUData(pd.DataFrame({"IU_CODE": []})),
+            iu_meta_data,
         )
         output_directory_structure.write_country_composite(
             working_directory, country, country_composite
@@ -93,7 +92,7 @@ def country_composite(working_directory):
         yield country_composite
 
 
-def africa_composite(working_directory):
+def africa_composite(working_directory, iu_meta_data):
     canonical_file_iter = post_process_file_generator(
         file_directory=output_directory_structure.get_canonical_dir(working_directory),
         end_of_file="_canonical.csv",
@@ -107,8 +106,7 @@ def africa_composite(working_directory):
                 desc="Building Africa composite run",
             )
         ),
-        # TODO: provide the population data!
-        iu_data=IUData(pd.DataFrame({"IU_CODE": []})),
+        iu_data=iu_meta_data,
         is_africa=True,
     )
     # # Currently the composite thing sticks a column for country based on the first IU which
@@ -119,21 +117,14 @@ def africa_composite(working_directory):
     )
 
 
-def country_aggregate(country_composite, iu_lvl_data, population_data, country_code):
+def country_aggregate(country_composite, iu_lvl_data, country_code, iu_meta_data):
     country_statistical_aggregates = single_country_aggregate(country_composite)
     country_iu_summary_aggregates = country_lvl_aggregate(
         iu_lvl_data,
         constants.COUNTRY_THRESHOLD_SUMMARY_COLUMNS,
         constants.COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS,
         constants.COUNTRY_THRESHOLD_RENAME_MAP,
-        # TODO: filter population data to be for a given country
-        composite_run.get_ius_per_country(
-            pd.DataFrame(
-                population_data, columns=["country_code", "iu_name", "is_endemic"]
-            ),
-            country_code,
-            "is_endemic",
-        ),
+        iu_meta_data.get_total_ius_in_country(country_code),
     )
     return pd.concat([country_statistical_aggregates, country_iu_summary_aggregates])
 
@@ -142,6 +133,8 @@ def pipeline(working_directory, disease):
     iu_statistical_aggregates(
         working_directory,
     )
+
+    iu_meta_data = IUData(pd.DataFrame({"IU_CODE": [], "ADMIN0ISO3": []}))
 
     all_iu_data = (
         iu_lvl_aggregate(aggregate_post_processed_files(f"{working_directory}/ius/"))
@@ -155,17 +148,16 @@ def pipeline(working_directory, disease):
     )
 
     country_aggregates = [
-        # TODO: Add population data
         country_aggregate(
             country_composite,
             all_iu_data[
                 all_iu_data["country_code"]
                 == country_composite["country_code"].values[0]
             ],
-            {},
             country_composite["country_code"].values[0],
+            iu_meta_data,
         )
-        for country_composite in country_composite(working_directory)
+        for country_composite in country_composite(working_directory, iu_meta_data)
     ]
 
     all_country_aggregates = (
@@ -178,7 +170,7 @@ def pipeline(working_directory, disease):
         working_directory, all_country_aggregates, disease
     )
 
-    africa_composite(working_directory)
+    africa_composite(working_directory, iu_meta_data)
     africa_aggregates = (
         africa_lvl_aggregate(
             pd.read_csv(f"{working_directory}/composite/africa_composite.csv")
