@@ -2,13 +2,18 @@ import glob
 import csv
 import os
 import pandas as pd
+from endgame_postprocessing.post_processing import canoncical_columns
+from endgame_postprocessing.post_processing.measures import measure_summary_float
+from functools import partial
 import numpy as np
 from tqdm import tqdm
 from .constants import (
+    DRAW_COLUMNN_NAME_START,
     MEASURE_COLUMN_NAME,
     PERCENTILES_TO_CALC,
-    AGGEGATE_DEFAULT_TYPING_MAP
+    AGGEGATE_DEFAULT_TYPING_MAP,
 )
+
 
 def _percentile(n):
     def percentile_(x):
@@ -18,9 +23,25 @@ def _percentile(n):
     return percentile_
 
 
-def _calc_not_na(x):
-    return x.notnull().mean() * 100
+def _is_invalid_year(year):
+    return year.isin([-1, pd.NA, np.nan])
 
+
+def year_all_ius_reach_threshold(years_iu_reach_threshold):
+    if len(years_iu_reach_threshold[_is_invalid_year(years_iu_reach_threshold)]) > 0:
+        return -1
+    return years_iu_reach_threshold.max()
+
+
+def _calc_count_of_non_na_or_negative(x, denominator_val=1):
+    return len(x[~_is_invalid_year(x)]) / denominator_val
+
+
+def add_scenario_and_country_to_raw_data(data, scenario_name, iu_name):
+    data["scenario_name"] = scenario_name
+    data["country_code"] = iu_name[:3]
+    data["iu_name"] = iu_name
+    return(data)
 
 def aggregate_post_processed_files(
     path_to_files: str,
@@ -92,29 +113,128 @@ def iu_lvl_aggregate(
 
     return aggregated_data
 
+def _group_country_pop(data, column_to_group_by):
+    grouped_data = data.groupby(["country_code", column_to_group_by]).agg(
+        country_pop=("population", "sum")
+    )
+
+    return grouped_data[grouped_data[column_to_group_by] is True].copy()
+
+def _threshold_summary_helper(
+        data,
+        summary_measure_names,
+        group_by_columns,
+        aggregate_function,
+        aggregate_prefix,
+        measure_rename_map
+    ):
+    summarize_threshold = (
+        data[data[MEASURE_COLUMN_NAME].isin(summary_measure_names)]
+        .groupby(group_by_columns)
+        .agg({"mean": [("mean", aggregate_function)]})
+        .reset_index()
+    )
+    summarize_threshold.columns = group_by_columns + ["mean"]
+    summarize_threshold[MEASURE_COLUMN_NAME] = [
+        aggregate_prefix + measure_rename_map[measure_val]
+        for measure_val in summarize_threshold[MEASURE_COLUMN_NAME]
+        if measure_val in measure_rename_map
+    ]
+    return summarize_threshold
+
+
+def aggregate_draws(composite_data: pd.DataFrame) -> pd.DataFrame:
+    draw_names = list(
+        [
+            draw_column
+            for draw_column in composite_data.columns
+            if draw_column.startswith(DRAW_COLUMNN_NAME_START)
+        ]
+    )
+    statistical_aggregate = measure_summary_float(
+        data_to_summarize=composite_data.to_numpy(),
+        year_id_loc=composite_data.columns.get_loc(canoncical_columns.YEAR_ID),
+        measure_column_loc=composite_data.columns.get_loc(canoncical_columns.MEASURE),
+        # I think we should keep this as the prevalence values have different age starts / age ends
+        age_start_loc=0,
+        age_end_loc=0,
+        draws_loc=[composite_data.columns.get_loc(name) for name in draw_names],
+    )
+    statistical_aggregate_final = pd.DataFrame(
+        statistical_aggregate,
+        columns=["year_id", "age_start", "age_end", "measure", "mean"]
+        + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
+        + ["standard_deviation", "median"],
+    )
+
+    # TODO: these columns would be not even passed into and back out of measure_summary_float which
+    # ignores them
+    statistical_aggregate_final.drop(columns=["age_start", "age_end"], inplace=True)
+
+    return statistical_aggregate_final
+
+def africa_lvl_aggregate(composite_africa_runs: pd.DataFrame) -> pd.DataFrame:
+    africa_statistical_aggregate = aggregate_draws(composite_africa_runs)
+    general_columns = composite_africa_runs[
+        [
+            canoncical_columns.SCENARIO,
+        ]
+    ]
+
+    africa_aggregates_complete = pd.concat(
+        [general_columns, africa_statistical_aggregate], axis=1
+    )
+    return africa_aggregates_complete[
+        [
+            canoncical_columns.SCENARIO,
+            canoncical_columns.MEASURE,
+            "year_id",
+            "mean",
+        ]
+        + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
+        + ["standard_deviation", "median"]
+    ]
+
+
+def single_country_aggregate(composite_country_run: pd.DataFrame) -> pd.DataFrame:
+    country_statistical_aggregates = aggregate_draws(composite_country_run)
+
+    general_columns = composite_country_run[
+        [
+            canoncical_columns.SCENARIO,
+            canoncical_columns.COUNTRY_CODE,
+        ]
+    ]
+
+    country_aggregates_complete = pd.concat(
+        [general_columns, country_statistical_aggregates], axis=1
+    )
+    return country_aggregates_complete[
+        [
+            canoncical_columns.SCENARIO,
+            canoncical_columns.COUNTRY_CODE,
+            canoncical_columns.MEASURE,
+            "year_id",
+            "mean",
+        ]
+        + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
+        + ["standard_deviation", "median"]
+    ]
+
 
 def country_lvl_aggregate(
-    iu_lvl_data: pd.DataFrame,
-    general_summary_measure_names: list[str],
-    general_groupby_cols: list[str],
+    processed_iu_lvl_data: pd.DataFrame,
     threshold_summary_measure_names: list[str],
     threshold_groupby_cols: list[str],
     threshold_cols_rename: dict,
+    denominator_to_use: int,
 ) -> pd.DataFrame:
     """
     Takes in an input dataframe of all the aggregated iu-lvl data and returns a summarized version
     with country level metrics.
     See constants.py for possible inputs to this function.
     Args:
-        iu_lvl_data (pd.Dataframe): the dataframe with all the iu-lvl data.
-        general_summary_measure_names (list[str]): a list of measures that we want to generally
-                                            summarize with mean, percentiles, std, and median.
-                                            Example: ["prevalence", "year_of_1_mfp_avg",
-                                            "year_of_90_under_1_mfp"].
-        general_groupby_cols (list[str]): a list of columns that we want to use to group the general
-                                            summaries by.
-                                            Example: ["scenario", "country_code", "year_id",
-                                            "age_start", "age_end", "measure"].
+        processed_iu_lvl_data (pd.Dataframe): the dataframe with all the iu-lvl data.
         threshold_summary_measure_names (list[str]): a list of measures names that we want to
                                             calculate the threshold statistics for
                                             (number of IU's that reach a threshold, calculated
@@ -128,105 +248,56 @@ def country_lvl_aggregate(
                                     statistics. Example:
                                     {"year_of_90_under_1_mfp":"pct_of_ius_passing_90pct_threshold",
                                     "year_of_1_mfp_avg":"pct_of_ius_passing_avg_threshold"}
+        denominator_to_use (int): The value of the denominator for the given input
 
     Returns:
         A dataframe with country-level metrics
     """
-    general_summary_df = iu_lvl_data.loc[
-        iu_lvl_data[MEASURE_COLUMN_NAME].isin(general_summary_measure_names), :
-    ].copy()
-    # group by doesn't work with NaN/null values
-    general_summary_df[general_groupby_cols] = general_summary_df[
-        general_groupby_cols
-    ].fillna(-1)
-    general_summary = (
-        general_summary_df.groupby(general_groupby_cols)
-        .agg(
-            {
-                "mean": ["mean"]
-                + [_percentile(p) for p in PERCENTILES_TO_CALC]
-                + ["std", "median"]
-            }
-        )
-        .reset_index()
-    )
-    general_summary.columns = (
-        general_groupby_cols
-        + ["mean"]
-        + [str(p) + "_percentile" for p in PERCENTILES_TO_CALC]
-        + ["standard_deviation", "median"]
-    )
-    general_summary[general_groupby_cols] = general_summary[
-        general_groupby_cols
-    ].replace(-1, np.nan)
-
     if (len(threshold_summary_measure_names) == 0):
         if len(threshold_groupby_cols) > 0:
             raise ValueError(
-                "The length of threshold_summary_measure_names is "+
+                "The length of threshold_summary_measure_names is " +
                 f"{len(threshold_summary_measure_names)} " +
                 f"while threshold_groupby_cols is of length {len(threshold_groupby_cols)}. " +
                 "threshold_summary_measure_names should be provided if the length of " +
                 "threshold_groupby_cols is greater than 0."
             )
-        return general_summary
-
-    summarize_threshold = (
-        iu_lvl_data[iu_lvl_data[MEASURE_COLUMN_NAME].isin(threshold_summary_measure_names)]
-        .groupby(threshold_groupby_cols)
-        .agg({"mean": [("mean", _calc_not_na)]})
-        .reset_index()
-    )
-    summarize_threshold.columns = threshold_groupby_cols + ["mean"]
-    summarize_threshold[MEASURE_COLUMN_NAME] = [
-        threshold_cols_rename[measure_val]
-        for measure_val in summarize_threshold[MEASURE_COLUMN_NAME]
-        if measure_val in threshold_cols_rename
-    ]
-    return pd.concat([general_summary, summarize_threshold], axis=0, ignore_index=True)
-
-
-def africa_lvl_aggregate(
-    country_lvl_data: pd.DataFrame,
-    measures_to_summarize: list[str],
-    columns_to_group_by: list[str],
-) -> pd.DataFrame:
-    """
-    Takes in an input dataframe of all the aggregated country-level metrics and returns a summarized
-    version with africa level metrics.
-
-    Args:
-        country_lvl_data (pd.Dataframe): the dataframe with country-level data.
-        measures_to_summarize (list[str]): a list of measures that we want to generally summarize
-                                            with mean, percentiles, std, and median.
-                                            Example: ["prevalence"].
-        columns_to_group_by (list[str]): a list of columns that we want to use
-                                            to group the summaries by.
-                                            Example: ["scenario", "year_id", "age_start",
-                                            "age_end", "measure"].
-
-    Returns:
-        A dataframe with africa-level metrics
-    """
-    africa_summary = (
-        country_lvl_data[
-            country_lvl_data[MEASURE_COLUMN_NAME].isin(measures_to_summarize)
-        ]
-        .groupby(columns_to_group_by)
-        .agg(
-            {
-                "mean": ["mean"]
-                + [_percentile(p) for p in PERCENTILES_TO_CALC]
-                + ["std", "median"]
-            }
+        raise ValueError(
+            "Threshold summary measures are required to be input."
         )
-        .reset_index()
+
+    summarize_threshold = _threshold_summary_helper(
+        processed_iu_lvl_data,
+        threshold_summary_measure_names,
+        threshold_groupby_cols,
+        partial(_calc_count_of_non_na_or_negative, denominator_val=denominator_to_use),
+        "pct_of_",
+        threshold_cols_rename,
     )
 
-    africa_summary.columns = (
-        columns_to_group_by
-        + ["mean"]
-        + [str(p) + "_percentile" for p in PERCENTILES_TO_CALC]
-        + ["standard_deviation", "median"]
+    summarize_threshold_counts = _threshold_summary_helper(
+        processed_iu_lvl_data,
+        threshold_summary_measure_names,
+        threshold_groupby_cols,
+        _calc_count_of_non_na_or_negative,
+        "count_of_",
+        threshold_cols_rename,
     )
-    return africa_summary
+
+    summarize_threshold_year = _threshold_summary_helper(
+        processed_iu_lvl_data,
+        threshold_summary_measure_names,
+        threshold_groupby_cols,
+        year_all_ius_reach_threshold,
+        "year_of_",
+        threshold_cols_rename,
+    )
+
+    # Summary stuff
+    summarize_threshold_year["mean"] = summarize_threshold_year["mean"].fillna(-1)
+
+    return pd.concat(
+        [summarize_threshold, summarize_threshold_counts, summarize_threshold_year],
+        axis=0,
+        ignore_index=True,
+    )
