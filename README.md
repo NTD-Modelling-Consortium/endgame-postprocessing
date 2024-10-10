@@ -77,7 +77,7 @@ flowchart TD
 * **prob_under_threshold_prevalence** - The percentage of runs which the protocol threshold was reached by this year
 * **year_of_Xpct_runs_under_threshold** - the year X percentage of runs crossed the disease specific threshold (-1 if it never reaches the threshold in at least X percent of runs)
 
-##### Per Country file:
+##### Country Statistical Aggregates
 
 ###### Columns
 
@@ -92,11 +92,10 @@ flowchart TD
 
 
 ###### Measures
-- **processed_prevalence** - the composite prevalence in country (percentage taken using ?? as population)
-- **number_of_ius_Xpct_under_threshold** - for each year, the number of IUs that in X percent of runs have gone under the threshold by this year
-- **pct_modelled_ius_Xpct_under_threshold** - for each year, the percentage of IUs, out of those modelled, who in X percent of runs have gone under the threshold by this year
-- **pct_endemic_ius_Xpct_under_threshold** - for each year, the percentage of IUs, out of those that are classified as endemic, who in X percent of runs have gone under the threshold by this year
-- **year_X_pct_runs_in_all_ius** - the year in X percent of runs all IUs have crossed the threshold. If any IU has not reached the threshold in X percent of runs, this will be -1. Note: column year_id will be n/a for this.
+- **processed_prevalence** - the composite prevalence in country (percentage taken assuming each IU has a priority population of 10000 !TODO!)
+- **count_of_ius_passing_Xpct_under_threshold** - for each year, the number of IUs that in X percent of runs have gone under the threshold by this year (TODO currently by 2040 only)
+- **pct_of_ius_passing_Xpct_under_threshold** - for each year, the percentage of IUs, out of 100 (TODO 100 is arbitrary here), who in X percent of runs have gone under the threshold by this year (TODO currently by 2040 only)
+- **year_of_ius_passing_Xpct_under_threshold** - the year in X percent of runs all IUs have crossed the threshold. If any IU has not reached the threshold in X percent of runs, this will be -1. Note: column year_id will be n/a for this.
 
 
 ## Tests
