@@ -84,7 +84,7 @@ def country_composite(working_directory):
                 ]
             ),
             # TODO: provide the population data!
-            population_data={},
+            iu_data={},
         )
         output_directory_structure.write_country_composite(
             working_directory, country, country_composite
@@ -107,7 +107,7 @@ def africa_composite(working_directory):
             )
         ),
         # TODO: provide the population data!
-        population_data={},
+        iu_data={},
         is_africa=True,
     )
     # # Currently the composite thing sticks a column for country based on the first IU which
