@@ -47,8 +47,8 @@ flowchart TD
  - {disease}/
    - aggregated/
      - combined-{disease}-iu-lvl-agg.csv (concatenation of [the per IU file](#per-iu--combined-iu-level-file-))
-     - [combined-{disease}-country-lvl-agg.csv](#per-country-file)
-     - combined-{disease}-africa-lvl-agg.csv
+     - [combined-{disease}-country-lvl-agg.csv](#country-statistical-aggregates)
+     - [combined-{disease}-africa-lvl-agg.csv](#africa-statistical-aggregates)
    - ius/
      - [{scenario_N}\_{IU code}\_post_processed.csv](#per-iu--combined-iu-level-file-)
      - ... for each IU, for each scenario
@@ -97,6 +97,21 @@ flowchart TD
 - **pct_of_ius_passing_Xpct_under_threshold** - for each year, the percentage of included IUs  (TODO currently assume there are 100 included IUs), who in X percent of runs have gone under the threshold by this year (TODO currently by 2040 only)
 - **year_of_ius_passing_Xpct_under_threshold** - the year in X percent of runs all IUs have crossed the threshold. If any IU has not reached the threshold in X percent of runs, this will be -1. Note: column year_id will be n/a for this.
 
+##### Africa Statistical Aggregates
+
+###### Columns
+
+- scenario
+- measure
+- year_id
+- mean - _the primary value for the measure (may not be a mean)_
+- X_percentile [2.5%, 5%, 10%, 25%, 50%, 75%, 90%, 95%, 97.5%]
+- standard_deviation
+- median
+
+
+###### Measures
+- **processed_prevalence** - the composite prevalence in Africa. The prevalence for a specific draw is worked out by taking the prevalence for each IU we have results for, multiplying it by its priority population (TODO currently assumed 10000), summing across the IUs, then dividing by the priority population of all included IUs (TODO currently divided by the population of all the IUs we have data for)
 
 ## Tests
 
