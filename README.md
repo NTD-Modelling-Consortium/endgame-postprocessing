@@ -20,6 +20,16 @@
 * **Composite Country Results** - the weighted assembling the draws for all the IUs still split out into multiple draws
 * **Country statistical aggregates** - The composite draws for the country condensed into mean, median and percentiles, with columns for each protocol confidence whose values are _number_ of IUs that pass the protocol in the confidence percentage of runs.  
 
+#### Disease Definitions
+
+Currently only implemented LF and Oncho.
+
+| Disease | Priority population | Processed prevalence | Protocol Threshold |
+| ------- | ------------------- | -------------------- | ------------------ |
+| LF | $\geq 5$ Years Old | True mf Prevalence | $\leq 1$% |
+| Oncho | $\geq 5$ Years Old | True mf prevalence | $\leq 1$% | 
+
+
 ```mermaid
 flowchart TD
     Raw[Raw IU results] --disease specific canoncilaisation--> IU_canonical[Canoncical IU results]
