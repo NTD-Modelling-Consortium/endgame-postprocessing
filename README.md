@@ -46,7 +46,7 @@ flowchart TD
 
  - {disease}/
    - aggregated/
-     - combined-{disease}-iu-lvl-agg.csv
+     - combined-{disease}-iu-lvl-agg.csv (concatenation of [the per IU file](#per-iu--combined-iu-level-file-))
      - [combined-{disease}-country-lvl-agg.csv](#per-country-file)
      - combined-{disease}-africa-lvl-agg.csv
    - ius/
