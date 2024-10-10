@@ -28,12 +28,12 @@ class IUData:
         return iu["population"].iat[0]
 
     def get_total_ius_in_country(self, country_code):
-        num = len(self._get_ius_for_country(country_code))
+        num = len(self._get_iu_codes_for_country(country_code))
         if num == 0:
             return 100
         return num
 
-    def _get_ius_for_country(self, country_code):
+    def _get_iu_codes_for_country(self, country_code):
         return self.input_data[self.input_data["ADMIN0ISO3"] == country_code]["IU_CODE"]
 
     # TODO: implement get_modelled_ius_for_country, get_endemic_ius_for_country
