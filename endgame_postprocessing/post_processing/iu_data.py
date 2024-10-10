@@ -10,6 +10,8 @@ def _is_valid_iu_code(iu_code):
 class IUData:
 
     def __init__(self, input_data: pd.DataFrame):
+        # TODO: validate the required columns are as expcted
+
         if input_data["IU_CODE"].nunique() != len(input_data):
             raise InvalidIUDataFile("Duplicate IUs found")
         self.input_data = input_data
@@ -22,6 +24,7 @@ class IUData:
             # raise Exception(f"IU {iu_code} not found in IU metadata file")
             return 10000
         assert len(iu) == 1
+        # TODO: use disease specific column
         return iu["population"].iat[0]
 
     def get_total_ius_in_country(self, country_code):
@@ -32,6 +35,8 @@ class IUData:
 
     def _get_ius_for_country(self, country_code):
         return self.input_data[self.input_data["ADMIN0ISO3"] == country_code]["IU_CODE"]
+
+    # TODO: implement get_modelled_ius_for_country, get_endemic_ius_for_country
 
 
 class InvalidIUDataFile(Exception):
