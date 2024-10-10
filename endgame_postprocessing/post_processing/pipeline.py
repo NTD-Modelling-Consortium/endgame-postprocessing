@@ -14,6 +14,7 @@ from endgame_postprocessing.post_processing.aggregation import (
     iu_lvl_aggregate,
     country_lvl_aggregate,
 )
+from endgame_postprocessing.post_processing.iu_data import IUData
 from endgame_postprocessing.post_processing.single_file_post_processing import (
     process_single_file,
     measure_summary_float,
@@ -84,7 +85,7 @@ def country_composite(working_directory):
                 ]
             ),
             # TODO: provide the population data!
-            iu_data={},
+            iu_data=IUData({}),
         )
         output_directory_structure.write_country_composite(
             working_directory, country, country_composite
@@ -107,7 +108,7 @@ def africa_composite(working_directory):
             )
         ),
         # TODO: provide the population data!
-        iu_data={},
+        iu_data=IUData({}),
         is_africa=True,
     )
     # # Currently the composite thing sticks a column for country based on the first IU which
