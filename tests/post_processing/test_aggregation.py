@@ -183,7 +183,7 @@ def test_country_lvl_aggregate_aggregate_by_country_rename():
         {
             "country": ["C1"] + ["C2"],
             "measure": ["M2"] * 2,
-            "mean": [None, 12],
+            "mean": [-1, 12],
         }
     )
     aggregate_data = aggregation.country_lvl_aggregate(
@@ -198,7 +198,33 @@ def test_country_lvl_aggregate_aggregate_by_country_rename():
         pd.DataFrame(
             {
                 "measure": ["pct_of_test", "count_of_test", "year_of_test"],
-                "mean": [0.5, 1.0, 12.0],
+                "mean": [0.5, 1.0, -1],
+            }
+        ),
+    )
+
+
+def test_country_lvl_aggregate_aggregate_when_measure_has_year_picks_max():
+    iu_data = pd.DataFrame(
+        {
+            "country": ["C1"] + ["C2"],
+            "measure": ["M2"] * 2,
+            "mean": [15, 12],
+        }
+    )
+    aggregate_data = aggregation.country_lvl_aggregate(
+        iu_data,
+        threshold_cols_rename={"M2": "test", "M1": "should not rename"},
+        threshold_groupby_cols=["measure"],
+        threshold_summary_measure_names=["M2"],
+        denominator_to_use=2,
+    )
+    pdt.assert_frame_equal(
+        aggregate_data,
+        pd.DataFrame(
+            {
+                "measure": ["pct_of_test", "count_of_test", "year_of_test"],
+                "mean": [1.0, 2.0, 15],
             }
         ),
     )
@@ -260,3 +286,18 @@ def test_calc_sum_not_na_or_negative_excludes_minus_one_with_divisor():
         pd.Series([np.nan, 1, 4]), denominator_val=2
     )
     npt.assert_equal(result, 1.0)
+
+
+def test_year_all_ius_reach_threshold_with_negative_is_never():
+    result = aggregation.year_all_ius_reach_threshold(pd.Series([-1, 2030]))
+    npt.assert_equal(result, -1)
+
+
+def test_year_all_ius_reach_threshold_with_NA_is_never():
+    result = aggregation.year_all_ius_reach_threshold(pd.Series([pd.NA, 2030]))
+    npt.assert_equal(result, -1)
+
+
+def test_year_all_ius_reach_threshold_with_only_valid_years_returns_max():
+    result = aggregation.year_all_ius_reach_threshold(pd.Series([2035, 2030]))
+    npt.assert_equal(result, 2035)

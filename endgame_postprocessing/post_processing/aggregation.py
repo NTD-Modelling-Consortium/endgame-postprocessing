@@ -23,12 +23,19 @@ def _percentile(n):
     return percentile_
 
 
+def _is_invalid_year(year):
+    return year.isin([-1, pd.NA])
+
+
+def year_all_ius_reach_threshold(years_iu_reach_threshold):
+    if len(years_iu_reach_threshold[_is_invalid_year(years_iu_reach_threshold)]) > 0:
+        return -1
+    return years_iu_reach_threshold.max()
+
+
 def _calc_count_of_non_na_or_negative(x, denominator_val=1):
     return x[x != -1].notnull().sum() / denominator_val
 
-
-def _calc_max_not_na(x):
-    return x.max()
 
 def add_scenario_and_country_to_raw_data(data, scenario_name, iu_name):
     data["scenario_name"] = scenario_name
@@ -281,9 +288,9 @@ def country_lvl_aggregate(
         processed_iu_lvl_data,
         threshold_summary_measure_names,
         threshold_groupby_cols,
-        _calc_max_not_na,
+        year_all_ius_reach_threshold,
         "year_of_",
-        threshold_cols_rename
+        threshold_cols_rename,
     )
 
     # Summary stuff
