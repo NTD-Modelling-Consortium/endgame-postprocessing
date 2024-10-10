@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import numpy.testing as npt
 from endgame_postprocessing.post_processing import measures
 from tests.test_helper_functions import (
     PERCENTILES_TO_TEST,
@@ -178,7 +179,8 @@ def test_find_year_reaching_threshold_success():
     )
     assert year == years[-8]
 
-def test_find_year_reaching_threshold_success_returns_nan():
+
+def test_find_year_reaching_threshold_success_returns_negative_one():
     min_year = 1970
     total_years = 40
     years = np.arange(min_year, min_year+total_years)
@@ -189,7 +191,8 @@ def test_find_year_reaching_threshold_success_returns_nan():
         year_ids=years,
         comparitor_function=np.less
     )
-    assert np.isnan(year)
+    npt.assert_equal(year, -1)
+
 
 def test_find_year_reaching_threshold_success_other_comparitor():
     min_year = 1970

@@ -1,9 +1,11 @@
-YEAR_COLUMN_NAME="year_id"
-MEASURE_COLUMN_NAME="measure"
-AGE_START_COLUMN_NAME="age_start"
-AGE_END_COLUMN_NAME="age_end"
-DRAW_COLUMNN_NAME_START="draw_"
+YEAR_COLUMN_NAME = "year_id"
+MEASURE_COLUMN_NAME = "measure"
+AGE_START_COLUMN_NAME = "age_start"
+AGE_END_COLUMN_NAME = "age_end"
+DRAW_COLUMNN_NAME_START = "draw_"
+NUM_DRAWS = 200
 
+DEFAULT_PREVALENCE_MEASURE_NAME = "processed_prevalence"
 
 PERCENTILES_TO_CALC = [2.5, 5, 10, 25, 50, 75, 90, 95, 97.5]
 
@@ -25,8 +27,17 @@ AGGEGATE_DEFAULT_TYPING_MAP = {
     "standard_deviation": float,
 }
 
-FINAL_COLUMNS = ([
-        "iu_name", "country_code", "scenario", "year_id", "age_start",
-        "age_end", "measure", "mean"] +
-        [str(p) + "_percentile" for p in PERCENTILES_TO_CALC] +
-        ["standard_deviation", "median"])
+FINAL_COLUMNS = (
+    [
+        "iu_name",
+        "country_code",
+        "scenario",
+        "year_id",
+        "age_start",
+        "age_end",
+        "measure",
+        "mean",
+    ]
+    + [str(p) + "_percentile" for p in PERCENTILES_TO_CALC]
+    + ["standard_deviation", "median"]
+)

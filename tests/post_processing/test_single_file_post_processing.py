@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+import numpy.testing as npt
 from endgame_postprocessing.post_processing.constants import FINAL_COLUMNS
 from endgame_postprocessing.post_processing import single_file_post_processing, measures
 from tests.test_helper_functions import (
@@ -60,7 +61,10 @@ def test_filter_out_old_data_success():
     cut_off = 2000
     test_input = generate_test_input(start_time, end_time)
     filtered_data = single_file_post_processing._filter_out_old_data(
-        test_input["input"], test_input["year_loc"], cut_off
+        test_input["input"],
+        test_input["year_loc"],
+        post_processing_start_time=cut_off,
+        post_processing_end_time=2050,
     )
     assert filtered_data.shape[0] == end_time - cut_off
     assert np.amin(filtered_data[:, 0].astype(float)) >= cut_off
@@ -72,7 +76,10 @@ def test_filter_out_old_data_success_all_data_is_before():
     cut_off = 2050
     test_input = generate_test_input(start_time, end_time)
     filtered_data = single_file_post_processing._filter_out_old_data(
-        test_input["input"], test_input["year_loc"], cut_off
+        test_input["input"],
+        test_input["year_loc"],
+        post_processing_start_time=cut_off,
+        post_processing_end_time=2050,
     )
     assert filtered_data.shape[0] == 0
 
@@ -83,7 +90,10 @@ def test_filter_out_old_data_success_all_data_is_after():
     cut_off = 1900
     test_input = generate_test_input(start_time, end_time)
     filtered_data = single_file_post_processing._filter_out_old_data(
-        test_input["input"], test_input["year_loc"], cut_off
+        test_input["input"],
+        test_input["year_loc"],
+        post_processing_start_time=cut_off,
+        post_processing_end_time=2050,
     )
     assert (test_input["input"] == filtered_data).all()
 
@@ -111,21 +121,21 @@ def test_calculate_probabilities_and_thresholds_success():
             draws_loc=test_input["draws_loc"],
             prevalence_marker_name=PREV_MEASURE_NAME,
             threshold=0.1,
-            pct_runs_under_threshold=0.9,
+            pct_runs_under_threshold=[0.8, 0.9],
         )
     )
-    assert (
-        prob_and_threshold_data[:, test_input["measure_loc"]]
-        == np.concatenate(
+    npt.assert_array_equal(
+        prob_and_threshold_data[:, test_input["measure_loc"]],
+        np.concatenate(
             (
                 np.full(test_input["total_rows"], "prob_under_threshold_prevalence"),
                 [
-                    "year_of_threshold_prevalence_avg",
-                    "year_of_pct_runs_under_threshold",
+                    "year_of_80pct_runs_under_threshold",
+                    "year_of_90pct_runs_under_threshold",
                 ],
             )
-        )
-    ).all()
+        ),
+    )
     assert prob_and_threshold_data.shape[0] == test_input["input"].shape[0] + 2
     assert prob_and_threshold_data.shape[1] == 16
     assert check_if_columns_is_float(
@@ -147,7 +157,7 @@ def test_calculate_probabilities_and_thresholds_success_non_numeric_year():
             draws_loc=test_input["draws_loc"],
             prevalence_marker_name=PREV_MEASURE_NAME,
             threshold=0.1,
-            pct_runs_under_threshold=0.9,
+            pct_runs_under_threshold=[0.9],
         )
     )
     with pytest.raises(AssertionError):
@@ -166,7 +176,7 @@ def test_calculate_probabilities_and_thresholds_fail_no_year_column_exists():
             draws_loc=test_input["draws_loc"],
             prevalence_marker_name=PREV_MEASURE_NAME,
             threshold=0.1,
-            pct_runs_under_threshold=0.9,
+            pct_runs_under_threshold=[0.9],
         )
 
 
@@ -186,7 +196,7 @@ def test_calculate_probabilities_and_thresholds_fail_invalid_input_string():
             draws_loc=test_input["draws_loc"],
             prevalence_marker_name=PREV_MEASURE_NAME,
             threshold=0.1,
-            pct_runs_under_threshold=0.9,
+            pct_runs_under_threshold=[0.9],
         )
 
 
@@ -323,7 +333,7 @@ def test_process_single_file_success():
     # total_length = probabilities calculated for cut off +
     # summary for all years +
     # 2 extra threshold calculations
-    total_length = (end_year - cut_off) + (end_year - start_year) + 2
+    total_length = (end_year - cut_off) + (end_year - start_year) + 1
     assert processed_file.columns.to_list() == FINAL_COLUMNS
     assert (processed_file["iu_name"] == np.full(total_length, "test_iu")).all()
     assert (processed_file["country_code"] == np.full(total_length, "tes")).all()
