@@ -297,7 +297,7 @@ def country_lvl_aggregate(
     for pct in pct_runs_under_threshold:
         yearly_pct_of_runs_dfs.append(_yearly_pct_of_runs_threshold_summary_helper(
             processed_iu_lvl_data,
-            threshold_groupby_cols,
+            list(set(threshold_groupby_cols) | {canoncical_columns.YEAR_ID}),
             denominator_to_use,
             pct
         ))
@@ -305,7 +305,7 @@ def country_lvl_aggregate(
     summarize_threshold_year = _threshold_summary_helper(
         processed_iu_lvl_data,
         threshold_summary_measure_names,
-        [col for col in threshold_groupby_cols if col != canoncical_columns.YEAR_ID],
+        threshold_groupby_cols,
         year_all_ius_reach_threshold,
         "year_of_",
         threshold_cols_rename,
