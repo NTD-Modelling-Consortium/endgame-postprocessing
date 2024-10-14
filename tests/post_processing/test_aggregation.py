@@ -201,8 +201,8 @@ def test_country_lvl_aggregate_aggregate_by_country_rename():
         aggregate_data,
         pd.DataFrame(
             {
-                "measure": ["year_of_test"],
                 "year_id": [np.nan],
+                "measure": ["year_of_test"],
                 "mean": [-1],
             }
         ),
@@ -230,8 +230,8 @@ def test_country_lvl_aggregate_aggregate_when_measure_has_year_picks_max():
         aggregate_data,
         pd.DataFrame(
             {
-                "measure": ["pct_of_ius_with_10pct_runs_under_threshold", "count_of_ius_with_10pct_runs_under_threshold", "year_of_test"],
                 "year_id": [2012, 2012, np.nan],
+                "measure": ["pct_of_ius_with_10pct_runs_under_threshold", "count_of_ius_with_10pct_runs_under_threshold", "year_of_test"],
                 "mean": [0.5, 1, 15],
             }
         ),
