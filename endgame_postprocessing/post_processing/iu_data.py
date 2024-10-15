@@ -30,10 +30,8 @@ class IUData:
             raise Exception(f"Invalid IU code: {iu_code}")
         iu = self.input_data.loc[self.input_data.IU_CODE == iu_code]
         if len(iu) == 0:
-            # raise Exception(f"IU {iu_code} not found in IU metadata file")
-            return 10000
+            raise Exception(f"IU {iu_code} not found in IU metadata file")
         assert len(iu) == 1
-        # TODO: use disease specific column
         return iu[self._get_priority_population_column_name()].iat[0]
 
     def get_priority_population_for_country(self, country_code):
@@ -48,10 +46,7 @@ class IUData:
         )
 
     def get_total_ius_in_country(self, country_code):
-        num = len(self._get_iu_codes_for_country(country_code))
-        if num == 0:
-            return 100
-        return num
+        return len(self._get_iu_codes_for_country(country_code))
 
     def _get_iu_codes_for_country(self, country_code):
         return self.input_data[self.input_data["ADMIN0ISO3"] == country_code]["IU_CODE"]

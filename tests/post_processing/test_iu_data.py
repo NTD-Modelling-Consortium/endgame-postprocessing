@@ -8,15 +8,12 @@ from endgame_postprocessing.post_processing.iu_data import (
 from endgame_postprocessing.post_processing.disease import Disease
 
 
-def test_iu_data_get_priority_population_iu_missing_returns_10000():
-    # with pytest.raises(Exception):
-    assert (
+def test_iu_data_get_priority_population_iu_missing_raises_exception():
+    with pytest.raises(Exception):
         IUData(
             pd.DataFrame({"IU_CODE": [], "Priority_Population_LF": []}),
             disease=Disease.LF,
         ).get_priority_population_for_IU("AAA00001")
-        == 10000
-    )
 
 
 def test_iu_data_get_priority_population_invalid_iu_raises_exception():
