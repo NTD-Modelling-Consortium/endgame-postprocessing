@@ -40,6 +40,56 @@ flowchart TD
     IU_canonical --Count number of IUs that meet threshold--> Country_Agg_model_measures
 ```
 
+### The input specification
+
+In general, inside the `input_directory` should be:
+
+ - PopulationMetadatafie.csv
+ - scenario_1\
+   - AAA\
+     - AAA00001\
+       - disease_specific_raw_file.csv
+     - .. for each IU in country AAA, with 5 digit IU code
+   - ... for each country ISO3 code
+ - ... for each scenario
+
+See below for disease specific specification:
+
+#### Oncho
+
+Expect file to be called:
+`ihme-{IU_CODE}-{SCENARIO}-200_sims-mda_stop_2040-sampling_interval_1.0-raw_all_age_data.csv`
+
+And have the following columns:
+
+- `year_id`
+- `age_start`
+- `age_end`
+- `measure`
+- `draw_0`
+- `draw_1`
+- ... for each draw
+
+We use the values whose measure is `prevalence`.
+
+#### LF
+
+Expect the file to be called: 
+`ntdmc-{IU_CODE}-lf-{SCENARIO}-200.csv`
+
+Have the following columns:
+
+- `espen_loc`
+- `year_id`
+- `age_start`
+- `age_end`
+- `measure`
+- `draw_0`
+- `draw_1`
+- .. for each draw
+
+We use the values whose measure is `true mf prevalence (all pop)`
+
 ### The output specification:
 
 #### Directory structure:
