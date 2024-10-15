@@ -1,3 +1,4 @@
+from enum import Enum
 import re
 
 import pandas as pd
@@ -26,11 +27,22 @@ def preprocess_iu_meta_data(input_data: pd.DataFrame):
     return deduped_input_data
 
 
+class IUSelectionCriteria(Enum):
+    ALL_IUS = 0
+    MODELLED_IUS = 1
+
+
 class IUData:
 
-    def __init__(self, input_data: pd.DataFrame, disease: Disease):
+    def __init__(
+        self,
+        input_data: pd.DataFrame,
+        disease: Disease,
+        iu_selection_criteria: IUSelectionCriteria,
+    ):
         self.disease = disease
         self.input_data = input_data
+        self.iu_selection_criteria = iu_selection_criteria
         # TODO: validate the required columns are as expcted
 
         population_column_name = self._get_priority_population_column_name()
@@ -65,24 +77,40 @@ class IUData:
         return iu[self._get_priority_population_column_name()].iat[0]
 
     def get_priority_population_for_country(self, country_code):
-        return self._get_ius_for_country(country_code)[
+        included_ius_in_country = self._get_included_ius_for_country(country_code)
+        population_column = self._get_priority_population_column_name()
+        return included_ius_in_country[population_column].sum()
+
+    def get_priority_population_for_africa(self):
+        return self.get_included_ius()[
             self._get_priority_population_column_name()
         ].sum()
 
-    def get_priority_population_for_africa(self):
-        return self.input_data[self._get_priority_population_column_name()].sum()
-
     def get_total_ius_in_country(self, country_code):
-        return len(self._get_ius_for_country(country_code))
+        return len(self._get_included_ius_for_country(country_code))
 
-    def _get_ius_for_country(self, country_code):
-        return self.input_data[self.input_data["ADMIN0ISO3"] == country_code]
+    def _get_included_ius_for_country(self, country_code):
+        return self.get_included_ius().loc[
+            self.input_data["ADMIN0ISO3"] == country_code
+        ]
+
+    def get_included_ius(self):
+        if self.iu_selection_criteria == IUSelectionCriteria.ALL_IUS:
+            return self.input_data
+        if self.iu_selection_criteria == IUSelectionCriteria.MODELLED_IUS:
+            return self._get_modelled_ius()
+
+    def _get_modelled_ius(self):
+        modelled_column = self._get_modelled_column_name()
+        return self.input_data[self.input_data[modelled_column]]
 
     def _get_priority_population_column_name(self):
         disease_str = _get_capitalised_disease(self.disease)
         return f"Priority_Population_{disease_str}"
 
-    # TODO: implement get_modelled_ius_for_country, get_endemic_ius_for_country
+    def _get_modelled_column_name(self):
+        disease_str = _get_capitalised_disease(self.disease)
+        return f"Modelled_{disease_str}"
 
 
 class InvalidIUDataFile(Exception):

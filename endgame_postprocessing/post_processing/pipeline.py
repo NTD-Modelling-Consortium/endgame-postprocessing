@@ -16,7 +16,7 @@ from endgame_postprocessing.post_processing.aggregation import (
     country_lvl_aggregate,
 )
 from endgame_postprocessing.post_processing.disease import Disease
-from endgame_postprocessing.post_processing.iu_data import IUData
+from endgame_postprocessing.post_processing.iu_data import IUData, IUSelectionCriteria
 from endgame_postprocessing.post_processing.single_file_post_processing import (
     process_single_file,
     measure_summary_float,
@@ -142,6 +142,7 @@ def pipeline(input_dir, working_directory, disease: Disease):
             pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv")
         ),
         disease,
+        iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
     )
 
     all_iu_data = (
