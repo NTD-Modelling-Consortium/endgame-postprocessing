@@ -41,5 +41,5 @@ def test_endemecity_classifier_invalid_state():
     with pytest.raises(Exception) as e:
         classifier.is_state_endemic("random")
     assert e.match(
-        "Invalid endemic state: random - must be one of: {'endemic', 'non-endemic'}"
+        r"Invalid endemic state: random - must be one of: ({'endemic', 'non-endemic'}|{'non-endemic', 'endemic'})"
     )
