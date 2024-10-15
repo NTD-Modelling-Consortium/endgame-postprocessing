@@ -38,7 +38,7 @@ def write_iu_stat_agg(
 def write_combined_iu_stat_agg(
     root_dir, all_ius_stat_agg: pd.DataFrame, disease: Disease
 ):
-    file_name = f"combined-{str(disease).lower()}-iu-lvl-agg.csv"
+    file_name = f"combined-{disease.name.lower()}-iu-lvl-agg.csv"
     path = Path(f"{root_dir}/aggregated/")
     path.mkdir(parents=True, exist_ok=True)
     all_ius_stat_agg.to_csv(f"{path}/{file_name}", index=False, float_format="%g")
@@ -47,7 +47,7 @@ def write_combined_iu_stat_agg(
 def write_country_stat_agg(
     root_dir, country_statistical_aggregate: pd.DataFrame, disease: Disease
 ):
-    file_name = f"combined-{str(disease).lower()}-country-lvl-agg.csv"
+    file_name = f"combined-{disease.name.lower()}-country-lvl-agg.csv"
     path = Path(f"{root_dir}/aggregated/")
     path.mkdir(parents=True, exist_ok=True)
     country_statistical_aggregate.to_csv(
@@ -72,7 +72,7 @@ def write_africa_composite(root_dir, country_composite: pd.DataFrame):
 def write_africa_stat_agg(
     root_dir, africa_statistical_aggregate: pd.DataFrame, disease: Disease
 ):
-    file_name = f"combined-{str(disease).lower()}-africa-lvl-agg.csv"
+    file_name = f"combined-{disease.name.lower()}-africa-lvl-agg.csv"
     path = Path(f"{root_dir}/aggregated/")
     path.mkdir(parents=True, exist_ok=True)
     africa_statistical_aggregate.to_csv(
