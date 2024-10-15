@@ -137,6 +137,22 @@ def test_get_population_for_country():
     )
 
 
+def test_get_africa_population():
+    assert (
+        IUData(
+            pd.DataFrame(
+                {
+                    "ADMIN0ISO3": ["AAA"] * 3 + ["BBB"],
+                    "Priority_Population_LF": [100, 200, 300, 400],
+                    "IU_CODE": ["AAA00001", "AAA00002", "AAA00003", "BBB00001"],
+                }
+            ),
+            disease=Disease.LF,
+        ).get_priority_population_for_africa()
+        == 1000
+    )
+
+
 def test_preprocess_iu_meta_data_contains_duplicate_and_valid_id():
     preprocessed_input = preprocess_iu_meta_data(
         pd.DataFrame(
