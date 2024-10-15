@@ -153,9 +153,16 @@ def _yearly_pct_of_runs_threshold_summary_helper(
         processed_iu_lvl_data,
         [PROB_UNDER_THRESHOLD_MEASURE_NAME],
         group_by_cols,
-        partial(_calc_count_of_pct_runs, pct_of_runs=pct_of_runs, denominator_val=denominator_to_use),
+        partial(
+            _calc_count_of_pct_runs,
+            pct_of_runs=pct_of_runs,
+            denominator_val=denominator_to_use
+        ),
         "pct_of_",
-        {PROB_UNDER_THRESHOLD_MEASURE_NAME: f"ius_with_{int(pct_of_runs*100)}pct_runs_under_threshold"},
+        {
+            PROB_UNDER_THRESHOLD_MEASURE_NAME:
+            f"ius_with_{int(pct_of_runs*100)}pct_runs_under_threshold"
+        },
     )
 
     summarize_threshold_counts = _threshold_summary_helper(
@@ -164,7 +171,10 @@ def _yearly_pct_of_runs_threshold_summary_helper(
         group_by_cols,
         partial(_calc_count_of_pct_runs, pct_of_runs=pct_of_runs, denominator_val=1),
         "count_of_",
-        {PROB_UNDER_THRESHOLD_MEASURE_NAME: f"ius_with_{int(pct_of_runs*100)}pct_runs_under_threshold"},
+        {
+            PROB_UNDER_THRESHOLD_MEASURE_NAME:
+            f"ius_with_{int(pct_of_runs*100)}pct_runs_under_threshold"
+        },
     )
     return pd.concat([summarize_threshold, summarize_threshold_counts], axis=0, ignore_index=True)
 
