@@ -14,6 +14,7 @@ from endgame_postprocessing.post_processing.aggregation import (
     iu_lvl_aggregate,
     country_lvl_aggregate,
 )
+from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.iu_data import IUData
 from endgame_postprocessing.post_processing.single_file_post_processing import (
     process_single_file,
@@ -129,12 +130,14 @@ def country_aggregate(country_composite, iu_lvl_data, country_code, iu_meta_data
     return pd.concat([country_statistical_aggregates, country_iu_summary_aggregates])
 
 
-def pipeline(working_directory, disease):
+def pipeline(input_dir, working_directory, disease: Disease):
     iu_statistical_aggregates(
         working_directory,
     )
 
-    iu_meta_data = IUData(pd.DataFrame({"IU_CODE": [], "ADMIN0ISO3": []}))
+    iu_meta_data = IUData(
+        pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv"), disease
+    )
 
     all_iu_data = (
         iu_lvl_aggregate(aggregate_post_processed_files(f"{working_directory}/ius/"))

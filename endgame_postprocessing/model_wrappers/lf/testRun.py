@@ -4,6 +4,7 @@ from endgame_postprocessing.post_processing import (
     output_directory_structure,
     pipeline,
 )
+from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.file_util import (
     post_process_file_generator,
 )
@@ -61,7 +62,7 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str, num_jobs: int):
 
     """
     canonicalise_raw_lf_results(input_dir, output_dir)
-    pipeline.pipeline(output_dir, disease="lf")
+    pipeline.pipeline(input_dir, output_dir, disease=Disease.LF)
 
 if __name__ == "__main__":
     run_postprocessing_pipeline("local_data/lf", "local_data/lf-output", 1)
