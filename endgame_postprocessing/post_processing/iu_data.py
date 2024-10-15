@@ -22,6 +22,7 @@ class IUData:
 
     def __init__(self, input_data: pd.DataFrame, disease: Disease):
         self.disease = disease
+        self.input_data = input_data
         # TODO: validate the required columns are as expcted
 
         population_column_name = self._get_priority_population_column_name()
@@ -33,8 +34,6 @@ class IUData:
 
         if input_data["IU_CODE"].nunique() != len(input_data):
             raise InvalidIUDataFile("Duplicate IUs found")
-
-        self.input_data = input_data.drop_duplicates()
 
         if (
             len(
