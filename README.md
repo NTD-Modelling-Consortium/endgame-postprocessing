@@ -44,7 +44,7 @@ flowchart TD
 
 In general, inside the `input_directory` should be:
 
- - PopulationMetadatafie.csv
+ - [PopulationMetadatafie.csv](#iu-meta-data-file)
  - scenario_1\
    - AAA\
      - AAA00001\
@@ -89,6 +89,17 @@ Have the following columns:
 - .. for each draw
 
 We use the values whose measure is `true mf prevalence (all pop)`
+
+#### IU Meta Data File
+
+This should include the following columns:
+
+- IU_ID - the integer ID of the IU
+- ADMIN0ISO3 - the ISO 3 character country code
+- Priority_Population_Oncho
+- Priority_Population_LF
+
+Each row should correspond to a single IU. 
 
 ### The output specification:
 
