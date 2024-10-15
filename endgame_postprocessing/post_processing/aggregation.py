@@ -12,6 +12,7 @@ from .constants import (
     MEASURE_COLUMN_NAME,
     PERCENTILES_TO_CALC,
     AGGEGATE_DEFAULT_TYPING_MAP,
+    PROB_UNDER_THRESHOLD_MEASURE_NAME,
 )
 
 
@@ -33,8 +34,8 @@ def year_all_ius_reach_threshold(years_iu_reach_threshold):
     return years_iu_reach_threshold.max()
 
 
-def _calc_count_of_non_na_or_negative(x, denominator_val=1):
-    return len(x[~_is_invalid_year(x)]) / denominator_val
+def _calc_count_of_pct_runs(x, pct_of_runs=0, denominator_val=1):
+    return len(x[x >= pct_of_runs]) / denominator_val
 
 
 def add_scenario_and_country_to_raw_data(data, scenario_name, iu_name):
@@ -142,6 +143,41 @@ def _threshold_summary_helper(
     ]
     return summarize_threshold
 
+def _yearly_pct_of_runs_threshold_summary_helper(
+        processed_iu_lvl_data,
+        group_by_cols,
+        denominator_to_use,
+        pct_of_runs
+    ):
+    summarize_threshold = _threshold_summary_helper(
+        processed_iu_lvl_data,
+        [PROB_UNDER_THRESHOLD_MEASURE_NAME],
+        group_by_cols,
+        partial(
+            _calc_count_of_pct_runs,
+            pct_of_runs=pct_of_runs,
+            denominator_val=denominator_to_use
+        ),
+        "pct_of_",
+        {
+            PROB_UNDER_THRESHOLD_MEASURE_NAME:
+            f"ius_with_{int(pct_of_runs*100)}pct_runs_under_threshold"
+        },
+    )
+
+    summarize_threshold_counts = _threshold_summary_helper(
+        processed_iu_lvl_data,
+        [PROB_UNDER_THRESHOLD_MEASURE_NAME],
+        group_by_cols,
+        partial(_calc_count_of_pct_runs, pct_of_runs=pct_of_runs, denominator_val=1),
+        "count_of_",
+        {
+            PROB_UNDER_THRESHOLD_MEASURE_NAME:
+            f"ius_with_{int(pct_of_runs*100)}pct_runs_under_threshold"
+        },
+    )
+    return pd.concat([summarize_threshold, summarize_threshold_counts], axis=0, ignore_index=True)
+
 
 def aggregate_draws(composite_data: pd.DataFrame) -> pd.DataFrame:
     draw_names = list(
@@ -227,6 +263,7 @@ def country_lvl_aggregate(
     threshold_summary_measure_names: list[str],
     threshold_groupby_cols: list[str],
     threshold_cols_rename: dict,
+    pct_runs_under_threshold: list[float],
     denominator_to_use: int,
 ) -> pd.DataFrame:
     """
@@ -266,23 +303,14 @@ def country_lvl_aggregate(
             "Threshold summary measures are required to be input."
         )
 
-    summarize_threshold = _threshold_summary_helper(
-        processed_iu_lvl_data,
-        threshold_summary_measure_names,
-        threshold_groupby_cols,
-        partial(_calc_count_of_non_na_or_negative, denominator_val=denominator_to_use),
-        "pct_of_",
-        threshold_cols_rename,
-    )
-
-    summarize_threshold_counts = _threshold_summary_helper(
-        processed_iu_lvl_data,
-        threshold_summary_measure_names,
-        threshold_groupby_cols,
-        _calc_count_of_non_na_or_negative,
-        "count_of_",
-        threshold_cols_rename,
-    )
+    yearly_pct_of_runs_dfs = []
+    for pct in pct_runs_under_threshold:
+        yearly_pct_of_runs_dfs.append(_yearly_pct_of_runs_threshold_summary_helper(
+            processed_iu_lvl_data,
+            list(set(threshold_groupby_cols) | {canoncical_columns.YEAR_ID}),
+            denominator_to_use,
+            pct
+        ))
 
     summarize_threshold_year = _threshold_summary_helper(
         processed_iu_lvl_data,
@@ -297,7 +325,7 @@ def country_lvl_aggregate(
     summarize_threshold_year["mean"] = summarize_threshold_year["mean"].fillna(-1)
 
     return pd.concat(
-        [summarize_threshold, summarize_threshold_counts, summarize_threshold_year],
+        yearly_pct_of_runs_dfs + [summarize_threshold_year],
         axis=0,
         ignore_index=True,
     )

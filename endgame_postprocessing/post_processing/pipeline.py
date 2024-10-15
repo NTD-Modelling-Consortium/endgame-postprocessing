@@ -125,6 +125,7 @@ def country_aggregate(country_composite, iu_lvl_data, population_data, country_c
         constants.COUNTRY_THRESHOLD_SUMMARY_COLUMNS,
         constants.COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS,
         constants.COUNTRY_THRESHOLD_RENAME_MAP,
+        constants.PCT_RUNS_UNDER_THRESHOLD,
         # TODO: filter population data to be for a given country
         composite_run.get_ius_per_country(
             pd.DataFrame(

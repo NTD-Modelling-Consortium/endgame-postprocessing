@@ -1,3 +1,4 @@
+from endgame_postprocessing.post_processing.constants import PROB_UNDER_THRESHOLD_MEASURE_NAME
 import numpy as np
 import numpy.testing as npt
 import pandas as pd
@@ -173,6 +174,7 @@ def test_country_lvl_aggregate_raises_error_if_provided_groupby_without_any_meas
             threshold_cols_rename={},
             threshold_groupby_cols=["random_group_by"],
             threshold_summary_measure_names=[],
+            pct_runs_under_threshold=[0.1],
             denominator_to_use=1,
         )
 
@@ -182,8 +184,9 @@ def test_country_lvl_aggregate_aggregate_by_country_rename():
     iu_data = pd.DataFrame(
         {
             "country": ["C1"] + ["C2"],
+            "year_id": [np.nan, np.nan],
             "measure": ["M2"] * 2,
-            "mean": [-1, 12],
+            "mean": [-1, 2012],
         }
     )
     aggregate_data = aggregation.country_lvl_aggregate(
@@ -191,25 +194,29 @@ def test_country_lvl_aggregate_aggregate_by_country_rename():
         threshold_cols_rename={"M2": "test", "M1": "should not rename"},
         threshold_groupby_cols=["measure"],
         threshold_summary_measure_names=["M2"],
+        pct_runs_under_threshold=[0.1],
         denominator_to_use=2,
     )
     pdt.assert_frame_equal(
         aggregate_data,
         pd.DataFrame(
             {
-                "measure": ["pct_of_test", "count_of_test", "year_of_test"],
-                "mean": [0.5, 1.0, -1],
+                "year_id": [np.nan],
+                "measure": ["year_of_test"],
+                "mean": [-1],
             }
         ),
+        check_like=True,
     )
 
 
 def test_country_lvl_aggregate_aggregate_when_measure_has_year_picks_max():
     iu_data = pd.DataFrame(
         {
-            "country": ["C1"] + ["C2"],
-            "measure": ["M2"] * 2,
-            "mean": [15, 12],
+            "country": ["C1", "C2"] * 2,
+            "year_id": [np.nan] * 2 + [2012] * 2,
+            "measure": ["M2"] * 2 + [PROB_UNDER_THRESHOLD_MEASURE_NAME] * 2,
+            "mean": [15, 12, 0.09, 0.2],
         }
     )
     aggregate_data = aggregation.country_lvl_aggregate(
@@ -217,16 +224,23 @@ def test_country_lvl_aggregate_aggregate_when_measure_has_year_picks_max():
         threshold_cols_rename={"M2": "test", "M1": "should not rename"},
         threshold_groupby_cols=["measure"],
         threshold_summary_measure_names=["M2"],
+        pct_runs_under_threshold=[0.1],
         denominator_to_use=2,
     )
     pdt.assert_frame_equal(
         aggregate_data,
         pd.DataFrame(
             {
-                "measure": ["pct_of_test", "count_of_test", "year_of_test"],
-                "mean": [1.0, 2.0, 15],
+                "year_id": [2012, 2012, np.nan],
+                "measure": [
+                    "pct_of_ius_with_10pct_runs_under_threshold",
+                    "count_of_ius_with_10pct_runs_under_threshold",
+                    "year_of_test",
+                ],
+                "mean": [0.5, 1, 15],
             }
         ),
+        check_like=True,
     )
 
 
@@ -271,22 +285,18 @@ def test_africa_lvl_aggregate_success():
     )
 
 
-def test_calc_sum_not_na_or_negative_excludes_minus_one():
-    result = aggregation._calc_count_of_non_na_or_negative(pd.Series([-1, 1, 4]))
+def test_calc_count_of_pct_runs_with_thresholds():
+    result = aggregation._calc_count_of_pct_runs(pd.Series([0.1, 0.2, 0.3]), pct_of_runs=0.2)
     npt.assert_equal(result, 2)
 
 
-def test_calc_sum_not_na_or_negative_excludes_nas():
-    result = aggregation._calc_count_of_non_na_or_negative(pd.Series([np.nan, 1, 4]))
-    npt.assert_equal(result, 2)
-
-
-def test_calc_sum_not_na_or_negative_excludes_minus_one_with_divisor():
-    result = aggregation._calc_count_of_non_na_or_negative(
-        pd.Series([np.nan, 1, 4]), denominator_val=2
+def test_calc_count_of_pct_runs_with_divisor():
+    result = aggregation._calc_count_of_pct_runs(
+        pd.Series([0.1, 0.2, 0.3]),
+        pct_of_runs=0.2,
+        denominator_val=3
     )
-    npt.assert_equal(result, 1.0)
-
+    npt.assert_equal(result, 2/3)
 
 def test_year_all_ius_reach_threshold_with_negative_is_never():
     result = aggregation.year_all_ius_reach_threshold(pd.Series([-1, 2030]))
