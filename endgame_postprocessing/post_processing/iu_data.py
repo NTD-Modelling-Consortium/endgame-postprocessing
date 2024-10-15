@@ -9,6 +9,14 @@ def _is_valid_iu_code(iu_code):
     return re.match(r"[A-Z]{3}\d{5}$", iu_code)
 
 
+def _get_capitalised_disease(disease: Disease):
+    if disease is Disease.ONCHO:
+        return "Oncho"
+    elif disease is Disease.LF:
+        return "LF"
+    raise Exception(f"Invalid disease {disease}")
+
+
 def preprocess_iu_meta_data(input_data: pd.DataFrame):
     deduped_input_data = input_data.drop_duplicates()
     new_iu_code = deduped_input_data.ADMIN0ISO3 + deduped_input_data["IU_ID"].apply(
@@ -71,12 +79,7 @@ class IUData:
         return self.input_data[self.input_data["ADMIN0ISO3"] == country_code]
 
     def _get_priority_population_column_name(self):
-        if self.disease is Disease.ONCHO:
-            disease_str = "Oncho"
-        elif self.disease is Disease.LF:
-            disease_str = "LF"
-        else:
-            raise Exception(f"Invalid disease {self.disease}")
+        disease_str = _get_capitalised_disease(self.disease)
         return f"Priority_Population_{disease_str}"
 
     # TODO: implement get_modelled_ius_for_country, get_endemic_ius_for_country
