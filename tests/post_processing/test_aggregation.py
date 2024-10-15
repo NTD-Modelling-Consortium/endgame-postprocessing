@@ -206,6 +206,7 @@ def test_country_lvl_aggregate_aggregate_by_country_rename():
                 "mean": [-1],
             }
         ),
+        check_like=True,
     )
 
 
@@ -234,11 +235,12 @@ def test_country_lvl_aggregate_aggregate_when_measure_has_year_picks_max():
                 "measure": [
                     "pct_of_ius_with_10pct_runs_under_threshold",
                     "count_of_ius_with_10pct_runs_under_threshold",
-                    "year_of_test"
+                    "year_of_test",
                 ],
                 "mean": [0.5, 1, 15],
             }
         ),
+        check_like=True,
     )
 
 
