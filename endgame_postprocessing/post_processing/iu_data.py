@@ -4,6 +4,9 @@ import re
 import pandas as pd
 
 from endgame_postprocessing.post_processing.disease import Disease
+from endgame_postprocessing.post_processing.endemicity_classification import (
+    ENDEMICITY_CLASSIFIERS,
+)
 
 
 def _is_valid_iu_code(iu_code):
@@ -25,28 +28,6 @@ def preprocess_iu_meta_data(input_data: pd.DataFrame):
     )
     deduped_input_data.loc[:, "IU_CODE"] = new_iu_code
     return deduped_input_data
-
-ONCHO_IS_ENDEMIC_STATE = {
-    "Endemic (MDA not delivered)",
-    "Endemic (under MDA)",
-    "Endemic (under post-intervention surveillance)",
-}
-
-ONCHO_IS_NOT_ENDEMIC_STATE = {
-    "Unknown (under LF MDA)",
-    "Unknown (consider Oncho Elimination Mapping)",
-    "Non-endemic",
-    "Not reported",
-    "Endemic (pending IA)",
-}
-
-ALL_ONCHO_ENDEMICTY_STATES = ONCHO_IS_ENDEMIC_STATE.union(ONCHO_IS_NOT_ENDEMIC_STATE)
-
-
-def _is_state_oncho_endemic(state):
-    if state not in ALL_ONCHO_ENDEMICTY_STATES:
-        raise Exception(f"Invalid Oncho endemic state: {state}")
-    return state in ONCHO_IS_ENDEMIC_STATE
 
 
 class IUSelectionCriteria(Enum):
@@ -140,8 +121,11 @@ class IUData:
 
     def _get_endemic_ius(self):
         endemic_column = self._get_endemic_column_name()
+        endemicity_classifier = ENDEMICITY_CLASSIFIERS[self.disease]
         return self.input_data.loc[
-            self.input_data[endemic_column].apply(_is_state_oncho_endemic)
+            self.input_data[endemic_column].apply(
+                endemicity_classifier.is_state_endemic
+            )
         ]
 
     def _get_endemic_column_name(self):
