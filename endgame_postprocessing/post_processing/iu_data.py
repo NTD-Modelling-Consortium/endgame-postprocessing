@@ -42,7 +42,7 @@ class IUData:
         return sum(self.get_priority_population_for_IU(iu_code) for iu_code in iu_codes)
 
     def get_priority_population_for_africa(self):
-        sum(
+        return sum(
             self.get_priority_population_for_IU(iu_code)
             for iu_code in self.input_data["IU_CODE"]
         )
