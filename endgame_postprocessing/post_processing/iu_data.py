@@ -6,7 +6,7 @@ from endgame_postprocessing.post_processing.disease import Disease
 
 
 def _is_valid_iu_code(iu_code):
-    return re.match("[A-Z]{3}\d{5}$", iu_code)
+    return re.match(r"[A-Z]{3}\d{5}$", iu_code)
 
 
 def preprocess_iu_meta_data(input_data: pd.DataFrame):
@@ -24,9 +24,11 @@ class IUData:
         self.disease = disease
         # TODO: validate the required columns are as expcted
 
-        if self._get_priority_population_column_name() not in input_data.columns:
+        population_column_name = self._get_priority_population_column_name()
+        if population_column_name not in input_data.columns:
             raise InvalidIUDataFile(
-                f"No priority population found for disease {self.disease}, expected {self._get_priority_population_column_name()}"
+                f"No priority population found for disease {self.disease.name}"
+                f", expected {population_column_name}"
             )
 
         if input_data["IU_CODE"].nunique() != len(input_data):
