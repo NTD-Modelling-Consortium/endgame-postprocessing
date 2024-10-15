@@ -6,6 +6,7 @@ DRAW_COLUMNN_NAME_START = "draw_"
 NUM_DRAWS = 200
 
 DEFAULT_PREVALENCE_MEASURE_NAME = "processed_prevalence"
+PROB_UNDER_THRESHOLD_MEASURE_NAME = "prob_under_threshold_prevalence"
 
 PERCENTILES_TO_CALC = [2.5, 5, 10, 25, 50, 75, 90, 95, 97.5]
 

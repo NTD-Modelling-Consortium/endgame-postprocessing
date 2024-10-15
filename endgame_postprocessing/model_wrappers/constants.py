@@ -26,7 +26,7 @@ COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS = ["scenario", "country_code", "measure"
 
 COUNTRY_THRESHOLD_RENAME_MAP = {
     f"year_of_{int(pct * 100)}pct_runs_under_threshold":
-    f"ius_passing_{int(pct * 100)}pct_under_threshold"
+    f"ius_passing_{int(pct * 100)}pct_runs_under_threshold"
     for pct in PCT_RUNS_UNDER_THRESHOLD
 }
 

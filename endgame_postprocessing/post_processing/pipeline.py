@@ -126,6 +126,7 @@ def country_aggregate(country_composite, iu_lvl_data, country_code, iu_meta_data
         constants.COUNTRY_THRESHOLD_SUMMARY_COLUMNS,
         constants.COUNTRY_THRESHOLD_SUMMARY_GROUP_COLUMNS,
         constants.COUNTRY_THRESHOLD_RENAME_MAP,
+        constants.PCT_RUNS_UNDER_THRESHOLD,
         iu_meta_data.get_total_ius_in_country(country_code),
     )
     return pd.concat([country_statistical_aggregates, country_iu_summary_aggregates])
