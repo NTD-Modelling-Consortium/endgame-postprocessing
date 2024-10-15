@@ -33,5 +33,18 @@ ENDEMICITY_CLASSIFIERS = {
             "Not reported",
             "Endemic (pending IA)",
         },
-    )
+    ),
+    Disease.LF: EndemicityClassifier(
+        endemic_states={
+            "Endemic (MDA not delivered)",
+            "Endemic (under post-intervention surveillance)",
+            "Endemic (under MDA)",
+            "Endemic (pending IA)",
+        },
+        non_endemic_states={
+            "Non-endemic",
+            "Not reported",
+            "Endemicity unknown",
+        },
+    ),
 }

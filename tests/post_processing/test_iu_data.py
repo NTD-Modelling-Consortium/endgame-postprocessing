@@ -131,6 +131,28 @@ def test_iu_data_get_ius_in_country_only_modelled():
     )
 
 
+def test_iu_data_get_ius_in_country_only_endemic_lf():
+    assert (
+        IUData(
+            pd.DataFrame(
+                {
+                    "ADMIN0ISO3": ["AAA"] * 3,
+                    "IU_CODE": ["AAA00001", "AAA00002", "AAA00003"],
+                    "Priority_Population_LF": [10] * 3,
+                    "Encemicity_LF": [
+                        "Endemic (MDA not delivered)",
+                        "Non-endemic",
+                        "Non-endemic",
+                    ],
+                }
+            ),
+            disease=Disease.LF,
+            iu_selection_criteria=IUSelectionCriteria.ENDEMIC_IUS,
+        ).get_total_ius_in_country("AAA")
+        == 1
+    )
+
+
 def test_iu_data_get_ius_in_country_many_iu_many_country():
     assert (
         IUData(
