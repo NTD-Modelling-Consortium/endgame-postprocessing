@@ -44,6 +44,22 @@ def test_iu_data_get_priority_population_iu_in():
     )
 
 
+def test_iu_data_get_priority_population_iu_in_from_oncho():
+    assert (
+        IUData(
+            pd.DataFrame(
+                {
+                    "IU_CODE": ["AAA00001"],
+                    "Priority_Population_LF": [10],
+                    "Priority_Population_Oncho": [20],
+                }
+            ),
+            disease=Disease.ONCHO,
+        ).get_priority_population_for_IU("AAA00001")
+        == 20
+    )
+
+
 def test_duplicate_iu_raises_exception():
     with pytest.raises(InvalidIUDataFile):
         IUData(
