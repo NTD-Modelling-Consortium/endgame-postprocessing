@@ -1,10 +1,11 @@
 import pandas as pd
 import pytest
 from endgame_postprocessing.post_processing.iu_data import (
-    Disease,
     IUData,
     InvalidIUDataFile,
 )
+
+from endgame_postprocessing.post_processing.disease import Disease
 
 
 def test_iu_data_get_priority_population_iu_missing_returns_10000():

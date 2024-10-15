@@ -1,16 +1,12 @@
-from enum import Enum
 import re
 
 import pandas as pd
 
+from endgame_postprocessing.post_processing.disease import Disease
+
 
 def _is_valid_iu_code(iu_code):
     return re.match("[A-Z]{3}\d{5}", iu_code)
-
-
-class Disease(Enum):
-    ONCHO = 1
-    LF = 2
 
 
 class IUData:
