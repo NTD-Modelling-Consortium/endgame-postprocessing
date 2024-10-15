@@ -236,6 +236,29 @@ def test_get_africa_population_modelled_ius_only():
     )
 
 
+def test_get_africa_population_endemic_ius_only():
+    assert (
+        IUData(
+            pd.DataFrame(
+                {
+                    "ADMIN0ISO3": ["AAA"] * 3 + ["BBB"],
+                    "Priority_Population_Oncho": [100, 200, 300, 400],
+                    "IU_CODE": ["AAA00001", "AAA00002", "AAA00003", "BBB00001"],
+                    "Encemicity_Oncho": [
+                        "Endemic (MDA not delivered)",
+                        "Non-endemic",
+                        "Non-endemic",
+                        "Endemic (MDA not delivered)",
+                    ],
+                }
+            ),
+            disease=Disease.ONCHO,
+            iu_selection_criteria=IUSelectionCriteria.ENDEMIC_IUS,
+        ).get_priority_population_for_africa()
+        == 500
+    )
+
+
 def test_preprocess_iu_meta_data_contains_duplicate_and_valid_id():
     preprocessed_input = preprocess_iu_meta_data(
         pd.DataFrame(
