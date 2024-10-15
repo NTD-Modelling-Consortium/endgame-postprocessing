@@ -5,8 +5,8 @@ default_iu_meta_data = pd.DataFrame(
         "ADMIN0ISO3": ["AAA"] * 2 + ["BBB"] * 2,
         # "ADMIN0_FIP": [], # Not used
         # "IUs_NAME": [],  # Not used
-        "IU_CODE": ["AAA00001", "AAA00002", "BBB00003", "BBB00004"],
-        # "IU_ID": [],
+        "IU_CODE": ["AAAXXXX00001", "AAAXXXX00002", "BBBXXXX00003", "BBBXXXX00004"],
+        "IU_ID": ["00001", "00002", "00003", "00004"],
         # "Population_Total": [],
         # "Population_SAC": [],
         # "Population_Adult": [],

@@ -5,6 +5,7 @@ from endgame_postprocessing.post_processing import (
     composite_run,
     output_directory_structure,
 )
+from endgame_postprocessing.post_processing import iu_data
 from endgame_postprocessing.post_processing.aggregation import (
     africa_lvl_aggregate,
     aggregate_post_processed_files,
@@ -136,7 +137,10 @@ def pipeline(input_dir, working_directory, disease: Disease):
     )
 
     iu_meta_data = IUData(
-        pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv"), disease
+        iu_data.preprocess_iu_meta_data(
+            pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv")
+        ),
+        disease,
     )
 
     all_iu_data = (

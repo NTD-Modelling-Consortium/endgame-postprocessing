@@ -9,6 +9,15 @@ def _is_valid_iu_code(iu_code):
     return re.match("[A-Z]{3}\d{5}$", iu_code)
 
 
+def preprocess_iu_meta_data(input_data: pd.DataFrame):
+    deduped_input_data = input_data.drop_duplicates()
+    new_iu_code = deduped_input_data.ADMIN0ISO3 + deduped_input_data["IU_ID"].apply(
+        lambda id: str.zfill(str(id), 5)
+    )
+    deduped_input_data.loc[:, "IU_CODE"] = new_iu_code
+    return deduped_input_data
+
+
 class IUData:
 
     def __init__(self, input_data: pd.DataFrame, disease: Disease):
@@ -23,7 +32,19 @@ class IUData:
         if input_data["IU_CODE"].nunique() != len(input_data):
             raise InvalidIUDataFile("Duplicate IUs found")
 
-        self.input_data = input_data
+        self.input_data = input_data.drop_duplicates()
+
+        if (
+            len(
+                self.input_data[
+                    self.input_data["IU_CODE"].apply(
+                        lambda x: not bool(_is_valid_iu_code(x))
+                    )
+                ]
+            )
+            != 0
+        ):
+            raise InvalidIUDataFile("IU_CODE contains invalid IU codes")
 
     def get_priority_population_for_IU(self, iu_code):
         if not _is_valid_iu_code(iu_code):

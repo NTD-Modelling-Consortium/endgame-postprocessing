@@ -1,8 +1,10 @@
 import pandas as pd
+import pandas.testing as pdt
 import pytest
 from endgame_postprocessing.post_processing.iu_data import (
     IUData,
     InvalidIUDataFile,
+    preprocess_iu_meta_data,
 )
 
 from endgame_postprocessing.post_processing.disease import Disease
@@ -105,4 +107,29 @@ def test_get_population_for_country():
             disease=Disease.LF,
         ).get_priority_population_for_country("AAA")
         == 600
+    )
+
+
+def test_preprocess_iu_meta_data_contains_duplicate_and_valid_id():
+    preprocessed_input = preprocess_iu_meta_data(
+        pd.DataFrame(
+            {
+                "ADMIN0ISO3": ["AAA"] * 2,
+                "Priority_Population_LF": [100] * 2,
+                "IU_CODE": ["AAA0000000001"] * 2,
+                "IU_ID": [1] * 2,
+            }
+        )
+    )
+
+    pdt.assert_frame_equal(
+        preprocessed_input,
+        pd.DataFrame(
+            {
+                "ADMIN0ISO3": ["AAA"],
+                "Priority_Population_LF": [100],
+                "IU_CODE": ["AAA00001"],
+                "IU_ID": [1],
+            }
+        ),
     )
