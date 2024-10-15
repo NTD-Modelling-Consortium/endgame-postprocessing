@@ -56,21 +56,18 @@ class IUData:
         return iu[self._get_priority_population_column_name()].iat[0]
 
     def get_priority_population_for_country(self, country_code):
-        iu_codes = self._get_iu_codes_for_country(country_code)
-
-        return sum(self.get_priority_population_for_IU(iu_code) for iu_code in iu_codes)
+        return self._get_ius_for_country(country_code)[
+            self._get_priority_population_column_name()
+        ].sum()
 
     def get_priority_population_for_africa(self):
-        return sum(
-            self.get_priority_population_for_IU(iu_code)
-            for iu_code in self.input_data["IU_CODE"]
-        )
+        return self.input_data[self._get_priority_population_column_name()].sum()
 
     def get_total_ius_in_country(self, country_code):
-        return len(self._get_iu_codes_for_country(country_code))
+        return len(self._get_ius_for_country(country_code))
 
-    def _get_iu_codes_for_country(self, country_code):
-        return self.input_data[self.input_data["ADMIN0ISO3"] == country_code]["IU_CODE"]
+    def _get_ius_for_country(self, country_code):
+        return self.input_data[self.input_data["ADMIN0ISO3"] == country_code]
 
     def _get_priority_population_column_name(self):
         if self.disease is Disease.ONCHO:
