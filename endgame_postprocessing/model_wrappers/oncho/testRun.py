@@ -3,6 +3,7 @@ from endgame_postprocessing.post_processing import (
     output_directory_structure,
     pipeline,
 )
+from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.file_util import (
     post_process_file_generator,
 )
@@ -33,4 +34,4 @@ oncho_dir = "local_data/oncho"
 working_directory = "local_data/output"
 
 canonicalise_raw_oncho_results(oncho_dir, working_directory, 1970, 2041)
-pipeline.pipeline(working_directory, disease="oncho")
+pipeline.pipeline(oncho_dir, working_directory, disease=Disease.ONCHO)

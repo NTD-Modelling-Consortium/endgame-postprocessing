@@ -12,6 +12,10 @@
 * **Model Measures** - the measures derived from the model, currently just processed prevalence
 * **Protocol Measures** - the measures the post processing pipeline calculates, 
   currently each of the protocol confidence levels and whether enough simulations for that IU passed. 
+* **IU Inclusion Criteria** - when counting up IUs for country aggregates (e.g. for working percentage of 
+  IUs that meet the threshold for a given protocol confidence, or the total population of that country), 
+  which IUs should be included.
+* **Simulated IU** - an IU for which we have a set of simulated results for.
 
 #### File Types
 * **Raw** - the format that comes out of the model, multiple draws, many measures, non-standard names, per IU
@@ -24,10 +28,10 @@
 
 Currently only implemented LF and Oncho.
 
-| Disease | Priority population | Processed prevalence | Protocol Threshold |
-| ------- | ------------------- | -------------------- | ------------------ |
-| LF | $\geq 5$ Years Old | True mf Prevalence | $\leq 1$% |
-| Oncho | $\geq 5$ Years Old | True mf prevalence | $\leq 1$% | 
+| Disease | Priority population | Processed prevalence | Protocol Threshold | IU Inclusion Criteria |
+| ------- | ------------------- | -------------------- | ------------------ | --------------------- |
+| LF | $\geq 5$ Years Old | True mf Prevalence | $\leq 1$% | All IUs |
+| Oncho | $\geq 5$ Years Old | True mf prevalence | $\leq 1$% | All IUs |
 
 
 ```mermaid
@@ -39,6 +43,67 @@ flowchart TD
     Composite_Country_Results --Statistical Aggregation--> Country_Agg_model_measures[Country Statistical Aggregates]
     IU_canonical --Count number of IUs that meet threshold--> Country_Agg_model_measures
 ```
+
+### The input specification
+
+In general, inside the `input_directory` should be:
+
+ - [PopulationMetadatafie.csv](#iu-meta-data-file)
+ - scenario_1\
+   - AAA\
+     - AAA00001\
+       - disease_specific_raw_file.csv
+     - .. for each IU in country AAA, with 5 digit IU code
+   - ... for each country ISO3 code
+ - ... for each scenario
+
+See below for disease specific specification:
+
+#### Oncho
+
+Expect file to be called:
+`ihme-{IU_CODE}-{SCENARIO}-200_sims-mda_stop_2040-sampling_interval_1.0-raw_all_age_data.csv`
+
+And have the following columns:
+
+- `year_id`
+- `age_start`
+- `age_end`
+- `measure`
+- `draw_0`
+- `draw_1`
+- ... for each draw
+
+We use the values whose measure is `prevalence`.
+
+#### LF
+
+Expect the file to be called: 
+`ntdmc-{IU_CODE}-lf-{SCENARIO}-200.csv`
+
+Have the following columns:
+
+- `espen_loc`
+- `year_id`
+- `age_start`
+- `age_end`
+- `measure`
+- `draw_0`
+- `draw_1`
+- .. for each draw
+
+We use the values whose measure is `true mf prevalence (all pop)`
+
+#### IU Meta Data File
+
+This should include the following columns:
+
+- IU_ID - the integer ID of the IU
+- ADMIN0ISO3 - the ISO 3 character country code
+- Priority_Population_Oncho
+- Priority_Population_LF
+
+Each row should correspond to a single IU. 
 
 ### The output specification:
 
@@ -92,10 +157,12 @@ flowchart TD
 
 
 ###### Measures
-- **processed_prevalence** - the composite prevalence in country. The prevalence for a specific draw is worked out by taking the prevalence for each IU we have results for, multiplying it by its priority population (TODO currently assumed 10000), summing across the IUs, then dividing by the priority population of all included IUs (TODO currently divided by the population of all the IUs we have data for)
-- **count_of_ius_passing_Xpct_under_threshold** - for each year, the number of IUs that in X percent of runs have gone under the threshold by this year (TODO currently by 2040 only)
-- **pct_of_ius_passing_Xpct_under_threshold** - for each year, the percentage of included IUs  (TODO currently assume there are 100 included IUs), who in X percent of runs have gone under the threshold by this year (TODO currently by 2040 only)
-- **year_of_ius_passing_Xpct_under_threshold** - the year in X percent of runs all IUs have crossed the threshold. If any IU has not reached the threshold in X percent of runs, this will be -1. Note: column year_id will be n/a for this.
+- **processed_prevalence** - the composite prevalence in country. The prevalence for a specific draw is worked out by taking the prevalence for each IU we have results for, multiplying it by its priority population, summing across the IUs, then dividing by the priority population of all included IUs. 
+- **count_of_ius_passing_Xpct_under_threshold** - for each year, the number of IUs that in X percent of runs have gone under the threshold by this year
+- **pct_of_ius_passing_Xpct_under_threshold** - for each year, the percentage of included IUs, who in X percent of runs have gone under the threshold by this year
+- **year_of_ius_passing_Xpct_under_threshold** - the year in X percent of runs all simulated IUs have crossed the threshold. If any IU has not reached the threshold in X percent of runs, this will be -1. Note: column year_id will be n/a for this.
+
+_Note: because the pct of IUs passing under the threshold is taken over the included IUs, if some IUs are included but we don't have simulation data for, then this percentage can never be 100%. However, the `year_of_ius_passing_Xpct_under_threshold` is the year all simulated IUs reach the threshold, which can happen._
 
 ##### Africa Statistical Aggregates
 
@@ -111,7 +178,7 @@ flowchart TD
 
 
 ###### Measures
-- **processed_prevalence** - the composite prevalence in Africa. The prevalence for a specific draw is worked out by taking the prevalence for each IU we have results for, multiplying it by its priority population (TODO currently assumed 10000), summing across the IUs, then dividing by the priority population of all included IUs (TODO currently divided by the population of all the IUs we have data for)
+- **processed_prevalence** - the composite prevalence in Africa. The prevalence for a specific draw is worked out by taking the prevalence for each IU we have results for, multiplying it by its priority population, summing across the IUs, then dividing by the priority population of all included IUs.
 
 ## Tests
 
