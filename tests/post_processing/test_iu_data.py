@@ -18,6 +18,17 @@ def test_iu_data_get_priority_population_iu_missing_raises_exception():
         ).get_priority_population_for_IU("AAA00001")
 
 
+def test_iu_data_without_valid_priority_population_column_raises_exception():
+    with pytest.raises(Exception) as e:
+        IUData(
+            pd.DataFrame({"IU_CODE": [], "Priority_Population_InvalidDisease": []}),
+            disease=Disease.LF,
+        )
+    assert e.match(
+        "No priority population found for disease LF, expected Priority_Population_LF"
+    )
+
+
 def test_iu_data_get_priority_population_invalid_iu_raises_exception():
     with pytest.raises(Exception):
         IUData(pd.DataFrame({"IU_CODE": []})).get_priority_population_for_IU("AAA0001")
