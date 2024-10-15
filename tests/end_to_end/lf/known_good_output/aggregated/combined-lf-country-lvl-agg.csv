@@ -44,7 +44,7 @@ scenario_0,BBB,processed_prevalence,2037,0.0122975,0.00559844,0.00638668,0.00747
 scenario_0,BBB,processed_prevalence,2038,0.0118908,0.00541123,0.00620829,0.00718284,0.00883405,0.0114163,0.0142082,0.0174027,0.0185526,0.0211244,0.00428031,0.0114163
 scenario_0,BBB,processed_prevalence,2039,0.011484,0.00505475,0.00599394,0.00697887,0.00873761,0.011055,0.0136137,0.0169032,0.0178812,0.019654,0.00411448,0.011055
 scenario_0,BBB,processed_prevalence,2040,0.0111236,0.00485071,0.00577631,0.00676169,0.00841986,0.0108579,0.0131283,0.016342,0.0175178,0.0186164,0.00400211,0.0108579
-scenario_0,BBB,pct_of_ius_passing_50pct_under_threshold,,0.01,,,,,,,,,,,
+scenario_0,BBB,pct_of_ius_passing_50pct_under_threshold,,0.5,,,,,,,,,,,
 scenario_0,BBB,pct_of_ius_passing_75pct_under_threshold,,0,,,,,,,,,,,
 scenario_0,BBB,pct_of_ius_passing_85pct_under_threshold,,0,,,,,,,,,,,
 scenario_0,BBB,pct_of_ius_passing_90pct_under_threshold,,0,,,,,,,,,,,
@@ -104,7 +104,7 @@ scenario_1,BBB,processed_prevalence,2037,0.00977277,0.00265492,0.00338253,0.0045
 scenario_1,BBB,processed_prevalence,2038,0.00944004,0.0026373,0.00337891,0.0045179,0.00603319,0.00833807,0.0119292,0.0155445,0.0187769,0.0212639,0.00480145,0.00833807
 scenario_1,BBB,processed_prevalence,2039,0.00908535,0.00259314,0.00336563,0.0041422,0.00566146,0.00829252,0.0113723,0.0147535,0.0183617,0.019701,0.00464273,0.00829252
 scenario_1,BBB,processed_prevalence,2040,0.0087972,0.00260173,0.00337307,0.00412124,0.00560958,0.00805594,0.010955,0.0146422,0.0175987,0.0190991,0.00450716,0.00805594
-scenario_1,BBB,pct_of_ius_passing_50pct_under_threshold,,0.02,,,,,,,,,,,
+scenario_1,BBB,pct_of_ius_passing_50pct_under_threshold,,1,,,,,,,,,,,
 scenario_1,BBB,pct_of_ius_passing_75pct_under_threshold,,0,,,,,,,,,,,
 scenario_1,BBB,pct_of_ius_passing_85pct_under_threshold,,0,,,,,,,,,,,
 scenario_1,BBB,pct_of_ius_passing_90pct_under_threshold,,0,,,,,,,,,,,
