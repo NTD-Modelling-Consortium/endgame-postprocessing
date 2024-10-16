@@ -24,7 +24,9 @@ def canonicalise_raw_oncho_results(input_dir, output_dir, start_year=1970, stop_
 
     for file_info in tqdm(all_files, desc="Canoncialise LF results"):
         raw_iu = pd.read_csv(file_info.file_path)
-        raw_iu_filtered = raw_iu[(raw_iu['year_id'] >= start_year) & (raw_iu['year_id'] <= stop_year)].copy()
+        raw_iu_filtered = raw_iu[
+            (raw_iu['year_id'] >= start_year) & (raw_iu['year_id'] <= stop_year)
+        ].copy()
         # TODO: canonical shouldn't need the age_start / age_end but these are assumed present later
         canonical_result = canonicalise.canonicalise_raw(
             raw_iu_filtered, file_info, "prevalence"
