@@ -1,4 +1,5 @@
 from functools import reduce
+import glob
 from operator import mul
 import os
 import re
@@ -15,6 +16,12 @@ from endgame_postprocessing.post_processing.file_util import (
     post_process_file_generator,
 )
 import pandas as pd
+
+WORM_MAPPING = {
+    "hookworm": "hookworm",
+    "ascaris": "roundworm",
+    "trichuris": "whipworm",
+}
 
 def probability_any_worm(probability_for_each_worm):
     """
@@ -45,7 +52,11 @@ def combine_many_worms(first_worm, other_worms):
 
 
 def swap_worm_in_heirachy(original_file_info, first_worm, new_worm):
-    other_worm_path = original_file_info.file_path.replace(first_worm, new_worm)
+    friendly_first_worm = WORM_MAPPING[first_worm]
+    friendly_new_worm = WORM_MAPPING[new_worm]
+    other_worm_path = original_file_info.file_path.replace(
+        first_worm, new_worm
+    ).replace(friendly_first_worm, friendly_new_worm)
 
     return CustomFileInfo(
         scenario_index=original_file_info.scenario_index,
@@ -57,32 +68,46 @@ def swap_worm_in_heirachy(original_file_info, first_worm, new_worm):
     )
 
 
-# def get_flat(input_dir):
-#     path, directories, files = next(os.walk(input_dir))
-#     for file in files:
-#         file_name_regex = r"ntdmc-(?P<country>[A-Z]{3})(?P<iu_id>\d{5})-(\w+)-group_001-(?P<scenario>scenario_(?P<scenario_index>\d))-group_001-200_simulations.csv"
-#         file_match = re.match(file_name_regex, file)
-#         if not file_match:
-#             warnings.warns(f"Unexpected file: {file}")
-#             continue
+def get_flat(input_dir):
+    files = glob.glob(
+        "**/ntdmc-*-group_001-200_simulations.csv", root_dir=input_dir, recursive=True
+    )
+    for file in files:
+        file_name_regex = r"ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-(?P<worm>\w+)-group_001-(?P<scenario>scenario_\w+)-group_001-200_simulations.csv"
+        file_match = re.search(file_name_regex, file)
+        if not file_match:
+            warnings.warn(f"Unexpected file: {file}")
+            continue
 
-#         yield CustomFileInfo(
-#             scenario_index=int(file_match("scenario_index")),
-#             total_scenarios=3,  # TODO
-#             scenario=file_match.group("scenario"),
-#             country=file_match.group("country"),
+        yield CustomFileInfo(
+            scenario_index=1,  # TODO - note scenarios are not ints, eg 2a
+            total_scenarios=3,  # TODO
+            scenario=file_match.group("scenario"),
+            country=file_match.group("country"),
+            iu=file_match.group("iu_id"),
+            file_path=f"{input_dir}/{file}",
+        )
 
-#         )
+
+def get_worm(file_path):
+    file_name_regex = r"ntdmc-[A-Z]{3}\d{5}-(?P<worm>\w+)-group_001-scenario_\w+-group_001-200_simulations.csv"
+    file_match = re.search(file_name_regex, file_path)
+    return file_match.group("worm")
 
 
 def canonicalise_raw_sth_results(input_dir, output_dir):
     worms = next(os.walk(input_dir))[1]
 
-    first_worm = worms[0]
-    other_worms = worms[1:]
-    file_iter = post_process_file_generator(
-        file_directory=f"{input_dir}/{first_worm}", end_of_file=".csv"
-    )
+    first_worm_dir = worms[0]
+    other_worms_dirs = worms[1:]
+    other_worms = [
+        get_worm(next(get_flat(f"{input_dir}/{other_worm_dir}")).file_path)
+        for other_worm_dir in other_worms_dirs
+    ]
+    # file_iter = post_process_file_generator(
+    #     file_directory=f"{input_dir}/{first_worm_dir}", end_of_file=".csv"
+    # )
+    file_iter = get_flat(f"{input_dir}/{first_worm_dir}")
 
     all_files = list(file_iter)
 
@@ -93,6 +118,7 @@ def canonicalise_raw_sth_results(input_dir, output_dir):
 
     for file_info in tqdm(all_files, desc="Canoncialise STH results"):
         canonical_result_first_worm = canoncialise_single_result(file_info)
+        first_worm = get_worm(file_info.file_path)
         other_worm_file_infos = [
             swap_worm_in_heirachy(file_info, first_worm, worm) for worm in other_worms
         ]

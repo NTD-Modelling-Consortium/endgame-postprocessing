@@ -2,8 +2,10 @@ import pandas as pd
 import pandas.testing as pdt
 from endgame_postprocessing.model_wrappers.sch.run_sch import (
     combine_many_worms,
+    get_flat,
     probability_any_worm,
 )
+from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
 
 
 def test_probability_any_worm_zero_for_all_worms():
@@ -88,3 +90,20 @@ def test_combine_many_worms_many_years():
             }
         ),
     )
+
+
+def test_flat_walk(fs):
+    fs.create_file(
+        "foo/ntdmc-AGO02049-hookworm-group_001-scenario_2a-group_001-200_simulations.csv"
+    )
+    results = list(get_flat("foo"))
+    assert results == [
+        CustomFileInfo(
+            scenario_index=1,
+            total_scenarios=3,  # TODO
+            scenario="scenario_2a",
+            country="AGO",
+            iu="AGO02049",
+            file_path="foo/ntdmc-AGO02049-hookworm-group_001-scenario_2a-group_001-200_simulations.csv",
+        )
+    ]
