@@ -36,6 +36,7 @@ class IUSelectionCriteria(Enum):
     ALL_IUS = 0
     MODELLED_IUS = 1
     ENDEMIC_IUS = 2
+    SIMULATED_IUS = 4  # ie the ones this post processing script is running against
 
 
 class IUData:
@@ -45,10 +46,14 @@ class IUData:
         input_data: pd.DataFrame,
         disease: Disease,
         iu_selection_criteria: IUSelectionCriteria,
+        simulated_IUs: list[str] = None,
     ):
         self.disease = disease
         self.input_data = input_data
         self.iu_selection_criteria = iu_selection_criteria
+        self.simulated_IUs = simulated_IUs
+        if iu_selection_criteria is IUSelectionCriteria.SIMULATED_IUS:
+            assert simulated_IUs != None
         # TODO: validate the required columns are as expcted
 
         population_column_name = self._get_priority_population_column_name()
@@ -107,6 +112,8 @@ class IUData:
             return self._get_modelled_ius()
         if self.iu_selection_criteria == IUSelectionCriteria.ENDEMIC_IUS:
             return self._get_endemic_ius()
+        if self.iu_selection_criteria == IUSelectionCriteria.SIMULATED_IUS:
+            return self._get_simulated_ius()
         raise Exception(f"Invalid IU Selection Criteria {self.iu_selection_criteria}")
 
     def _get_modelled_ius(self):
@@ -120,6 +127,9 @@ class IUData:
     def _get_modelled_column_name(self):
         disease_str = _get_capitalised_disease(self.disease)
         return f"Modelled_{disease_str}"
+
+    def _get_simulated_ius(self):
+        return self.input_data.loc[self.input_data["IU_CODE"].isin(self.simulated_IUs)]
 
     def _get_endemic_ius(self):
         endemic_column = self._get_endemic_column_name()
