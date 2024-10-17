@@ -113,6 +113,7 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str, num_jobs: int):
     """
     Aggregates into standard format the input files found in input_dir.
     input_dir must have the following substructure:
+        PopulationMetadatafile.csv
         worm1/
             scenario1/
                 country1/
