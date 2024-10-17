@@ -12,9 +12,6 @@ from endgame_postprocessing.post_processing import (
 )
 from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
-from endgame_postprocessing.post_processing.file_util import (
-    post_process_file_generator,
-)
 import pandas as pd
 
 WORM_MAPPING = {
@@ -73,7 +70,7 @@ def get_flat(input_dir):
         "**/ntdmc-*-group_001-200_simulations.csv", root_dir=input_dir, recursive=True
     )
     for file in files:
-        file_name_regex = r"ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-(?P<worm>\w+)-group_001-(?P<scenario>scenario_\w+)-group_001-200_simulations.csv"
+        file_name_regex = r"ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-(?P<worm>\w+)-group_001-(?P<scenario>scenario_\w+)-group_001-200_simulations.csv"  # noqa 501
         file_match = re.search(file_name_regex, file)
         if not file_match:
             warnings.warn(f"Unexpected file: {file}")
@@ -90,7 +87,7 @@ def get_flat(input_dir):
 
 
 def get_worm(file_path):
-    file_name_regex = r"ntdmc-[A-Z]{3}\d{5}-(?P<worm>\w+)-group_001-scenario_\w+-group_001-200_simulations.csv"
+    file_name_regex = r"ntdmc-[A-Z]{3}\d{5}-(?P<worm>\w+)-group_001-scenario_\w+-group_001-200_simulations.csv"  # noqa 501
     file_match = re.search(file_name_regex, file_path)
     return file_match.group("worm")
 
@@ -167,9 +164,9 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str, num_jobs: int):
     Note this will be looking at prevalence across any worm.
 
     """
-    canonicalise_raw_sth_results(input_dir, output_dir)
+    # canonicalise_raw_sth_results(input_dir, output_dir)
     pipeline.pipeline(input_dir, output_dir, disease=Disease.STH)
 
 
 if __name__ == "__main__":
-    run_postprocessing_pipeline("local_data/sth-small", "local_data/sth-output", 1)
+    run_postprocessing_pipeline("local_data/sth-fresh", "local_data/sth-output", 1)

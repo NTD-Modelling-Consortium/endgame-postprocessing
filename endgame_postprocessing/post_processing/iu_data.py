@@ -54,7 +54,7 @@ class IUData:
         self.iu_selection_criteria = iu_selection_criteria
         self.simulated_IUs = simulated_IUs
         if iu_selection_criteria is IUSelectionCriteria.SIMULATED_IUS:
-            assert simulated_IUs != None
+            assert simulated_IUs is not None
         # TODO: validate the required columns are as expcted
 
         population_column_name = self._get_priority_population_column_name()
