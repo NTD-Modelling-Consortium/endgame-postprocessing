@@ -61,9 +61,21 @@ def canonicalise_raw_sth_results(input_dir, output_dir):
             file_info.file_path.replace(first_worm, worm) for worm in other_worms
         ]
 
-        other_worms_canoncial = [
-            canoncialise_single_result(other_worm_path)
+        other_worm_file_infos = [
+            CustomFileInfo(
+                scenario_index=file_info.scenario_index,
+                scenario=file_info.scenario,
+                country=file_info.country,
+                file_path=other_worm_path,
+                iu=file_info.iu,
+                total_scenarios=file_info.total_scenarios,
+            )
             for other_worm_path in other_worm_paths
+        ]
+
+        other_worms_canoncial = [
+            canoncialise_single_result(other_worm_file_info)
+            for other_worm_file_info in other_worm_file_infos
         ]
 
         all_worms_canonical = combine_many_worms(
