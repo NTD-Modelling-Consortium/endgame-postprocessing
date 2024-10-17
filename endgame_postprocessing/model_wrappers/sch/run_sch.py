@@ -164,7 +164,7 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str, num_jobs: int):
     Note this will be looking at prevalence across any worm.
 
     """
-    # canonicalise_raw_sth_results(input_dir, output_dir)
+    canonicalise_raw_sth_results(input_dir, output_dir)
     pipeline.pipeline(input_dir, output_dir, disease=Disease.STH)
 
 
