@@ -18,6 +18,8 @@ def _get_capitalised_disease(disease: Disease):
         return "Oncho"
     elif disease is Disease.LF:
         return "LF"
+    elif disease is Disease.STH:
+        return "STH"
     raise Exception(f"Invalid disease {disease}")
 
 
@@ -113,8 +115,6 @@ class IUData:
 
     def _get_priority_population_column_name(self):
         disease_str = _get_capitalised_disease(self.disease)
-        elif self.disease is Disease.STH:
-            disease_str = "STH"
         return f"Priority_Population_{disease_str}"
 
     def _get_modelled_column_name(self):
