@@ -75,6 +75,8 @@ class IUData:
             disease_str = "Oncho"
         elif self.disease is Disease.LF:
             disease_str = "LF"
+        elif self.disease is Disease.STH:
+            disease_str = "STH"
         else:
             raise Exception(f"Invalid disease {self.disease}")
         return f"Priority_Population_{disease_str}"

@@ -1,11 +1,16 @@
 from functools import reduce
 from operator import mul
 import os
+import re
+import warnings
 from tqdm import tqdm
 from endgame_postprocessing.post_processing import (
     canonicalise,
     output_directory_structure,
+    pipeline,
 )
+from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
+from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.file_util import (
     post_process_file_generator,
 )
@@ -37,6 +42,24 @@ def combine_many_worms(first_worm, other_worms):
         [first_worm.loc[:, "draw_0":]] + other_worm_draws
     )
     return first_worm
+
+
+# def get_flat(input_dir):
+#     path, directories, files = next(os.walk(input_dir))
+#     for file in files:
+#         file_name_regex = r"ntdmc-(?P<country>[A-Z]{3})(?P<iu_id>\d{5})-(\w+)-group_001-(?P<scenario>scenario_(?P<scenario_index>\d))-group_001-200_simulations.csv"
+#         file_match = re.match(file_name_regex, file)
+#         if not file_match:
+#             warnings.warns(f"Unexpected file: {file}")
+#             continue
+
+#         yield CustomFileInfo(
+#             scenario_index=int(file_match("scenario_index")),
+#             total_scenarios=3,  # TODO
+#             scenario=file_match.group("scenario"),
+#             country=file_match.group("country"),
+
+#         )
 
 
 def canonicalise_raw_sth_results(input_dir, output_dir):
@@ -84,3 +107,41 @@ def canonicalise_raw_sth_results(input_dir, output_dir):
         output_directory_structure.write_canonical(
             output_dir, file_info, all_worms_canonical
         )
+
+
+def run_postprocessing_pipeline(input_dir: str, output_dir: str, num_jobs: int):
+    """
+    Aggregates into standard format the input files found in input_dir.
+    input_dir must have the following substructure:
+        worm1/
+            scenario1/
+                country1/
+                    iu1/
+                        iu.csv
+            scenario2/
+        worm2/
+
+    The output directory must be empty.
+    On completion the sub-structure will be:
+    output_dir/
+        ius/
+            a csv per IU with name format
+            scenario1_iu1_post_processed.csv
+        aggregated/
+            combined-lf-iu-lvl-agg.csv - all IUs in one csv
+                a aggregated by country csv
+            combined-lf-country-lvl-agg.csv - aggregate by country
+            combined-lf-africa-lvl-agg.csv - aggregated across Africa
+    Arguments:
+        input_dir (str): The directory to search for input files.
+        output_dir (str): The directory to store the output files.
+
+    Note this will be looking at prevalence across any worm.
+
+    """
+    canonicalise_raw_sth_results(input_dir, output_dir)
+    pipeline.pipeline(input_dir, output_dir, disease=Disease.STH)
+
+
+if __name__ == "__main__":
+    run_postprocessing_pipeline("local_data/sth-small", "local_data/sth-output", 1)
