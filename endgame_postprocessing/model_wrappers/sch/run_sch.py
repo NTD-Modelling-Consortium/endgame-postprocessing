@@ -40,7 +40,7 @@ def combine_many_worms(first_worm, other_worms):
 
 
 def canonicalise_raw_sth_results(input_dir, output_dir):
-    worms = next(os.walk("."))[1]
+    worms = next(os.walk(input_dir))[1]
 
     first_worm = worms[0]
     other_worms = worms[1:]
