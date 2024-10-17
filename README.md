@@ -102,6 +102,10 @@ This should include the following columns:
 - ADMIN0ISO3 - the ISO 3 character country code
 - Priority_Population_Oncho
 - Priority_Population_LF
+- Endemecity_Oncho - the endemecity of Oncho (one of 'Endemic (under post-intervention surveillance)', 'Not reported', 'Endemic (pending IA)', 'Unknown (consider Oncho Elimination Mapping)', 'Unknown (under LF MDA)', 'Non-endemic', 'Endemic (MDA not delivered)', 'Endemic (under MDA)')
+- Endemecity_LF - The endemecity of LF (one of 'Endemicity unknown', 'Endemic (under post-intervention surveillance)', 'Endemic (pending IA)', 'Not reported', 'Non-endemic', 'Endemic (MDA not delivered)', 'Endemic (under MDA)')
+
+See [endemecity_classification.py](endgame_postprocessing/post_processing/endemicity_classification.py) for details of what are considered endemic.
 
 Each row should correspond to a single IU. 
 
