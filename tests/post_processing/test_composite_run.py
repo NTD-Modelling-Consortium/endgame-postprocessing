@@ -2,7 +2,7 @@ import pandas as pd
 import pandas.testing as pdt
 from endgame_postprocessing.post_processing import composite_run
 from endgame_postprocessing.post_processing.disease import Disease
-from endgame_postprocessing.post_processing.iu_data import IUData
+from endgame_postprocessing.post_processing.iu_data import IUData, IUSelectionCriteria
 
 
 def test_build_iu_case_numbers():
@@ -34,6 +34,7 @@ def test_build_composite_run_from_one_iu():
             }
         ),
         disease=Disease.LF,
+        iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
     )
     result = composite_run.build_composite_run([canoncial_iu], population_data)
     pdt.assert_frame_equal(
@@ -83,6 +84,7 @@ def test_build_composite_run_from_two_iu_but_second_iu_ignored():
             }
         ),
         disease=Disease.LF,
+        iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
     )
     result = composite_run.build_composite_run(
         [canoncial_iu1, canoncial_iu2], population_data
@@ -134,6 +136,7 @@ def test_build_composite_run_from_two_equal_sized_ius():
             }
         ),
         disease=Disease.LF,
+        iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
     )
     result = composite_run.build_composite_run(
         [canoncial_iu1, canoncial_iu2], population_data
@@ -185,6 +188,7 @@ def test_build_composite_run_retains_year_id():
             }
         ),
         disease=Disease.LF,
+        iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
     )
     result = composite_run.build_composite_run(
         [canoncial_iu1, canoncial_iu2], population_data
@@ -236,6 +240,7 @@ def test_build_composite_multiple_scenarios():
             }
         ),
         disease=Disease.LF,
+        iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
     )
     result = composite_run.build_composite_run_multiple_scenarios(
         [canoncial_iu_scenario_1, canoncial_iu_scenario_2], population_data
