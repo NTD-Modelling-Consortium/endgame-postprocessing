@@ -44,6 +44,19 @@ def combine_many_worms(first_worm, other_worms):
     return first_worm
 
 
+def swap_worm_in_heirachy(original_file_info, first_worm, new_worm):
+    other_worm_path = original_file_info.file_path.replace(first_worm, new_worm)
+
+    return CustomFileInfo(
+        scenario_index=original_file_info.scenario_index,
+        scenario=original_file_info.scenario,
+        country=original_file_info.country,
+        file_path=other_worm_path,
+        iu=original_file_info.iu,
+        total_scenarios=original_file_info.total_scenarios,
+    )
+
+
 # def get_flat(input_dir):
 #     path, directories, files = next(os.walk(input_dir))
 #     for file in files:
@@ -80,20 +93,8 @@ def canonicalise_raw_sth_results(input_dir, output_dir):
 
     for file_info in tqdm(all_files, desc="Canoncialise STH results"):
         canonical_result_first_worm = canoncialise_single_result(file_info)
-        other_worm_paths = [
-            file_info.file_path.replace(first_worm, worm) for worm in other_worms
-        ]
-
         other_worm_file_infos = [
-            CustomFileInfo(
-                scenario_index=file_info.scenario_index,
-                scenario=file_info.scenario,
-                country=file_info.country,
-                file_path=other_worm_path,
-                iu=file_info.iu,
-                total_scenarios=file_info.total_scenarios,
-            )
-            for other_worm_path in other_worm_paths
+            swap_worm_in_heirachy(file_info, first_worm, worm) for worm in other_worms
         ]
 
         other_worms_canoncial = [
