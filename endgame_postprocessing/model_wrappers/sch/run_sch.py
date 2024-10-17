@@ -24,10 +24,10 @@ def probability_any_worm(probability_for_each_worm):
 
 def canoncialise_single_result(file_info):
     raw_iu = pd.read_csv(file_info.file_path)
-    raw_without_columns = raw_iu.drop(columns=["espen_loc"])
+    raw_without_columns = raw_iu.drop(columns=["intensity", "species"])
     # TODO: canonical shouldn't need the age_start / age_end but these are assumed present later
     return canonicalise.canonicalise_raw(
-        raw_without_columns, file_info, "true mf prevalence (all pop)"
+        raw_without_columns, file_info, "Prevalence Whole Population"
     )
 
 
