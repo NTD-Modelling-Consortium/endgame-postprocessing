@@ -32,7 +32,7 @@ def canoncialise_single_result(file_info):
     raw_without_columns = raw_iu.drop(columns=["intensity", "species"])
     # TODO: canonical shouldn't need the age_start / age_end but these are assumed present later
     return canonicalise.canonicalise_raw(
-        raw_without_columns, file_info, "Prevalence Whole Population"
+        raw_without_columns, file_info, "Prevalence SAC"
     )
 
 
