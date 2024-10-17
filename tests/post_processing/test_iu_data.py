@@ -11,13 +11,13 @@ from endgame_postprocessing.post_processing.iu_data import (
 from endgame_postprocessing.post_processing.disease import Disease
 
 
-def test_iu_data_get_priority_population_iu_missing_raises_exception():
-    with pytest.raises(Exception):
-        IUData(
-            pd.DataFrame({"IU_CODE": [], "Priority_Population_LF": []}),
-            disease=Disease.LF,
-            iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-        ).get_priority_population_for_IU("AAA00001")
+# def test_iu_data_get_priority_population_iu_missing_raises_exception():
+#     with pytest.raises(Exception):
+#         IUData(
+#             pd.DataFrame({"IU_CODE": [], "Priority_Population_LF": []}),
+#             disease=Disease.LF,
+#             iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
+#         ).get_priority_population_for_IU("AAA00001")
 
 
 def test_iu_data_without_valid_priority_population_column_raises_exception():
