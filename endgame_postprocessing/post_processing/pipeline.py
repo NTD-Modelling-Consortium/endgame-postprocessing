@@ -137,12 +137,23 @@ def pipeline(input_dir, working_directory, disease: Disease):
         working_directory,
     )
 
+    all_ius = [
+        file_info.iu
+        for file_info in post_process_file_generator(
+            file_directory=output_directory_structure.get_canonical_dir(
+                working_directory
+            ),
+            end_of_file="_canonical.csv",
+        )
+    ]
+
     iu_meta_data = IUData(
         iu_data.preprocess_iu_meta_data(
             pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv")
         ),
         disease,
-        iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
+        iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
+        simulated_IUs=all_ius,
     )
 
     all_iu_data = (

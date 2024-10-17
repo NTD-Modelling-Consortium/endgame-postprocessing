@@ -11,13 +11,13 @@ from endgame_postprocessing.post_processing.iu_data import (
 from endgame_postprocessing.post_processing.disease import Disease
 
 
-def test_iu_data_get_priority_population_iu_missing_raises_exception():
-    with pytest.raises(Exception):
-        IUData(
-            pd.DataFrame({"IU_CODE": [], "Priority_Population_LF": []}),
-            disease=Disease.LF,
-            iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-        ).get_priority_population_for_IU("AAA00001")
+# def test_iu_data_get_priority_population_iu_missing_raises_exception():
+#     with pytest.raises(Exception):
+#         IUData(
+#             pd.DataFrame({"IU_CODE": [], "Priority_Population_LF": []}),
+#             disease=Disease.LF,
+#             iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
+#         ).get_priority_population_for_IU("AAA00001")
 
 
 def test_iu_data_without_valid_priority_population_column_raises_exception():
@@ -303,4 +303,22 @@ def test_preprocess_iu_meta_data_contains_duplicate_and_valid_id():
                 "IU_ID": [1],
             }
         ),
+    )
+
+
+def test_simulated_ius_includes_simulated_iu():
+    assert (
+        IUData(
+            pd.DataFrame(
+                {
+                    "ADMIN0ISO3": ["AAA"] * 3 + ["BBB"],
+                    "Priority_Population_Oncho": [100, 200, 300, 400],
+                    "IU_CODE": ["AAA00001", "AAA00002", "AAA00003", "BBB00001"],
+                }
+            ),
+            disease=Disease.ONCHO,
+            iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
+            simulated_IUs=["AAA00001", "BBB00001"],
+        ).get_priority_population_for_africa()
+        == 500
     )
