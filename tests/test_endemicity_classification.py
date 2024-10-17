@@ -32,6 +32,15 @@ def test_endemecity_classifier_is_nan_is_non_endemic():
     assert classifier.is_state_endemic(pd.NA)
 
 
+def test_endemecity_classifier_is_nan_is_endemic_if_configured():
+    classifier = EndemicityClassifier(
+        endemic_states={"endemic"},
+        non_endemic_states={"non-endemic"},
+        missing_data_is_endemic=False,
+    )
+    assert not classifier.is_state_endemic(pd.NA)
+
+
 def test_endemecity_classifier_invalid_state():
     classifier = EndemicityClassifier(
         endemic_states={"endemic"},
