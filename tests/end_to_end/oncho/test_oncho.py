@@ -5,12 +5,25 @@ import endgame_postprocessing.model_wrappers.oncho.testRun as oncho_runner
 from pathlib import Path
 import pandas as pd
 import pandas.testing as pdt
+import pytest
 
 from tests.end_to_end.generate_snapshot_dictionary import (
     generate_flat_snapshot_set,
     generate_snapshot_dictionary,
 )
 
+def test_oncho_empty_input_directory(mocker):
+    with pytest.raises(Exception) as exception:
+        file_gen_mock = mocker.patch(
+            "endgame_postprocessing.model_wrappers.oncho.testRun.post_process_file_generator"
+        )
+        file_gen_mock.return_value = []
+        oncho_runner.run_postprocessing_pipeline(
+            input_dir=Path(__file__).parent / "empty_input_data",
+            output_dir=Path(__file__).parent / "generated_data"
+        )
+
+        assert "No scenario directories found in empty_input_data" == str(exception)
 
 def test_oncho_end_to_end(snapshot):
     input_data = Path(__file__).parent / "example_input_data"
