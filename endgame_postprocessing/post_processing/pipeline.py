@@ -31,7 +31,7 @@ from tqdm import tqdm
 import pandas as pd
 
 
-def iu_statistical_aggregates(working_directory):
+def iu_statistical_aggregates(working_directory, threshold):
     file_iter = post_process_file_generator(
         file_directory=output_directory_structure.get_canonical_dir(working_directory),
         end_of_file="_canonical.csv",
@@ -45,6 +45,7 @@ def iu_statistical_aggregates(working_directory):
                 prevalence_marker_name=canoncical_columns.PROCESSED_PREVALENCE,
                 post_processing_start_time=1970,
                 post_processing_end_time=2041,
+                threshold=threshold,
                 measure_summary_map={
                     canoncical_columns.PROCESSED_PREVALENCE: measure_summary_float
                 },
@@ -134,9 +135,7 @@ def country_aggregate(country_composite, iu_lvl_data, country_code, iu_meta_data
 
 
 def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
-    iu_statistical_aggregates(
-        working_directory,
-    )
+    iu_statistical_aggregates(working_directory, threshold=pipeline_config.threshold)
 
     all_ius = [
         file_info.iu
