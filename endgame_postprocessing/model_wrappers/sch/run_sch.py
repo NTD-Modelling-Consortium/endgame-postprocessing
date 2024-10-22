@@ -94,6 +94,13 @@ def get_sth_flat(input_dir):
     )
 
 
+def get_sch_flat(input_dir):
+    return _get_flat_regex(
+        r"ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-(?P<worm>[\w_]+)-group_001-(?P<scenario>scenario_\w+)-survey_type_kk2-group_001-200_simulations.csv",
+        input_dir,
+    )
+
+
 def get_sth_worm(file_path):
     file_name_regex = r"ntdmc-[A-Z]{3}\d{5}-(?P<worm>\w+)-group_001-scenario_\w+-group_001-200_simulations.csv"  # noqa 501
     file_match = re.search(file_name_regex, file_path)
@@ -147,7 +154,24 @@ def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
         )
 
 
-def run_postprocessing_pipeline(
+def canonicalise_raw_sch_results(input_dir, output_dir):
+    file_iter = get_sch_flat(f"{input_dir}")
+
+    all_files = list(file_iter)
+
+    if len(all_files) == 0:
+        raise Exception(
+            "No data for IUs found - see above warnings and check input directory"
+        )
+
+    for file_info in tqdm(all_files, desc="Canoncialise SCH results"):
+        canonical_result = canoncialise_single_result(file_info)
+        output_directory_structure.write_canonical(
+            output_dir, file_info, canonical_result
+        )
+
+
+def run_sth_postprocessing_pipeline(
     input_dir: str,
     output_dir: str,
     worm_directories: list[str],
@@ -197,13 +221,41 @@ def run_postprocessing_pipeline(
     pipeline.pipeline(input_dir, output_dir, config)
 
 
+def run_sch_postprocessing_pipeline(input_dir, output_dir, skip_canonical=False):
+    if not skip_canonical:
+        canonicalise_raw_sch_results(input_dir, output_dir)
+    config = PipelineConfig(
+        disease=Disease.SCH,
+        threshold=0.1,
+        include_country_and_continent_summaries=False,
+    )
+    pipeline.pipeline(input_dir, output_dir, config)
+
+
 if __name__ == "__main__":
-    input_dir = "local_data/sth-fresh"
-    worm_directories = next(os.walk(input_dir))[1]
+    #     input_dir = "local_data/sth-fresh-backup"
+    #     worm_directories = next(os.walk(input_dir))[1]
+    #     for worm_directory in worm_directories:
+    #         run_sth_postprocessing_pipeline(
+    #             input_dir,
+    #             f"local_data/sth-output-single-worm/{worm_directory}",
+    #             [worm_directory],
+    #             1,
+    #             skip_canonical=worm_directory == "sth-202410a-roundworm-flat-ntdmc-only",
+    #         )
+    #     run_sth_postprocessing_pipeline(
+    #         input_dir,
+    #         "local_data/sth-output-all-worm/",
+    #         worm_directories,
+    #         1,
+    #         skip_canonical=False,
+    #     )
+
+    root_input_dir = "local_data/sch-pilot/202410b-SCH-test-2-20241022"
+    worm_directories = next(os.walk(root_input_dir))[1]
     for worm_directory in worm_directories:
-        run_postprocessing_pipeline(
-            input_dir,
-            f"local_data/sth-output-single-worm-small/{worm_directory}",
-            [worm_directory],
-            1,
+        run_sch_postprocessing_pipeline(
+            f"{root_input_dir}/{worm_directory}",
+            f"local_data/sch-output-single-worm/{worm_directory}",
+            skip_canonical=False,
         )
