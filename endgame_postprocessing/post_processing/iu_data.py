@@ -21,6 +21,8 @@ def _get_capitalised_disease(disease: Disease):
         return "LF"
     elif disease is Disease.STH:
         return "STH"
+    elif disease is Disease.SCH:
+        return "Schisto"
     raise Exception(f"Invalid disease {disease}")
 
 
