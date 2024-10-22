@@ -6,3 +6,4 @@ from endgame_postprocessing.post_processing.disease import Disease
 class PipelineConfig:
     disease: Disease
     threshold: float = 0.01
+    include_country_and_continent_summaries: bool = True

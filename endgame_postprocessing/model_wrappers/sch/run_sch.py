@@ -183,7 +183,11 @@ def run_postprocessing_pipeline(
     if not skip_canonical:
         canonicalise_raw_sth_results(input_dir, output_dir, worm_directories)
 
-    config = PipelineConfig(disease=Disease.STH, threshold=0.1)
+    config = PipelineConfig(
+        disease=Disease.STH,
+        threshold=0.1,
+        include_country_and_continent_summaries=False,
+    )
     pipeline.pipeline(input_dir, output_dir, config)
 
 

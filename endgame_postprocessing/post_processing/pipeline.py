@@ -167,6 +167,9 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
         working_directory, all_iu_data, pipeline_config.disease
     )
 
+    if not pipeline_config.include_country_and_continent_summaries:
+        return
+
     country_aggregates = [
         country_aggregate(
             country_composite,
