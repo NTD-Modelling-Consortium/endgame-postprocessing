@@ -43,6 +43,43 @@ for worm_directory in worm_directories:
     )
 ```
 
+## Schisto
+
+At the moment, Schisto can only be run on each worm individually: 
+
+```python
+import endgame_postprocessing.model_wrappers.sch.run_sch as run_sch
+
+root_input_dir = # TODO
+worm_directories = next(os.walk(root_input_dir))[1]
+for worm_directory in worm_directories:
+    run_sch.run_sch_postprocessing_pipeline(
+        f"{root_input_dir}/{worm_directory}",
+        f"local_data/sch-output-single-worm/{worm_directory}",
+        skip_canonical=False,
+    )
+```
+
+It expects files inside this directory (arbitrarily nested) matching the following regex:
+
+```
+ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-[\w_]+-group_001-(?P<scenario>scenario_\w+)-survey_type_kk2-group_001-200_simulations.csv
+```
+
+Additionally, each worm directory needs to have a copy of the `PopulationMetadatafile.csv`.
+That is, the root_input_dir should look like:
+
+root_input_dir/ 
+ - sch-haematobium/
+   - PopulationMetadatafile.csv
+   - **/ntdmc-*.csv
+ - sch-mansoni-high-burden/
+   - PopulationMetadatafile.csv
+   - **/ntdmc-*.csv
+ - sch-mansoni-low-burden/
+   - PopulationMetadatafile.csv
+   - **/ntdmc-*.csv
+
 ## skip_canonical
 
 In all cases, there is an optional parameter `skip_canonical`, if this is
