@@ -29,10 +29,12 @@ run_sch.run_sth_postprocessing_pipeline(
 Alternatively, can be run for each worm separately:
 
 ```python
+import endgame_postprocessing.model_wrappers.sch.run_sch as run_sch
+
 input_dir = # TODO
 worm_directories = next(os.walk(input_dir))[1]
 for worm_directory in worm_directories:
-    run_sth_postprocessing_pipeline(
+    run_sch.run_sth_postprocessing_pipeline(
         input_dir,
         f"local_data/sth-output-single-worm/{worm_directory}",
         [worm_directory],
