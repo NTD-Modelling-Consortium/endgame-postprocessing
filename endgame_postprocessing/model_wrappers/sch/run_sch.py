@@ -67,12 +67,11 @@ def swap_worm_in_heirachy(original_file_info, first_worm, new_worm):
     )
 
 
-def get_flat(input_dir):
+def _get_flat_regex(file_name_regex, input_dir):
     files = glob.glob(
         "**/ntdmc-*-group_001-200_simulations.csv", root_dir=input_dir, recursive=True
     )
     for file in files:
-        file_name_regex = r"ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-(?P<worm>\w+)-group_001-(?P<scenario>scenario_\w+)-group_001-200_simulations.csv"  # noqa 501
         file_match = re.search(file_name_regex, file)
         if not file_match:
             warnings.warn(f"Unexpected file: {file}")
@@ -88,7 +87,14 @@ def get_flat(input_dir):
         )
 
 
-def get_worm(file_path):
+def get_sth_flat(input_dir):
+    return _get_flat_regex(
+        r"ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-(?P<worm>\w+)-group_001-(?P<scenario>scenario_\w+)-group_001-200_simulations.csv",
+        input_dir,
+    )
+
+
+def get_sth_worm(file_path):
     file_name_regex = r"ntdmc-[A-Z]{3}\d{5}-(?P<worm>\w+)-group_001-scenario_\w+-group_001-200_simulations.csv"  # noqa 501
     file_match = re.search(file_name_regex, file_path)
     return file_match.group("worm")
@@ -106,13 +112,13 @@ def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
 
     other_worms_dirs = worm_directories[1:]
     other_worms = [
-        get_worm(next(get_flat(f"{input_dir}/{other_worm_dir}")).file_path)
+        get_sth_worm(next(get_sth_flat(f"{input_dir}/{other_worm_dir}")).file_path)
         for other_worm_dir in other_worms_dirs
     ]
     # file_iter = post_process_file_generator(
     #     file_directory=f"{input_dir}/{first_worm_dir}", end_of_file=".csv"
     # )
-    file_iter = get_flat(f"{input_dir}/{first_worm_dir}")
+    file_iter = get_sth_flat(f"{input_dir}/{first_worm_dir}")
 
     all_files = list(file_iter)
 
@@ -123,7 +129,7 @@ def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
 
     for file_info in tqdm(all_files, desc="Canoncialise STH results"):
         canonical_result_first_worm = canoncialise_single_result(file_info)
-        first_worm = get_worm(file_info.file_path)
+        first_worm = get_sth_worm(file_info.file_path)
         other_worm_file_infos = [
             swap_worm_in_heirachy(file_info, first_worm, worm) for worm in other_worms
         ]

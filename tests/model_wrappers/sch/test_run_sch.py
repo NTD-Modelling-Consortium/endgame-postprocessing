@@ -2,7 +2,7 @@ import pandas as pd
 import pandas.testing as pdt
 from endgame_postprocessing.model_wrappers.sch.run_sch import (
     combine_many_worms,
-    get_flat,
+    get_sth_flat,
     probability_any_worm,
 )
 from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
@@ -96,7 +96,7 @@ def test_flat_walk(fs):
     fs.create_file(
         "foo/ntdmc-AGO02049-hookworm-group_001-scenario_2a-group_001-200_simulations.csv"
     )
-    results = list(get_flat("foo"))
+    results = list(get_sth_flat("foo"))
     assert results == [
         CustomFileInfo(
             scenario_index=1,
