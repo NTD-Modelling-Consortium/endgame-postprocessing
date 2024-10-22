@@ -14,6 +14,8 @@ from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
 import pandas as pd
 
+from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
+
 WORM_MAPPING = {
     "hookworm": "hookworm",
     "ascaris": "roundworm",
@@ -180,7 +182,9 @@ def run_postprocessing_pipeline(
     """
     if not skip_canonical:
         canonicalise_raw_sth_results(input_dir, output_dir, worm_directories)
-    pipeline.pipeline(input_dir, output_dir, disease=Disease.STH)
+
+    config = PipelineConfig(disease=Disease.STH)
+    pipeline.pipeline(input_dir, output_dir, config)
 
 
 if __name__ == "__main__":

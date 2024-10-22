@@ -10,6 +10,8 @@ from endgame_postprocessing.post_processing.file_util import (
 )
 import pandas as pd
 
+from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
+
 
 def canonicalise_raw_lf_results(input_dir, output_dir):
     file_iter = post_process_file_generator(
@@ -62,7 +64,7 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str, num_jobs: int):
 
     """
     canonicalise_raw_lf_results(input_dir, output_dir)
-    pipeline.pipeline(input_dir, output_dir, disease=Disease.LF)
+    pipeline.pipeline(input_dir, output_dir, PipelineConfig(disease=Disease.LF))
 
 if __name__ == "__main__":
     run_postprocessing_pipeline("local_data/lf", "local_data/lf-output", 1)

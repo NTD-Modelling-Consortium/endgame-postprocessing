@@ -10,6 +10,8 @@ from endgame_postprocessing.post_processing.file_util import (
 from tqdm import tqdm
 import pandas as pd
 
+from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
+
 
 def canonicalise_raw_oncho_results(input_dir, output_dir, start_year=1970, stop_year=2041):
     file_iter = post_process_file_generator(
@@ -34,4 +36,4 @@ oncho_dir = "local_data/oncho"
 working_directory = "local_data/output"
 
 canonicalise_raw_oncho_results(oncho_dir, working_directory, 1970, 2041)
-pipeline.pipeline(oncho_dir, working_directory, disease=Disease.ONCHO)
+pipeline.pipeline(oncho_dir, working_directory, PipelineConfig(disease=Disease.ONCHO))
