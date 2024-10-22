@@ -92,11 +92,17 @@ def get_worm(file_path):
     return file_match.group("worm")
 
 
-def canonicalise_raw_sth_results(input_dir, output_dir):
-    worms = next(os.walk(input_dir))[1]
+def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
+    if len(worm_directories) == 0:
+        raise Exception("Must provide at least one worm directory")
+    first_worm_dir = worm_directories[0]
 
-    first_worm_dir = worms[0]
-    other_worms_dirs = worms[1:]
+    if not os.path.exists(f"{input_dir}/{first_worm_dir}"):
+        raise Exception(
+            f"Could not find worm directory {first_worm_dir} inside {input_dir}"
+        )
+
+    other_worms_dirs = worm_directories[1:]
     other_worms = [
         get_worm(next(get_flat(f"{input_dir}/{other_worm_dir}")).file_path)
         for other_worm_dir in other_worms_dirs
@@ -134,7 +140,11 @@ def canonicalise_raw_sth_results(input_dir, output_dir):
 
 
 def run_postprocessing_pipeline(
-    input_dir: str, output_dir: str, num_jobs: int, skip_canonical=False
+    input_dir: str,
+    output_dir: str,
+    worm_directories: list[str],
+    num_jobs: int,
+    skip_canonical=False,
 ):
     """
     Aggregates into standard format the input files found in input_dir.
@@ -162,14 +172,24 @@ def run_postprocessing_pipeline(
     Arguments:
         input_dir (str): The directory to search for input files.
         output_dir (str): The directory to store the output files.
+        worm_directories (list[str]) The worm directories within input_dir
+           to combine. Provide a single worm directory to process a single worm
 
     Note this will be looking at prevalence across any worm.
 
     """
     if not skip_canonical:
-        canonicalise_raw_sth_results(input_dir, output_dir)
+        canonicalise_raw_sth_results(input_dir, output_dir, worm_directories)
     pipeline.pipeline(input_dir, output_dir, disease=Disease.STH)
 
 
 if __name__ == "__main__":
-    run_postprocessing_pipeline("local_data/sth-fresh", "local_data/sth-output", 1)
+    input_dir = "local_data/sth-fresh"
+    worm_directories = next(os.walk(input_dir))[1]
+    for worm_directory in worm_directories:
+        run_postprocessing_pipeline(
+            input_dir,
+            f"local_data/sth-output-single-worm-small/{worm_directory}",
+            [worm_directory],
+            1,
+        )
