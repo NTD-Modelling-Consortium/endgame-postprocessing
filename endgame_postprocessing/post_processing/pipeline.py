@@ -15,7 +15,6 @@ from endgame_postprocessing.post_processing.aggregation import (
     iu_lvl_aggregate,
     country_lvl_aggregate,
 )
-from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.iu_data import IUData, IUSelectionCriteria
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 from endgame_postprocessing.post_processing.single_file_post_processing import (
