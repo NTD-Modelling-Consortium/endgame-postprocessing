@@ -183,7 +183,7 @@ def run_postprocessing_pipeline(
         worm_directories (list[str]) The worm directories within input_dir
            to combine. Provide a single worm directory to process a single worm
 
-    Note this will be looking at prevalence across any worm.
+    Note this will be looking at prevalence across any worm specified in the worm_directories
 
     """
     if not skip_canonical:
