@@ -17,6 +17,7 @@ from endgame_postprocessing.post_processing.aggregation import (
 )
 from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.iu_data import IUData, IUSelectionCriteria
+from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 from endgame_postprocessing.post_processing.single_file_post_processing import (
     process_single_file,
     measure_summary_float,
@@ -132,7 +133,7 @@ def country_aggregate(country_composite, iu_lvl_data, country_code, iu_meta_data
     return pd.concat([country_statistical_aggregates, country_iu_summary_aggregates])
 
 
-def pipeline(input_dir, working_directory, disease: Disease):
+def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
     iu_statistical_aggregates(
         working_directory,
     )
@@ -151,7 +152,7 @@ def pipeline(input_dir, working_directory, disease: Disease):
         iu_data.preprocess_iu_meta_data(
             pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv")
         ),
-        disease,
+        pipeline_config.disease,
         iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
         simulated_IUs=all_ius,
     )
@@ -164,7 +165,7 @@ def pipeline(input_dir, working_directory, disease: Disease):
     )
 
     output_directory_structure.write_combined_iu_stat_agg(
-        working_directory, all_iu_data, disease
+        working_directory, all_iu_data, pipeline_config.disease
     )
 
     country_aggregates = [
@@ -187,7 +188,7 @@ def pipeline(input_dir, working_directory, disease: Disease):
         .convert_dtypes()  # attempt to reconstruct the types (TODO: why are they lost)
     )
     output_directory_structure.write_country_stat_agg(
-        working_directory, all_country_aggregates, disease
+        working_directory, all_country_aggregates, pipeline_config.disease
     )
 
     africa_composite(working_directory, iu_meta_data)
@@ -200,5 +201,5 @@ def pipeline(input_dir, working_directory, disease: Disease):
         .convert_dtypes()  # attempt to reconstruct the types (TODO: why are they lost)
     )
     output_directory_structure.write_africa_stat_agg(
-        working_directory, africa_aggregates, disease
+        working_directory, africa_aggregates, pipeline_config.disease
     )
