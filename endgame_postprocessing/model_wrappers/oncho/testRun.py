@@ -22,7 +22,7 @@ def canonicalise_raw_oncho_results(input_dir, output_dir, start_year=1970, stop_
             "No data for IUs found - see above warnings and check input directory"
         )
 
-    for file_info in tqdm(all_files, desc="Canoncialise LF results"):
+    for file_info in tqdm(all_files, desc="Canoncialise Oncho results"):
         raw_iu = pd.read_csv(file_info.file_path)
         raw_iu_filtered = raw_iu[
             (raw_iu['year_id'] >= start_year) & (raw_iu['year_id'] <= stop_year)
@@ -53,10 +53,10 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str):
             a csv per IU with name format
             scenario1_iu1_post_processed.csv
         aggregated/
-            combined-lf-iu-lvl-agg.csv - all IUs in one csv
+            combined-oncho-iu-lvl-agg.csv - all IUs in one csv
                 a aggregated by country csv
-            combined-lf-country-lvl-agg.csv - aggregate by country
-            combined-lf-africa-lvl-agg.csv - aggregated across Africa
+            combined-oncho-country-lvl-agg.csv - aggregate by country
+            combined-oncho-africa-lvl-agg.csv - aggregated across Africa
     Arguments:
         input_dir (str): The directory to search for input files.
         output_dir (str): The directory to store the output files.
