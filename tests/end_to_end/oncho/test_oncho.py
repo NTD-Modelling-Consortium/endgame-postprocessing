@@ -23,7 +23,7 @@ def test_oncho_empty_input_directory(mocker):
             output_dir=Path(__file__).parent / "generated_data"
         )
 
-        assert "No scenario directories found in empty_input_data" == str(exception)
+    assert "No data for IUs found - see above warnings and check input directory" in str(exception)
 
 def test_oncho_end_to_end(snapshot):
     input_data = Path(__file__).parent / "example_input_data"
