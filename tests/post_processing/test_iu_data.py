@@ -15,7 +15,11 @@ from endgame_postprocessing.post_processing.disease import Disease
 
 def test_insert_missing_ius():
     input_data = pd.DataFrame(
-        {"IU_CODE": ["AAA00001"], "Priority_Population_LF": [12345]}
+        {
+            "IU_CODE": ["AAA00001"],
+            "ADMIN0ISO3": ["AAA"],
+            "Priority_Population_LF": [12345],
+        }
     )
     required_ius = ["AAA00001", "AAA00002"]
     with warnings.catch_warnings(record=True) as w:
@@ -26,14 +30,14 @@ def test_insert_missing_ius():
         pd.DataFrame(
             {
                 "IU_CODE": ["AAA00001", "AAA00002"],
+                "ADMIN0ISO3": ["AAA"] * 2,
                 "Priority_Population_LF": [12345.0, 10000.0],
             }
         ),
     )
 
     assert [str(warning.message) for warning in w] == [
-        """1 were missing from the meta data file:     IU_CODE
-1  AAA00002"""
+        """1 were missing from the meta data file: ['AAA00002']"""
     ]
 
 
@@ -41,6 +45,7 @@ def test_insert_missing_ius_leaves_non_population_columns_as_was():
     input_data = pd.DataFrame(
         {
             "IU_CODE": ["AAA00001"],
+            "ADMIN0ISO3": ["AAA"],
             "Priority_Population_LF": [12345],
             "Endemicity_LF": [pd.NA],
         }
@@ -54,6 +59,7 @@ def test_insert_missing_ius_leaves_non_population_columns_as_was():
         pd.DataFrame(
             {
                 "IU_CODE": ["AAA00001", "AAA00002"],
+                "ADMIN0ISO3": ["AAA"] * 2,
                 "Priority_Population_LF": [12345.0, 10000.0],
                 "Endemicity_LF": [pd.NA, pd.NA],
             }
@@ -65,6 +71,7 @@ def test_insert_missing_ius_no_overlap():
     input_data = pd.DataFrame(
         {
             "IU_CODE": ["AAA00001", "AAA00003"],
+            "ADMIN0ISO3": ["AAA"] * 2,
             "Priority_Population_LF": [12345] * 2,
         }
     )
@@ -77,6 +84,7 @@ def test_insert_missing_ius_no_overlap():
         pd.DataFrame(
             {
                 "IU_CODE": ["AAA00001", "AAA00002", "AAA00003", "AAA00004"],
+                "ADMIN0ISO3": ["AAA"] * 4,
                 "Priority_Population_LF": [12345.0, 10000.0] * 2,
             }
         ),
@@ -87,6 +95,7 @@ def test_insert_missing_ius_duplicate_ius():
     input_data = pd.DataFrame(
         {
             "IU_CODE": ["AAA00001"],
+            "ADMIN0ISO3": ["AAA"],
             "Priority_Population_LF": [12345],
         }
     )
@@ -99,6 +108,7 @@ def test_insert_missing_ius_duplicate_ius():
         pd.DataFrame(
             {
                 "IU_CODE": ["AAA00001", "AAA00002"],
+                "ADMIN0ISO3": ["AAA"] * 2,
                 "Priority_Population_LF": [12345.0, 10000.0],
             }
         ),
@@ -384,7 +394,7 @@ def test_preprocess_iu_meta_data_contains_duplicate_and_valid_id():
                 "IU_CODE": ["AAA0000000001"] * 2,
                 "IU_ID": [1] * 2,
             }
-        )
+        ),
     )
 
     pdt.assert_frame_equal(

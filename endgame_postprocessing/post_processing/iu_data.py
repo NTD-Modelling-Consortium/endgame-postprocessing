@@ -33,14 +33,21 @@ def _get_priority_population_column_for_disease(disease: Disease):
 def insert_missing_ius(
     input_data: pd.DataFrame, required_ius: list[str]
 ) -> pd.DataFrame:
-    required_ius_data = pd.DataFrame({"IU_CODE": required_ius}).drop_duplicates()
+    assert all([_is_valid_iu_code(iu_code) for iu_code in required_ius])
+
+    required_ius_data = pd.DataFrame(
+        {
+            "IU_CODE": required_ius,
+            "ADMIN0ISO3": [iu_code[0:3] for iu_code in required_ius],
+        }
+    ).drop_duplicates()
     missing_ius = required_ius_data[~required_ius_data.IU_CODE.isin(input_data.IU_CODE)]
     if len(missing_ius) > 0:
         warnings.warn(
-            f"{len(missing_ius)} were missing from the meta data file: {missing_ius}"
+            f"{len(missing_ius)} were missing from the meta data file: {missing_ius.loc[:, 'IU_CODE'].values}"
         )
     input_data_with_all_ius = pd.merge(
-        input_data, required_ius_data, how="outer", on="IU_CODE"
+        input_data, required_ius_data, how="outer", on=["IU_CODE", "ADMIN0ISO3"]
     )
 
     population_columns = [
@@ -52,7 +59,7 @@ def insert_missing_ius(
     )
 
 
-def preprocess_iu_meta_data(input_data: pd.DataFrame, required_ius: list[str]):
+def preprocess_iu_meta_data(input_data: pd.DataFrame, required_ius: list[str] = []):
     deduped_input_data = input_data.drop_duplicates()
     new_iu_code = deduped_input_data.ADMIN0ISO3 + deduped_input_data["IU_ID"].apply(
         lambda id: str.zfill(str(id), 5)
