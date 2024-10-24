@@ -15,8 +15,8 @@ from endgame_postprocessing.post_processing.aggregation import (
     iu_lvl_aggregate,
     country_lvl_aggregate,
 )
-from endgame_postprocessing.post_processing.disease import Disease
-from endgame_postprocessing.post_processing.iu_data import IUData
+from endgame_postprocessing.post_processing.iu_data import IUData, IUSelectionCriteria
+from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 from endgame_postprocessing.post_processing.single_file_post_processing import (
     process_single_file,
     measure_summary_float,
@@ -30,7 +30,7 @@ from tqdm import tqdm
 import pandas as pd
 
 
-def iu_statistical_aggregates(working_directory):
+def iu_statistical_aggregates(working_directory, threshold):
     file_iter = post_process_file_generator(
         file_directory=output_directory_structure.get_canonical_dir(working_directory),
         end_of_file="_canonical.csv",
@@ -44,6 +44,7 @@ def iu_statistical_aggregates(working_directory):
                 prevalence_marker_name=canoncical_columns.PROCESSED_PREVALENCE,
                 post_processing_start_time=1970,
                 post_processing_end_time=2041,
+                threshold=threshold,
                 measure_summary_map={
                     canoncical_columns.PROCESSED_PREVALENCE: measure_summary_float
                 },
@@ -132,16 +133,26 @@ def country_aggregate(country_composite, iu_lvl_data, country_code, iu_meta_data
     return pd.concat([country_statistical_aggregates, country_iu_summary_aggregates])
 
 
-def pipeline(input_dir, working_directory, disease: Disease):
-    iu_statistical_aggregates(
-        working_directory,
-    )
+def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
+    iu_statistical_aggregates(working_directory, threshold=pipeline_config.threshold)
+
+    all_ius = [
+        file_info.iu
+        for file_info in post_process_file_generator(
+            file_directory=output_directory_structure.get_canonical_dir(
+                working_directory
+            ),
+            end_of_file="_canonical.csv",
+        )
+    ]
 
     iu_meta_data = IUData(
         iu_data.preprocess_iu_meta_data(
             pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv")
         ),
-        disease,
+        pipeline_config.disease,
+        iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
+        simulated_IUs=all_ius,
     )
 
     all_iu_data = (
@@ -152,8 +163,11 @@ def pipeline(input_dir, working_directory, disease: Disease):
     )
 
     output_directory_structure.write_combined_iu_stat_agg(
-        working_directory, all_iu_data, disease
+        working_directory, all_iu_data, pipeline_config.disease
     )
+
+    if not pipeline_config.include_country_and_continent_summaries:
+        return
 
     country_aggregates = [
         country_aggregate(
@@ -175,7 +189,7 @@ def pipeline(input_dir, working_directory, disease: Disease):
         .convert_dtypes()  # attempt to reconstruct the types (TODO: why are they lost)
     )
     output_directory_structure.write_country_stat_agg(
-        working_directory, all_country_aggregates, disease
+        working_directory, all_country_aggregates, pipeline_config.disease
     )
 
     africa_composite(working_directory, iu_meta_data)
@@ -188,5 +202,5 @@ def pipeline(input_dir, working_directory, disease: Disease):
         .convert_dtypes()  # attempt to reconstruct the types (TODO: why are they lost)
     )
     output_directory_structure.write_africa_stat_agg(
-        working_directory, africa_aggregates, disease
+        working_directory, africa_aggregates, pipeline_config.disease
     )

@@ -10,6 +10,9 @@ from endgame_postprocessing.post_processing.file_util import (
 )
 import pandas as pd
 
+from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
+
+
 def canonicalise_raw_oncho_results(input_dir, output_dir, start_year=1970, stop_year=2041):
     file_iter = post_process_file_generator(
         file_directory=input_dir, end_of_file=".csv"
@@ -63,7 +66,7 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str):
 
     """
     canonicalise_raw_oncho_results(input_dir, output_dir)
-    pipeline.pipeline(input_dir, output_dir, disease=Disease.ONCHO)
+    pipeline.pipeline(input_dir, output_dir, PipelineConfig(disease=Disease.ONCHO))
 
 if __name__ == "__main__":
     run_postprocessing_pipeline("local_data/oncho", "local_data/oncho-output", 1)
