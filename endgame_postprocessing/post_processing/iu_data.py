@@ -30,13 +30,36 @@ def _get_priority_population_column_for_disease(disease: Disease):
     return f"Priority_Population_{_get_capitalised_disease(disease)}"
 
 
-def preprocess_iu_meta_data(input_data: pd.DataFrame):
+def insert_missing_ius(
+    input_data: pd.DataFrame, required_ius: list[str]
+) -> pd.DataFrame:
+    required_ius_data = pd.DataFrame({"IU_CODE": required_ius}).drop_duplicates()
+    missing_ius = required_ius_data[~required_ius_data.IU_CODE.isin(input_data.IU_CODE)]
+    if len(missing_ius) > 0:
+        warnings.warn(
+            f"{len(missing_ius)} were missing from the meta data file: {missing_ius}"
+        )
+    input_data_with_all_ius = pd.merge(
+        input_data, required_ius_data, how="outer", on="IU_CODE"
+    )
+
+    population_columns = [
+        _get_priority_population_column_for_disease(disease) for disease in Disease
+    ]
+
+    return input_data_with_all_ius.fillna(
+        {column_name: 10000.0 for column_name in population_columns}
+    )
+
+
+def preprocess_iu_meta_data(input_data: pd.DataFrame, required_ius: list[str]):
     deduped_input_data = input_data.drop_duplicates()
     new_iu_code = deduped_input_data.ADMIN0ISO3 + deduped_input_data["IU_ID"].apply(
         lambda id: str.zfill(str(id), 5)
     )
     deduped_input_data.loc[:, "IU_CODE"] = new_iu_code
-    return deduped_input_data
+    all_simulated_ius = insert_missing_ius(deduped_input_data, required_ius)
+    return all_simulated_ius
 
 
 class IUSelectionCriteria(Enum):

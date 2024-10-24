@@ -1,3 +1,4 @@
+import warnings
 import pandas as pd
 import pandas.testing as pdt
 import pytest
@@ -5,10 +6,103 @@ from endgame_postprocessing.post_processing.iu_data import (
     IUData,
     IUSelectionCriteria,
     InvalidIUDataFile,
+    insert_missing_ius,
     preprocess_iu_meta_data,
 )
 
 from endgame_postprocessing.post_processing.disease import Disease
+
+
+def test_insert_missing_ius():
+    input_data = pd.DataFrame(
+        {"IU_CODE": ["AAA00001"], "Priority_Population_LF": [12345]}
+    )
+    required_ius = ["AAA00001", "AAA00002"]
+    with warnings.catch_warnings(record=True) as w:
+        result = insert_missing_ius(input_data, required_ius)
+
+    pdt.assert_frame_equal(
+        result,
+        pd.DataFrame(
+            {
+                "IU_CODE": ["AAA00001", "AAA00002"],
+                "Priority_Population_LF": [12345.0, 10000.0],
+            }
+        ),
+    )
+
+    assert [str(warning.message) for warning in w] == [
+        """1 were missing from the meta data file:     IU_CODE
+1  AAA00002"""
+    ]
+
+
+def test_insert_missing_ius_leaves_non_population_columns_as_was():
+    input_data = pd.DataFrame(
+        {
+            "IU_CODE": ["AAA00001"],
+            "Priority_Population_LF": [12345],
+            "Endemicity_LF": [pd.NA],
+        }
+    )
+    required_ius = ["AAA00001", "AAA00002"]
+    with warnings.catch_warnings(record=True) as w:
+        result = insert_missing_ius(input_data, required_ius)
+
+    pdt.assert_frame_equal(
+        result,
+        pd.DataFrame(
+            {
+                "IU_CODE": ["AAA00001", "AAA00002"],
+                "Priority_Population_LF": [12345.0, 10000.0],
+                "Endemicity_LF": [pd.NA, pd.NA],
+            }
+        ),
+    )
+
+
+def test_insert_missing_ius_no_overlap():
+    input_data = pd.DataFrame(
+        {
+            "IU_CODE": ["AAA00001", "AAA00003"],
+            "Priority_Population_LF": [12345] * 2,
+        }
+    )
+    required_ius = ["AAA00002", "AAA00004"]
+    with warnings.catch_warnings(record=True) as w:
+        result = insert_missing_ius(input_data, required_ius)
+
+    pdt.assert_frame_equal(
+        result,
+        pd.DataFrame(
+            {
+                "IU_CODE": ["AAA00001", "AAA00002", "AAA00003", "AAA00004"],
+                "Priority_Population_LF": [12345.0, 10000.0] * 2,
+            }
+        ),
+    )
+
+
+def test_insert_missing_ius_duplicate_ius():
+    input_data = pd.DataFrame(
+        {
+            "IU_CODE": ["AAA00001"],
+            "Priority_Population_LF": [12345],
+        }
+    )
+    required_ius = ["AAA00002", "AAA00002"]
+    with warnings.catch_warnings(record=True) as w:
+        result = insert_missing_ius(input_data, required_ius)
+
+    pdt.assert_frame_equal(
+        result,
+        pd.DataFrame(
+            {
+                "IU_CODE": ["AAA00001", "AAA00002"],
+                "Priority_Population_LF": [12345.0, 10000.0],
+            }
+        ),
+    )
 
 
 # def test_iu_data_get_priority_population_iu_missing_raises_exception():
