@@ -26,6 +26,10 @@ def _get_capitalised_disease(disease: Disease):
     raise Exception(f"Invalid disease {disease}")
 
 
+def _get_priority_population_column_for_disease(disease: Disease):
+    return f"Priority_Population_{_get_capitalised_disease(disease)}"
+
+
 def preprocess_iu_meta_data(input_data: pd.DataFrame):
     deduped_input_data = input_data.drop_duplicates()
     new_iu_code = deduped_input_data.ADMIN0ISO3 + deduped_input_data["IU_ID"].apply(
@@ -59,7 +63,9 @@ class IUData:
             assert simulated_IUs is not None
         # TODO: validate the required columns are as expcted
 
-        population_column_name = self._get_priority_population_column_name()
+        population_column_name = _get_priority_population_column_for_disease(
+            self.disease
+        )
         if population_column_name not in input_data.columns:
             raise InvalidIUDataFile(
                 f"No priority population found for disease {self.disease.name}"
@@ -91,16 +97,16 @@ class IUData:
             )
             return 10000
         assert len(iu) == 1
-        return iu[self._get_priority_population_column_name()].iat[0]
+        return iu[_get_priority_population_column_for_disease(self.disease)].iat[0]
 
     def get_priority_population_for_country(self, country_code):
         included_ius_in_country = self._get_included_ius_for_country(country_code)
-        population_column = self._get_priority_population_column_name()
+        population_column = _get_priority_population_column_for_disease(self.disease)
         return included_ius_in_country[population_column].sum()
 
     def get_priority_population_for_africa(self):
         return self.get_included_ius()[
-            self._get_priority_population_column_name()
+            _get_priority_population_column_for_disease(self.disease)
         ].sum()
 
     def get_total_ius_in_country(self, country_code):
@@ -125,10 +131,6 @@ class IUData:
     def _get_modelled_ius(self):
         modelled_column = self._get_modelled_column_name()
         return self.input_data[self.input_data[modelled_column]]
-
-    def _get_priority_population_column_name(self):
-        disease_str = _get_capitalised_disease(self.disease)
-        return f"Priority_Population_{disease_str}"
 
     def _get_modelled_column_name(self):
         disease_str = _get_capitalised_disease(self.disease)
