@@ -1,3 +1,4 @@
+import dataclasses
 from functools import reduce
 import glob
 from operator import mul
@@ -40,6 +41,37 @@ def canoncialise_single_result(file_info):
     return canonicalise.canonicalise_raw(
         raw_without_columns, file_info, "Prevalence SAC"
     )
+
+
+def _generate_new_iu(espen_id, country_code):
+    return f"{country_code}{int(espen_id)}"
+
+
+def read_remapping_file(remapping_file: pd.DataFrame) -> dict[str, list[str]]:
+    old_iu_column_name = "IU_CODE"
+    country_column_name = "ADMIN0ISO3"
+    new_iu_column_name = "ESPEN_IU_ID"
+    new_ius_by_old_iu = remapping_file.dropna(subset=new_iu_column_name).groupby(
+        old_iu_column_name
+    )
+
+    return {
+        old_iu: [
+            _generate_new_iu(espen_id, values[country_column_name].iat[0])
+            for espen_id in values[new_iu_column_name].values
+        ]
+        for old_iu, values in new_ius_by_old_iu
+    }
+
+
+def rename_iu(file: CustomFileInfo, new_iu_name):
+    return dataclasses.replace(file, iu=new_iu_name)
+
+
+def remap_old_ius_to_new_ius(file: CustomFileInfo, remapping: dict[str, list[str]]):
+    if file.iu in remapping:
+        return [rename_iu(file, new_iu_name) for new_iu_name in remapping[file.iu]]
+    return [file]
 
 
 def combine_many_worms(first_worm, other_worms):
@@ -108,6 +140,13 @@ def get_sth_worm(file_path):
 
 
 def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
+    remapping_file_path = f"{input_dir}/iu_remapping.csv"
+    if os.path.exists(remapping_file_path):
+        print(f"Using IU remapping {remapping_file_path}")
+        iu_remapping_dictionary = read_remapping_file(pd.read_csv(remapping_file_path))
+    else:
+        iu_remapping_dictionary = {}
+
     if len(worm_directories) == 0:
         raise Exception("Must provide at least one worm directory")
     first_worm_dir = worm_directories[0]
@@ -149,9 +188,15 @@ def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
         all_worms_canonical = combine_many_worms(
             canonical_result_first_worm, other_worms_canoncial
         )
-        output_directory_structure.write_canonical(
-            output_dir, file_info, all_worms_canonical
-        )
+
+        remapped_ius = remap_old_ius_to_new_ius(file_info, iu_remapping_dictionary)
+
+        for remapped_iu_file_info in remapped_ius:
+            # TODO: here we write out the file with the correct IU name, but the column IU_CODE is left
+            # as the old IU which is probably confusing, even if it doesn't seem to break anything
+            output_directory_structure.write_canonical(
+                output_dir, remapped_iu_file_info, all_worms_canonical
+            )
 
 
 def canonicalise_raw_sch_results(input_dir, output_dir):
