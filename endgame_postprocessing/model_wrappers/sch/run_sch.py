@@ -20,6 +20,9 @@ WORM_MAPPING = {
     "hookworm": "hookworm",
     "ascaris": "roundworm",
     "trichuris": "whipworm",
+    "sch-haematobium": "haematobium",
+    "sch-mansoni-high-burden": "mansoni_high_burden",
+    "sch-mansoni-low-burden": "mansoni_low_burden",
 }
 
 def probability_any_worm(probability_for_each_worm):
@@ -106,6 +109,11 @@ def get_sth_worm(file_path):
     file_match = re.search(file_name_regex, file_path)
     return file_match.group("worm")
 
+def get_sch_worm_info(file_path):
+    file_name_regex = r"ntdmc-[A-Z]{3}\d{5}-(?P<worm>[\w]+)_(?P<burden>high_burden|low_burden)?-group_001-scenario_\w+-survey_type_kk2-group_001-200_simulations.csv"
+    file_match = re.search(file_name_regex, file_path)
+    return (file_match.group("worm"), file_match.group("burden"))
+
 
 def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
     if len(worm_directories) == 0:
@@ -154,8 +162,40 @@ def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
         )
 
 
-def canonicalise_raw_sch_results(input_dir, output_dir):
-    file_iter = get_sch_flat(f"{input_dir}")
+def canonicalise_raw_sch_results(input_dir, output_dir, all_worm=False, worm_directories = [], first_worm=""):
+    if all_worm:
+        if len(worm_directories) <= 0:
+            raise Exception(
+                "Need to supply a list of worm directories for calculating all worm for SCH"
+            )
+        if first_worm == "" or first_worm not in worm_directories:
+            raise Exception(
+                "First worm needs to be supplied and in the worm directories"
+            )
+
+    # Assuming that the first worm only has one burden
+    file_iter_addition = ""
+    other_worms = []
+    if all_worm:
+        file_iter_addition = first_worm
+
+    file_iter = get_sch_flat(f"{input_dir}{file_iter_addition}")
+
+    if all_worm:
+        other_worm_directories = [worm for worm in worm_directories if worm != first_worm]
+        iter_other_worms = [
+            list(get_sch_flat(f"{input_dir}{other_worm_dir}"))
+            for other_worm_dir in other_worm_directories
+        ]
+        flattened_iter_other_worms = [
+            file.file_path
+            for worm_list in iter_other_worms
+            for file in worm_list
+        ]
+        other_worms = [
+            get_sch_worm_info(next(get_sch_flat(f"{input_dir}{other_worm_dir}")).file_path)
+            for other_worm_dir in other_worm_directories
+        ]
 
     all_files = list(file_iter)
 
@@ -165,10 +205,44 @@ def canonicalise_raw_sch_results(input_dir, output_dir):
         )
 
     for file_info in tqdm(all_files, desc="Canoncialise SCH results"):
-        canonical_result = canoncialise_single_result(file_info)
-        output_directory_structure.write_canonical(
-            output_dir, file_info, canonical_result
-        )
+        if not all_worm:
+            canonical_result = canoncialise_single_result(file_info)
+            output_directory_structure.write_canonical(
+                output_dir, file_info, canonical_result
+            )
+        else:
+            other_worm_file_infos = []
+            num_files_found = {}
+            for worm, burden in other_worms:
+                # folder names are different format than the file name
+                worm_burden = "sch-" + worm + "-" + burden.replace("_", "-")
+                if worm not in num_files_found:
+                    num_files_found[worm] = 0
+                new_file = swap_worm_in_heirachy(file_info, first_worm, worm_burden)
+                if new_file.file_path in flattened_iter_other_worms:
+                    num_files_found[worm] += 1
+                    other_worm_file_infos.append(new_file)
+                if num_files_found[worm] > 1:
+                    raise Exception(
+                        f"IU {file_info.iu} found in both high and low burden files"
+                    )
+            if any(files == 0 for files in num_files_found.values()):
+                raise Exception(
+                    f"IU {file_info.iu} not present in files for other worms"
+                )
+            canonical_result_first_worm = canoncialise_single_result(file_info)
+
+            other_worms_canoncial = [
+                canoncialise_single_result(other_worm_file_info)
+                for other_worm_file_info in other_worm_file_infos
+            ]
+
+            all_worms_canonical = combine_many_worms(
+                canonical_result_first_worm, other_worms_canoncial
+            )
+            output_directory_structure.write_canonical(
+                output_dir, file_info, all_worms_canonical
+            )
 
 
 def run_sth_postprocessing_pipeline(
@@ -221,9 +295,9 @@ def run_sth_postprocessing_pipeline(
     pipeline.pipeline(input_dir, output_dir, config)
 
 
-def run_sch_postprocessing_pipeline(input_dir, output_dir, skip_canonical=False):
+def run_sch_postprocessing_pipeline(input_dir, output_dir, skip_canonical=False, all_worm=False, worm_directories=[], first_worm_name=""):
     if not skip_canonical:
-        canonicalise_raw_sch_results(input_dir, output_dir)
+        canonicalise_raw_sch_results(input_dir, output_dir, all_worm, worm_directories, first_worm_name)
     config = PipelineConfig(
         disease=Disease.SCH,
         threshold=0.1,
@@ -251,11 +325,21 @@ if __name__ == "__main__":
     #         skip_canonical=False,
     #     )
 
-    root_input_dir = "local_data/sch-pilot/202410b-SCH-test-2-20241022"
+    root_input_dir = "local_data/202410b-SCH-test-2-20241022"
     worm_directories = next(os.walk(root_input_dir))[1]
+    first_worm_name = "sch-haematobium"
     for worm_directory in worm_directories:
         run_sch_postprocessing_pipeline(
             f"{root_input_dir}/{worm_directory}",
             f"local_data/sch-output-single-worm/{worm_directory}",
             skip_canonical=False,
+            all_worm=False,
         )
+    run_sch_postprocessing_pipeline(
+        f"{root_input_dir}/",
+        "local_data/sch-output-all-worm/",
+        skip_canonical=False,
+        all_worm=True,
+        worm_directories=worm_directories,
+        first_worm_name=first_worm_name,
+    )
