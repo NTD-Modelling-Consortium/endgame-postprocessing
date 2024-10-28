@@ -1,9 +1,12 @@
 import pandas as pd
 import pandas.testing as pdt
+import pytest
 from endgame_postprocessing.model_wrappers.sch.run_sch import (
     combine_many_worms,
     get_sth_flat,
     probability_any_worm,
+    _check_iu_in_all_folders,
+    canonicalise_raw_sch_results,
 )
 from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
 
@@ -91,6 +94,59 @@ def test_combine_many_worms_many_years():
         ),
     )
 
+def test_check_iu_in_all_folders_success_multi_scenario():
+    worm_iu_infos = [
+        ("worm1", None, "iu1", "scenario1"),
+        ("worm2", None, "iu1", "scenario1"),
+        ("worm1", None, "iu1", "scenario2"),
+        ("worm2", None, "iu1", "scenario2"),
+    ]
+    _check_iu_in_all_folders(worm_iu_infos)
+
+def test_check_iu_in_all_folders_success_single_burden():
+    worm_iu_infos = [
+        ("worm1", None, "iu1", "scenario1"),
+        ("worm2", "low_burden", "iu1", "scenario1"),
+    ]
+    _check_iu_in_all_folders(worm_iu_infos)
+
+def test_check_iu_in_all_folders_fail_multi_burden():
+    worm_iu_infos = [
+        ("worm1", None, "iu1", "scenario1"),
+        ("worm2", "low_burden", "iu1", "scenario1"),
+        ("worm2", "high_burden", "iu1", "scenario1"),
+    ]
+    with pytest.raises(Exception):
+        _check_iu_in_all_folders(worm_iu_infos)
+
+def test_check_iu_in_all_folders_missing_worm():
+    worm_iu_infos = [
+        ("worm1", None, "iu1", "scenario1"),
+        ("worm1", None, "iu2", "scenario1"),
+        ("worm2", "high_burden", "iu2", "scenario1"),
+    ]
+    with pytest.raises(Exception):
+        _check_iu_in_all_folders(worm_iu_infos)
+
+
+def test_canonicalise_raw_sch_results_all_worm_no_worm_directory():
+    with pytest.raises(Exception):
+        canonicalise_raw_sch_results(
+            "test_input_dir", "test_output_dir", all_worm=True, worm_directories = [], first_worm="worm1"
+        )
+
+
+def test_canonicalise_raw_sch_results_all_worm_first_worm_not_in_directory():
+    with pytest.raises(Exception):
+        canonicalise_raw_sch_results(
+            "test_input_dir", "test_output_dir", all_worm=True, worm_directories = ["worm1", "worm2"], first_worm="worm3"
+        )
+
+def test_canonicalise_raw_sch_results_not_all_worm_warning_for_unecessary_params():
+    with pytest.raises(Warning):
+        canonicalise_raw_sch_results(
+            "test_input_dir", "test_output_dir", all_worm=False, worm_directories = ["worm1", "worm2"], first_worm="worm2"
+        )
 
 def test_flat_walk(fs):
     fs.create_file(
