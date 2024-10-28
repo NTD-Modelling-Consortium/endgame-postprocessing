@@ -110,9 +110,9 @@ def get_sth_worm(file_path):
     return file_match.group("worm")
 
 def get_sch_worm_info(file_path):
-    file_name_regex = r"ntdmc-[A-Z]{3}\d{5}-(?P<worm>[\w]+)_(?P<burden>high_burden|low_burden)?-group_001-scenario_\w+-survey_type_kk2-group_001-200_simulations.csv"
+    file_name_regex = r"ntdmc-(?P<iu_id>[A-Z]{3}\d{5})-(?P<worm>[\w]+?)(_(?P<burden>high_burden|low_burden))?-group_001-(?P<scenario>scenario_\w+)-survey_type_kk2-group_001-200_simulations.csv"
     file_match = re.search(file_name_regex, file_path)
-    return (file_match.group("worm"), file_match.group("burden"))
+    return (file_match.group("worm"), file_match.group("burden"), file_match.group("iu_id"), file_match.group("scenario"))
 
 
 def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
@@ -161,6 +161,31 @@ def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
             output_dir, file_info, all_worms_canonical
         )
 
+def _check_iu_in_all_folders(worm_iu_info):
+    info = {}
+    unique_worms = set()
+    for worm, _, iu, scenario in worm_iu_info:
+        unique_worms.add(worm)
+        if scenario not in info:
+            info[scenario] = {}
+        if iu not in info[scenario]:
+            info[scenario][iu] = {}
+        if worm not in info[scenario][iu]:
+            info[scenario][iu][worm] = 0
+        info[scenario][iu][worm] += 1
+        if info[scenario][iu][worm] > 1:
+            raise Exception(
+                f"IU {iu} found multiple times for {worm} in scenario {scenario}."
+            )
+
+    for scenario in info.keys():
+        for iu in info[scenario].keys():
+            iu_worms = info[scenario][iu].keys()
+            for worm in unique_worms:
+                if worm != "haematobium" and worm not in iu_worms:
+                    raise Exception(
+                        f"IU {iu} not present for {worm}."
+                    )
 
 def canonicalise_raw_sch_results(input_dir, output_dir, all_worm=False, worm_directories = [], first_worm=""):
     if all_worm:
@@ -171,6 +196,11 @@ def canonicalise_raw_sch_results(input_dir, output_dir, all_worm=False, worm_dir
         if first_worm == "" or first_worm not in worm_directories:
             raise Exception(
                 "First worm needs to be supplied and in the worm directories"
+            )
+    if not all_worm:
+        if len(worm_directories) > 0 or first_worm != "":
+            raise Warning(
+                "Parameters `worm_directories` and `first_worm` were provided, but are unused when all_worm is set to False"
             )
 
     # Assuming that the first worm only has one burden
@@ -197,6 +227,13 @@ def canonicalise_raw_sch_results(input_dir, output_dir, all_worm=False, worm_dir
             for other_worm_dir in other_worm_directories
         ]
 
+        all_iu_worm_info = [
+            get_sch_worm_info(file_info.file_path)
+            for worm_dir in worm_directories
+            for file_info in get_sch_flat(f"{input_dir}{worm_dir}")
+        ]
+        _check_iu_in_all_folders(all_iu_worm_info)
+
     all_files = list(file_iter)
 
     if len(all_files) == 0:
@@ -212,24 +249,14 @@ def canonicalise_raw_sch_results(input_dir, output_dir, all_worm=False, worm_dir
             )
         else:
             other_worm_file_infos = []
-            num_files_found = {}
-            for worm, burden in other_worms:
+            for worm, burden, _, _ in other_worms:
                 # folder names are different format than the file name
                 worm_burden = "sch-" + worm + "-" + burden.replace("_", "-")
-                if worm not in num_files_found:
-                    num_files_found[worm] = 0
                 new_file = swap_worm_in_heirachy(file_info, first_worm, worm_burden)
+
                 if new_file.file_path in flattened_iter_other_worms:
-                    num_files_found[worm] += 1
                     other_worm_file_infos.append(new_file)
-                if num_files_found[worm] > 1:
-                    raise Exception(
-                        f"IU {file_info.iu} found in both high and low burden files"
-                    )
-            if any(files == 0 for files in num_files_found.values()):
-                raise Exception(
-                    f"IU {file_info.iu} not present in files for other worms"
-                )
+
             canonical_result_first_worm = canoncialise_single_result(file_info)
 
             other_worms_canoncial = [
