@@ -132,20 +132,23 @@ def test_check_iu_in_all_folders_missing_worm():
 def test_canonicalise_raw_sch_results_all_worm_no_worm_directory():
     with pytest.raises(Exception):
         canonicalise_raw_sch_results(
-            "test_input_dir", "test_output_dir", all_worm=True, worm_directories = [], first_worm="worm1"
+            "test_input_dir", "test_output_dir", all_worm=True,
+            worm_directories = [], first_worm="worm1"
         )
 
 
 def test_canonicalise_raw_sch_results_all_worm_first_worm_not_in_directory():
     with pytest.raises(Exception):
         canonicalise_raw_sch_results(
-            "test_input_dir", "test_output_dir", all_worm=True, worm_directories = ["worm1", "worm2"], first_worm="worm3"
+            "test_input_dir", "test_output_dir", all_worm=True,
+            worm_directories = ["worm1", "worm2"], first_worm="worm3"
         )
 
 def test_canonicalise_raw_sch_results_not_all_worm_warning_for_unecessary_params():
     with pytest.raises(Warning):
         canonicalise_raw_sch_results(
-            "test_input_dir", "test_output_dir", all_worm=False, worm_directories = ["worm1", "worm2"], first_worm="worm2"
+            "test_input_dir", "test_output_dir",
+            all_worm=False, worm_directories = ["worm1", "worm2"], first_worm="worm2"
         )
 
 def test_flat_walk(fs):

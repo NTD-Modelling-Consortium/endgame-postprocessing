@@ -110,9 +110,12 @@ def get_sth_worm(file_path):
     return file_match.group("worm")
 
 def get_sch_worm_info(file_path):
-    file_name_regex = r"ntdmc-(?P<iu_id>[A-Z]{3}\d{5})-(?P<worm>[\w]+?)(_(?P<burden>high_burden|low_burden))?-group_001-(?P<scenario>scenario_\w+)-survey_type_kk2-group_001-200_simulations.csv"
+    file_name_regex = r"ntdmc-(?P<iu_id>[A-Z]{3}\d{5})-(?P<worm>[\w]+?)(_(?P<burden>high_burden|low_burden))?-group_001-(?P<scenario>scenario_\w+)-survey_type_kk2-group_001-200_simulations.csv" # noqa 501
     file_match = re.search(file_name_regex, file_path)
-    return (file_match.group("worm"), file_match.group("burden"), file_match.group("iu_id"), file_match.group("scenario"))
+    return (
+        file_match.group("worm"), file_match.group("burden"),
+        file_match.group("iu_id"), file_match.group("scenario")
+    )
 
 
 def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
@@ -187,7 +190,13 @@ def _check_iu_in_all_folders(worm_iu_info):
                         f"IU {iu} not present for {worm}."
                     )
 
-def canonicalise_raw_sch_results(input_dir, output_dir, all_worm=False, worm_directories = [], first_worm=""):
+def canonicalise_raw_sch_results(
+    input_dir,
+    output_dir,
+    all_worm=False,
+    worm_directories = [],
+    first_worm=""
+):
     if all_worm:
         if len(worm_directories) <= 0:
             raise Exception(
@@ -200,7 +209,8 @@ def canonicalise_raw_sch_results(input_dir, output_dir, all_worm=False, worm_dir
     if not all_worm:
         if len(worm_directories) > 0 or first_worm != "":
             raise Warning(
-                "Parameters `worm_directories` and `first_worm` were provided, but are unused when all_worm is set to False"
+                "Parameters `worm_directories` and `first_worm` were provided" +
+                ", but are unused when all_worm is set to False"
             )
 
     # Assuming that the first worm only has one burden
@@ -322,9 +332,19 @@ def run_sth_postprocessing_pipeline(
     pipeline.pipeline(input_dir, output_dir, config)
 
 
-def run_sch_postprocessing_pipeline(input_dir, output_dir, skip_canonical=False, all_worm=False, worm_directories=[], first_worm_name=""):
+def run_sch_postprocessing_pipeline(
+    input_dir,
+    output_dir,
+    skip_canonical=False,
+    all_worm=False,
+    worm_directories=[],
+    first_worm_name=""
+):
     if not skip_canonical:
-        canonicalise_raw_sch_results(input_dir, output_dir, all_worm, worm_directories, first_worm_name)
+        canonicalise_raw_sch_results(
+            input_dir, output_dir,
+            all_worm, worm_directories, first_worm_name
+        )
     config = PipelineConfig(
         disease=Disease.SCH,
         threshold=0.1,
