@@ -1,3 +1,4 @@
+import math
 import warnings
 import pandas as pd
 import pandas.testing as pdt
@@ -41,6 +42,32 @@ def test_insert_missing_ius():
         """1 were missing from the meta data file: ['AAA00002']""",
         "For these IUs a default population of 10000.0 will be used",
     ]
+
+
+def test_insert_missing_ius_none_missing():
+    input_data = pd.DataFrame(
+        {
+            "IU_CODE": ["AAA00001"],
+            "ADMIN0ISO3": ["AAA"],
+            "Priority_Population_LF": [12345],
+        }
+    )
+    required_ius = ["AAA00001"]
+    with warnings.catch_warnings(record=True) as w:
+        result = insert_missing_ius(input_data, set(required_ius))
+
+    pdt.assert_frame_equal(
+        result,
+        pd.DataFrame(
+            {
+                "IU_CODE": ["AAA00001"],
+                "ADMIN0ISO3": ["AAA"],
+                "Priority_Population_LF": [12345],
+            }
+        ),
+    )
+
+    assert len(w) == 0
 
 
 def test_insert_missing_ius_leaves_non_population_columns_as_was():
@@ -434,6 +461,32 @@ def test_preprocess_iu_meta_data_removes_non_simulated_ius():
                 "Priority_Population_LF": [100],
                 "IU_CODE": ["AAA00001"],
                 "IU_ID": [1],
+            }
+        ),
+    )
+
+
+def test_preprocess_iu_meta_data_adds_missing_iu():
+    preprocessed_input = preprocess_iu_meta_data(
+        pd.DataFrame(
+            {
+                "ADMIN0ISO3": ["AAA"],
+                "Priority_Population_LF": [100],
+                "IU_CODE": ["AAA0000000001"],
+                "IU_ID": [1],
+            }
+        ),
+        simulated_IUs=["AAA00001", "AAA00002"],
+    )
+
+    pdt.assert_frame_equal(
+        preprocessed_input,
+        pd.DataFrame(
+            {
+                "ADMIN0ISO3": ["AAA"] * 2,
+                "Priority_Population_LF": [100.0, 10000.0],
+                "IU_CODE": ["AAA00001", "AAA00002"],
+                "IU_ID": [1.0, math.nan],
             }
         ),
     )
