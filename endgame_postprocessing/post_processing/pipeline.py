@@ -155,7 +155,7 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
     )
 
     iu_meta_data = IUData(
-        iu_data_fixup.preprocess_iu_meta_data(
+        iu_data_fixup.fixup_iu_meta_data_file(
             pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv"),
             simulated_IUs=all_ius,
         ),

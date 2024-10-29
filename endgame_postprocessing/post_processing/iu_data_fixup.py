@@ -49,7 +49,7 @@ def insert_missing_ius(
     )
 
 
-def preprocess_iu_meta_data(input_data: pd.DataFrame, simulated_IUs: set[str]):
+def fixup_iu_meta_data_file(input_data: pd.DataFrame, simulated_IUs: set[str]):
     deduped_input_data = input_data.drop_duplicates()
     new_iu_code = deduped_input_data.ADMIN0ISO3 + deduped_input_data["IU_ID"].apply(
         lambda id: str.zfill(str(id), 5)

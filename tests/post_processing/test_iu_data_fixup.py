@@ -5,7 +5,7 @@ import pandas.testing as pdt
 
 from endgame_postprocessing.post_processing.iu_data_fixup import (
     insert_missing_ius,
-    preprocess_iu_meta_data,
+    fixup_iu_meta_data_file,
     remove_non_simulated_ius,
 )
 
@@ -140,7 +140,7 @@ def test_insert_missing_ius_duplicate_ius():
 
 
 def test_preprocess_iu_meta_data_contains_duplicate_and_valid_id():
-    preprocessed_input = preprocess_iu_meta_data(
+    preprocessed_input = fixup_iu_meta_data_file(
         pd.DataFrame(
             {
                 "ADMIN0ISO3": ["AAA"] * 2,
@@ -166,7 +166,7 @@ def test_preprocess_iu_meta_data_contains_duplicate_and_valid_id():
 
 
 def test_preprocess_iu_meta_data_removes_non_simulated_ius():
-    preprocessed_input = preprocess_iu_meta_data(
+    preprocessed_input = fixup_iu_meta_data_file(
         pd.DataFrame(
             {
                 "ADMIN0ISO3": ["AAA"] * 2,
@@ -192,7 +192,7 @@ def test_preprocess_iu_meta_data_removes_non_simulated_ius():
 
 
 def test_preprocess_iu_meta_data_adds_missing_iu():
-    preprocessed_input = preprocess_iu_meta_data(
+    preprocessed_input = fixup_iu_meta_data_file(
         pd.DataFrame(
             {
                 "ADMIN0ISO3": ["AAA"],
