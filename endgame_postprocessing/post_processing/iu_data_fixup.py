@@ -50,6 +50,24 @@ def insert_missing_ius(
 
 
 def fixup_iu_meta_data_file(input_data: pd.DataFrame, simulated_IUs: set[str]):
+    """
+    Do a series of steps to the IU meta data file to make it work for the rest of the
+    post processing pipeline:
+
+    * Remove duplications (original version contained repeated rows)
+    * Have column IU_CODE with the AAA12345 style IU IDs
+    * Generate IUs for all simulated IUs with population 10000
+    * Remove IUs that are not simulated
+
+    Inputs:
+      input_data: The IU meta data csv file
+      simulated_IUs: the AAA12345 IU IDs for which we have simulation results
+
+    Outputs:
+      A dataframe that contains a column IU_CODE with unique IU IDs that are exactly
+      the simulated_IUs.
+
+    """
     deduped_input_data = input_data.drop_duplicates()
     new_iu_code = deduped_input_data.ADMIN0ISO3 + deduped_input_data["IU_ID"].apply(
         lambda id: str.zfill(str(id), 5)
