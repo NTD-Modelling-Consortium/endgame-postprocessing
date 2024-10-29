@@ -52,7 +52,7 @@ def test_insert_missing_ius_leaves_non_population_columns_as_was():
         }
     )
     required_ius = ["AAA00001", "AAA00002"]
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True):
         result = insert_missing_ius(input_data, required_ius)
 
     pdt.assert_frame_equal(
@@ -77,7 +77,7 @@ def test_insert_missing_ius_no_overlap():
         }
     )
     required_ius = ["AAA00002", "AAA00004"]
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True):
         result = insert_missing_ius(input_data, required_ius)
 
     pdt.assert_frame_equal(
@@ -101,7 +101,7 @@ def test_insert_missing_ius_duplicate_ius():
         }
     )
     required_ius = ["AAA00002", "AAA00002"]
-    with warnings.catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True):
         result = insert_missing_ius(input_data, required_ius)
 
     pdt.assert_frame_equal(

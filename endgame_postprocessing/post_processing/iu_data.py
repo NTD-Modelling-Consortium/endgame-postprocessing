@@ -28,6 +28,8 @@ def _get_capitalised_disease(disease: Disease):
 
 def _get_priority_population_column_for_disease(disease: Disease):
     return f"Priority_Population_{_get_capitalised_disease(disease)}"
+
+
 def remove_non_simulated_ius(input_data: pd.DataFrame, simulated_IUs: list[str]):
     return input_data.loc[input_data.IU_CODE.isin(simulated_IUs)]
 
@@ -46,7 +48,7 @@ def insert_missing_ius(
     missing_ius = required_ius_data[~required_ius_data.IU_CODE.isin(input_data.IU_CODE)]
     if len(missing_ius) > 0:
         warnings.warn(
-            f"{len(missing_ius)} were missing from the meta data file: {missing_ius.loc[:, 'IU_CODE'].values}"
+            f"{len(missing_ius)} were missing from the meta data file: {missing_ius.loc[:, 'IU_CODE'].values}"  # noqa 501
         )
     input_data_with_all_ius = pd.merge(
         input_data, required_ius_data, how="outer", on=["IU_CODE", "ADMIN0ISO3"]
