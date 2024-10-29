@@ -26,13 +26,22 @@ def _get_capitalised_disease(disease: Disease):
     raise Exception(f"Invalid disease {disease}")
 
 
-def preprocess_iu_meta_data(input_data: pd.DataFrame):
+def remove_non_simulated_ius(input_data: pd.DataFrame, simulated_IUs: list[str]):
+    return input_data.loc[input_data.IU_CODE.isin(simulated_IUs)]
+
+
+def preprocess_iu_meta_data(input_data: pd.DataFrame, simulated_IUs: list[str]):
     deduped_input_data = input_data.drop_duplicates()
     new_iu_code = deduped_input_data.ADMIN0ISO3 + deduped_input_data["IU_ID"].apply(
         lambda id: str.zfill(str(id), 5)
     )
     deduped_input_data.loc[:, "IU_CODE"] = new_iu_code
-    return deduped_input_data
+
+    # We remove non-simualted IUs as the current IU meta data file has mismatched IUs
+    # so we don't really know if the IUs that don't have matching simulations are
+    # actually simulated with a different ID, so for now we just drop them
+    only_simulated_ius = remove_non_simulated_ius(deduped_input_data, simulated_IUs)
+    return only_simulated_ius
 
 
 class IUSelectionCriteria(Enum):

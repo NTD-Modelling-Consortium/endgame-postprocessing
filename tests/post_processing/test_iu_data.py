@@ -6,6 +6,7 @@ from endgame_postprocessing.post_processing.iu_data import (
     IUSelectionCriteria,
     InvalidIUDataFile,
     preprocess_iu_meta_data,
+    remove_non_simulated_ius,
 )
 
 from endgame_postprocessing.post_processing.disease import Disease
@@ -290,7 +291,34 @@ def test_preprocess_iu_meta_data_contains_duplicate_and_valid_id():
                 "IU_CODE": ["AAA0000000001"] * 2,
                 "IU_ID": [1] * 2,
             }
-        )
+        ),
+        simulated_IUs=["AAA00001"],
+    )
+
+    pdt.assert_frame_equal(
+        preprocessed_input,
+        pd.DataFrame(
+            {
+                "ADMIN0ISO3": ["AAA"],
+                "Priority_Population_LF": [100],
+                "IU_CODE": ["AAA00001"],
+                "IU_ID": [1],
+            }
+        ),
+    )
+
+
+def test_preprocess_iu_meta_data_removes_non_simulated_ius():
+    preprocessed_input = preprocess_iu_meta_data(
+        pd.DataFrame(
+            {
+                "ADMIN0ISO3": ["AAA"] * 2,
+                "Priority_Population_LF": [100] * 2,
+                "IU_CODE": ["AAA0000000001", "AAA0000000002"],
+                "IU_ID": [1, 2],
+            }
+        ),
+        simulated_IUs=["AAA00001"],
     )
 
     pdt.assert_frame_equal(
@@ -321,4 +349,14 @@ def test_simulated_ius_includes_simulated_iu():
             simulated_IUs=["AAA00001", "BBB00001"],
         ).get_priority_population_for_africa()
         == 500
+    )
+
+
+def test_remove_nonsimualted_ius():
+    input_data = pd.DataFrame(
+        {"IU_CODE": ["AAA123", "AAA234"], "AnotherColumn": [1, 2]}
+    )
+    result = remove_non_simulated_ius(input_data, simulated_IUs=["AAA123"])
+    pdt.assert_frame_equal(
+        result, pd.DataFrame({"IU_CODE": ["AAA123"], "AnotherColumn": [1]})
     )

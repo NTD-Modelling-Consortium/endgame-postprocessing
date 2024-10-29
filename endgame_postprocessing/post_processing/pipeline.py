@@ -153,7 +153,8 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
 
     iu_meta_data = IUData(
         iu_data.preprocess_iu_meta_data(
-            pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv")
+            pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv"),
+            simulated_IUs=all_ius,
         ),
         pipeline_config.disease,
         iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
