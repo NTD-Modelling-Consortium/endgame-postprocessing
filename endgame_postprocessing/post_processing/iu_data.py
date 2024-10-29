@@ -26,21 +26,65 @@ def _get_capitalised_disease(disease: Disease):
     raise Exception(f"Invalid disease {disease}")
 
 
-def remove_non_simulated_ius(input_data: pd.DataFrame, simulated_IUs: list[str]):
+def _get_priority_population_column_for_disease(disease: Disease):
+    return f"Priority_Population_{_get_capitalised_disease(disease)}"
+
+
+def remove_non_simulated_ius(input_data: pd.DataFrame, simulated_IUs: set[str]):
     return input_data.loc[input_data.IU_CODE.isin(simulated_IUs)]
 
 
-def preprocess_iu_meta_data(input_data: pd.DataFrame, simulated_IUs: list[str]):
+DEFAULT_POPULATION = 10000.0
+
+def insert_missing_ius(
+    input_data: pd.DataFrame, simulated_IUs: set[str]
+) -> pd.DataFrame:
+    assert all([_is_valid_iu_code(iu_code) for iu_code in simulated_IUs])
+
+    ordered_ius = list(simulated_IUs)
+
+    required_ius_data = pd.DataFrame(
+        {
+            "IU_CODE": ordered_ius,
+            "ADMIN0ISO3": [iu_code[0:3] for iu_code in ordered_ius],
+        }
+    )
+    missing_ius = required_ius_data[~required_ius_data.IU_CODE.isin(input_data.IU_CODE)]
+    if len(missing_ius) > 0:
+        warnings.warn(
+            f"{len(missing_ius)} were missing from the meta data file: {missing_ius.loc[:, 'IU_CODE'].values}"  # noqa 501
+        )
+        warnings.warn(
+            f"For these IUs a default population of {DEFAULT_POPULATION} will be used"  # noqa 501
+        )
+    input_data_with_all_ius = pd.merge(
+        input_data, required_ius_data, how="outer", on=["IU_CODE", "ADMIN0ISO3"]
+    )
+
+    population_columns = [
+        _get_priority_population_column_for_disease(disease) for disease in Disease
+    ]
+
+    return input_data_with_all_ius.fillna(
+        {column_name: DEFAULT_POPULATION for column_name in population_columns}
+    )
+
+
+def preprocess_iu_meta_data(input_data: pd.DataFrame, simulated_IUs: set[str]):
     deduped_input_data = input_data.drop_duplicates()
     new_iu_code = deduped_input_data.ADMIN0ISO3 + deduped_input_data["IU_ID"].apply(
         lambda id: str.zfill(str(id), 5)
     )
     deduped_input_data.loc[:, "IU_CODE"] = new_iu_code
 
+    # We add in all simulated IUs into the IU meta data file so that every IU
+    # has a population, and country and continent level populations can be calculated
+    all_simulated_ius = insert_missing_ius(deduped_input_data, simulated_IUs)
+
     # We remove non-simualted IUs as the current IU meta data file has mismatched IUs
     # so we don't really know if the IUs that don't have matching simulations are
     # actually simulated with a different ID, so for now we just drop them
-    only_simulated_ius = remove_non_simulated_ius(deduped_input_data, simulated_IUs)
+    only_simulated_ius = remove_non_simulated_ius(all_simulated_ius, simulated_IUs)
     return only_simulated_ius
 
 
@@ -58,7 +102,7 @@ class IUData:
         input_data: pd.DataFrame,
         disease: Disease,
         iu_selection_criteria: IUSelectionCriteria,
-        simulated_IUs: list[str] = None,
+        simulated_IUs: set[str] = None,
     ):
         self.disease = disease
         self.input_data = input_data
@@ -68,7 +112,9 @@ class IUData:
             assert simulated_IUs is not None
         # TODO: validate the required columns are as expcted
 
-        population_column_name = self._get_priority_population_column_name()
+        population_column_name = _get_priority_population_column_for_disease(
+            self.disease
+        )
         if population_column_name not in input_data.columns:
             raise InvalidIUDataFile(
                 f"No priority population found for disease {self.disease.name}"
@@ -95,21 +141,20 @@ class IUData:
             raise Exception(f"Invalid IU code: {iu_code}")
         iu = self.input_data.loc[self.input_data.IU_CODE == iu_code]
         if len(iu) == 0:
-            warnings.warn(
-                f"Could not find IU {iu_code} in the IU meta data file, using population of 10000"
-            )
-            return 10000
+            # Consider using the preprocess_iu_meta_data function to add in every simulated IU into
+            # the meta data file
+            raise Exception(f"Could not find IU {iu_code} in the IU meta data file")
         assert len(iu) == 1
-        return iu[self._get_priority_population_column_name()].iat[0]
+        return iu[_get_priority_population_column_for_disease(self.disease)].iat[0]
 
     def get_priority_population_for_country(self, country_code):
         included_ius_in_country = self._get_included_ius_for_country(country_code)
-        population_column = self._get_priority_population_column_name()
+        population_column = _get_priority_population_column_for_disease(self.disease)
         return included_ius_in_country[population_column].sum()
 
     def get_priority_population_for_africa(self):
         return self.get_included_ius()[
-            self._get_priority_population_column_name()
+            _get_priority_population_column_for_disease(self.disease)
         ].sum()
 
     def get_total_ius_in_country(self, country_code):
@@ -134,10 +179,6 @@ class IUData:
     def _get_modelled_ius(self):
         modelled_column = self._get_modelled_column_name()
         return self.input_data[self.input_data[modelled_column]]
-
-    def _get_priority_population_column_name(self):
-        disease_str = _get_capitalised_disease(self.disease)
-        return f"Priority_Population_{disease_str}"
 
     def _get_modelled_column_name(self):
         disease_str = _get_capitalised_disease(self.disease)
