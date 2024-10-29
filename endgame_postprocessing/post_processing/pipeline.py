@@ -120,7 +120,12 @@ def africa_composite(working_directory, iu_meta_data):
     )
 
 
-def country_aggregate(country_composite, iu_lvl_data, country_code, iu_meta_data):
+def country_aggregate(
+    country_composite: pd.DataFrame,
+    iu_lvl_data: pd.DataFrame,
+    country_code: str,
+    iu_meta_data: IUData,
+):
     country_statistical_aggregates = single_country_aggregate(country_composite)
     country_iu_summary_aggregates = country_lvl_aggregate(
         iu_lvl_data,
@@ -148,7 +153,8 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
 
     iu_meta_data = IUData(
         iu_data.preprocess_iu_meta_data(
-            pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv")
+            pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv"),
+            simulated_IUs=all_ius,
         ),
         pipeline_config.disease,
         iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
