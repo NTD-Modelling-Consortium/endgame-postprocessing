@@ -141,8 +141,8 @@ class IUData:
             raise Exception(f"Invalid IU code: {iu_code}")
         iu = self.input_data.loc[self.input_data.IU_CODE == iu_code]
         if len(iu) == 0:
-            # Consider using the preprocess_iu_meta_data function to add in every simulated IU into the
-            # meta data file
+            # Consider using the preprocess_iu_meta_data function to add in every simulated IU into
+            # the meta data file
             raise Exception(f"Could not find IU {iu_code} in the IU meta data file")
         assert len(iu) == 1
         return iu[_get_priority_population_column_for_disease(self.disease)].iat[0]
