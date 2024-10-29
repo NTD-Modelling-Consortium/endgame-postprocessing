@@ -144,13 +144,13 @@ def test_insert_missing_ius_duplicate_ius():
     )
 
 
-# def test_iu_data_get_priority_population_iu_missing_raises_exception():
-#     with pytest.raises(Exception):
-#         IUData(
-#             pd.DataFrame({"IU_CODE": [], "Priority_Population_LF": []}),
-#             disease=Disease.LF,
-#             iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-#         ).get_priority_population_for_IU("AAA00001")
+def test_iu_data_get_priority_population_iu_missing_raises_exception():
+    with pytest.raises(Exception):
+        IUData(
+            pd.DataFrame({"IU_CODE": [], "Priority_Population_LF": []}),
+            disease=Disease.LF,
+            iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
+        ).get_priority_population_for_IU("AAA00001")
 
 
 def test_iu_data_without_valid_priority_population_column_raises_exception():
