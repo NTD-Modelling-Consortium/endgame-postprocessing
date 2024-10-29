@@ -69,6 +69,9 @@ def preprocess_iu_meta_data(input_data: pd.DataFrame, simulated_IUs: list[str]):
         lambda id: str.zfill(str(id), 5)
     )
     deduped_input_data.loc[:, "IU_CODE"] = new_iu_code
+
+    # We add in all simulated IUs into the IU meta data file so that every IU
+    # has a population, and country and continent level populations can be calculated
     all_simulated_ius = insert_missing_ius(deduped_input_data, simulated_IUs)
 
     # We remove non-simualted IUs as the current IU meta data file has mismatched IUs
