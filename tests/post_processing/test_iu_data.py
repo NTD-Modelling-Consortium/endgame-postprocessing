@@ -38,7 +38,8 @@ def test_insert_missing_ius():
     )
 
     assert [str(warning.message) for warning in w] == [
-        """1 were missing from the meta data file: ['AAA00002']"""
+        """1 were missing from the meta data file: ['AAA00002']""",
+        "For these IUs a default population of 10000.0 will be used",
     ]
 
 

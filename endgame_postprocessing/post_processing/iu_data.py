@@ -34,6 +34,8 @@ def remove_non_simulated_ius(input_data: pd.DataFrame, simulated_IUs: set[str]):
     return input_data.loc[input_data.IU_CODE.isin(simulated_IUs)]
 
 
+DEFAULT_POPULATION = 10000.0
+
 def insert_missing_ius(
     input_data: pd.DataFrame, simulated_IUs: set[str]
 ) -> pd.DataFrame:
@@ -52,6 +54,9 @@ def insert_missing_ius(
         warnings.warn(
             f"{len(missing_ius)} were missing from the meta data file: {missing_ius.loc[:, 'IU_CODE'].values}"  # noqa 501
         )
+        warnings.warn(
+            f"For these IUs a default population of {DEFAULT_POPULATION} will be used"  # noqa 501
+        )
     input_data_with_all_ius = pd.merge(
         input_data, required_ius_data, how="outer", on=["IU_CODE", "ADMIN0ISO3"]
     )
@@ -61,7 +66,7 @@ def insert_missing_ius(
     ]
 
     return input_data_with_all_ius.fillna(
-        {column_name: 10000.0 for column_name in population_columns}
+        {column_name: DEFAULT_POPULATION for column_name in population_columns}
     )
 
 
