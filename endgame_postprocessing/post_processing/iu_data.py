@@ -30,21 +30,23 @@ def _get_priority_population_column_for_disease(disease: Disease):
     return f"Priority_Population_{_get_capitalised_disease(disease)}"
 
 
-def remove_non_simulated_ius(input_data: pd.DataFrame, simulated_IUs: list[str]):
+def remove_non_simulated_ius(input_data: pd.DataFrame, simulated_IUs: set[str]):
     return input_data.loc[input_data.IU_CODE.isin(simulated_IUs)]
 
 
 def insert_missing_ius(
-    input_data: pd.DataFrame, required_ius: list[str]
+    input_data: pd.DataFrame, required_ius: set[str]
 ) -> pd.DataFrame:
     assert all([_is_valid_iu_code(iu_code) for iu_code in required_ius])
 
+    ordered_ius = list(required_ius)
+
     required_ius_data = pd.DataFrame(
         {
-            "IU_CODE": required_ius,
-            "ADMIN0ISO3": [iu_code[0:3] for iu_code in required_ius],
+            "IU_CODE": ordered_ius,
+            "ADMIN0ISO3": [iu_code[0:3] for iu_code in ordered_ius],
         }
-    ).drop_duplicates()
+    )
     missing_ius = required_ius_data[~required_ius_data.IU_CODE.isin(input_data.IU_CODE)]
     if len(missing_ius) > 0:
         warnings.warn(
@@ -63,7 +65,7 @@ def insert_missing_ius(
     )
 
 
-def preprocess_iu_meta_data(input_data: pd.DataFrame, simulated_IUs: list[str]):
+def preprocess_iu_meta_data(input_data: pd.DataFrame, simulated_IUs: set[str]):
     deduped_input_data = input_data.drop_duplicates()
     new_iu_code = deduped_input_data.ADMIN0ISO3 + deduped_input_data["IU_ID"].apply(
         lambda id: str.zfill(str(id), 5)
@@ -95,7 +97,7 @@ class IUData:
         input_data: pd.DataFrame,
         disease: Disease,
         iu_selection_criteria: IUSelectionCriteria,
-        simulated_IUs: list[str] = None,
+        simulated_IUs: set[str] = None,
     ):
         self.disease = disease
         self.input_data = input_data

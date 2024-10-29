@@ -141,15 +141,17 @@ def country_aggregate(
 def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
     iu_statistical_aggregates(working_directory, threshold=pipeline_config.threshold)
 
-    all_ius = [
-        file_info.iu
-        for file_info in post_process_file_generator(
-            file_directory=output_directory_structure.get_canonical_dir(
-                working_directory
-            ),
-            end_of_file="_canonical.csv",
-        )
-    ]
+    all_ius = set(
+        [
+            file_info.iu
+            for file_info in post_process_file_generator(
+                file_directory=output_directory_structure.get_canonical_dir(
+                    working_directory
+                ),
+                end_of_file="_canonical.csv",
+            )
+        ]
+    )
 
     iu_meta_data = IUData(
         iu_data.preprocess_iu_meta_data(
