@@ -35,11 +35,11 @@ def remove_non_simulated_ius(input_data: pd.DataFrame, simulated_IUs: set[str]):
 
 
 def insert_missing_ius(
-    input_data: pd.DataFrame, required_ius: set[str]
+    input_data: pd.DataFrame, simulated_IUs: set[str]
 ) -> pd.DataFrame:
-    assert all([_is_valid_iu_code(iu_code) for iu_code in required_ius])
+    assert all([_is_valid_iu_code(iu_code) for iu_code in simulated_IUs])
 
-    ordered_ius = list(required_ius)
+    ordered_ius = list(simulated_IUs)
 
     required_ius_data = pd.DataFrame(
         {
