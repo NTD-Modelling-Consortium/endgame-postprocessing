@@ -3,6 +3,7 @@ import itertools
 from endgame_postprocessing.post_processing import (
     canoncical_columns,
     composite_run,
+    iu_data_fixup,
     output_directory_structure,
 )
 from endgame_postprocessing.post_processing import iu_data
@@ -154,7 +155,7 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
     )
 
     iu_meta_data = IUData(
-        iu_data.preprocess_iu_meta_data(
+        iu_data_fixup.preprocess_iu_meta_data(
             pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv"),
             simulated_IUs=all_ius,
         ),
