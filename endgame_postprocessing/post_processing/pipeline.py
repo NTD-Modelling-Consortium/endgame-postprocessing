@@ -6,7 +6,6 @@ from endgame_postprocessing.post_processing import (
     iu_data_fixup,
     output_directory_structure,
 )
-from endgame_postprocessing.post_processing import iu_data
 from endgame_postprocessing.post_processing.aggregation import (
     africa_lvl_aggregate,
     aggregate_post_processed_files,

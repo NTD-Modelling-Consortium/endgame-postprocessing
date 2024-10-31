@@ -1,6 +1,5 @@
 from enum import Enum
 import re
-import warnings
 
 import pandas as pd
 
