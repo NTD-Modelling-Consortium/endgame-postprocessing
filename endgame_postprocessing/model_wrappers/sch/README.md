@@ -85,11 +85,7 @@ root_input_dir/
 In all cases, there is an optional parameter `skip_canonical`, if this is
 set to `True` then the canonical step will be skipped. 
 
-This step is required, if you skip it you will get the following error:
-
-```
-FileNotFoundError: [Errno 2] No such file or directory: './output/canonical_results/'
-```
+The canonical step is required if the canonical data has not been generated previously. 
 
 However, if it completes successfully and you want to re-run the aggregation, then this can be used.
 
