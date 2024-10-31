@@ -3,9 +3,9 @@ import itertools
 from endgame_postprocessing.post_processing import (
     canoncical_columns,
     composite_run,
+    iu_data_fixup,
     output_directory_structure,
 )
-from endgame_postprocessing.post_processing import iu_data
 from endgame_postprocessing.post_processing.aggregation import (
     africa_lvl_aggregate,
     aggregate_post_processed_files,
@@ -153,11 +153,17 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
         ]
     )
 
+    fixedup_meta_data_file = iu_data_fixup.fixup_iu_meta_data_file(
+        pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv"),
+        simulated_IUs=all_ius,
+    )
+
+    output_directory_structure.write_meta_data_file(
+        working_directory, fixedup_meta_data_file
+    )
+
     iu_meta_data = IUData(
-        iu_data.preprocess_iu_meta_data(
-            pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv"),
-            simulated_IUs=all_ius,
-        ),
+        fixedup_meta_data_file,
         pipeline_config.disease,
         iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
         simulated_IUs=all_ius,

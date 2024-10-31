@@ -39,6 +39,8 @@ flowchart TD
     Raw[Raw IU results] --disease specific canoncilaisation--> IU_canonical[Canoncical IU results]
     IU_canonical --Statistical Aggregation--> IU_Agg[Statistical aggregates of model and protocol measures per IU]
     IU_canonical --Derived protocol measures--> IU_Agg
+    IU_meta_data --iu_data_fixup--> fixed_up_iu_meta_data
+    fixed_up_iu_meta_data ---> Composite_Country_Results
     IU_canonical ---> Composite_Country_Results[Composite country results]
     Composite_Country_Results --Statistical Aggregation--> Country_Agg_model_measures[Country Statistical Aggregates]
     IU_canonical --Count number of IUs that meet threshold--> Country_Agg_model_measures
