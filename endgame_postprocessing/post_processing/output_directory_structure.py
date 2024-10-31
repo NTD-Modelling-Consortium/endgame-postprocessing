@@ -78,3 +78,9 @@ def write_africa_stat_agg(
     africa_statistical_aggregate.to_csv(
         f"{path}/{file_name}", index=False, float_format="%g"
     )
+
+
+def write_meta_data_file(root_dir, iu_metadata_file):
+    iu_metadata_file.to_csv(
+        f"{root_dir}/iu_metadata.csv", index=False, float_format="%g"
+    )
