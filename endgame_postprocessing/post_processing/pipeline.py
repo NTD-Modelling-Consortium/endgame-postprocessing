@@ -154,11 +154,17 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
         ]
     )
 
+    fixedup_meta_data_file = iu_data_fixup.fixup_iu_meta_data_file(
+        pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv"),
+        simulated_IUs=all_ius,
+    )
+
+    output_directory_structure.write_meta_data_file(
+        working_directory, fixedup_meta_data_file
+    )
+
     iu_meta_data = IUData(
-        iu_data_fixup.fixup_iu_meta_data_file(
-            pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv"),
-            simulated_IUs=all_ius,
-        ),
+        fixedup_meta_data_file,
         pipeline_config.disease,
         iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
         simulated_IUs=all_ius,
