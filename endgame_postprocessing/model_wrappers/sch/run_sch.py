@@ -204,21 +204,6 @@ def canonicalise_raw_sch_results(
     first_worm = worm_directories[0]
     file_iter = get_sch_flat(f"{input_dir}{first_worm}")
 
-    other_worm_directories = worm_directories[1:]
-    iter_other_worms = [
-        list(get_sch_flat(f"{input_dir}{other_worm_dir}"))
-        for other_worm_dir in other_worm_directories
-    ]
-    flattened_iter_other_worms = [
-        file.file_path
-        for worm_list in iter_other_worms
-        for file in worm_list
-    ]
-    other_worms = [
-        get_sch_worm_info(next(get_sch_flat(f"{input_dir}{other_worm_dir}")).file_path)
-        for other_worm_dir in other_worm_directories
-    ]
-
     all_iu_worm_info = [
         get_sch_worm_info(file_info.file_path)
         for worm_dir in worm_directories
@@ -227,26 +212,34 @@ def canonicalise_raw_sch_results(
     _check_iu_in_all_folders(all_iu_worm_info)
 
     all_files = list(file_iter)
-
     if len(all_files) == 0:
         raise Exception(
             "No data for IUs found - see above warnings and check input directory"
         )
 
+    other_worm_directories = worm_directories[1:]
+    other_worms = [
+        get_sch_worm_info(next(get_sch_flat(f"{input_dir}{other_worm_dir}")).file_path)
+        for other_worm_dir in other_worm_directories
+    ]
+
+    all_other_worms_file_paths = set(
+        file_desc.file_path
+        for worm_files_list in (
+            get_sch_flat(f"{input_dir}{worm_dir}")
+            for worm_dir in other_worm_directories
+        )
+        for file_desc in worm_files_list
+    )
+
     for file_info in tqdm(all_files, desc="Canoncialise SCH results"):
-        # if not all_worm:
-        #     canonical_result = canoncialise_single_result(file_info)
-        #     output_directory_structure.write_canonical(
-        #         output_dir, file_info, canonical_result
-        #     )
-        # else:
         other_worm_file_infos = []
         for worm, burden, _, _ in other_worms:
             # folder names are different format than the file name
             worm_burden = "sch-" + worm + "-" + burden.replace("_", "-")
             new_file = swap_worm_in_heirachy(file_info, first_worm, worm_burden)
 
-            if new_file.file_path in flattened_iter_other_worms:
+            if new_file.file_path in all_other_worms_file_paths:
                 other_worm_file_infos.append(new_file)
 
         canonical_result_first_worm = canoncialise_single_result(file_info)
