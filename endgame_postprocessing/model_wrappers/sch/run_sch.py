@@ -21,6 +21,9 @@ WORM_MAPPING = {
     "hookworm": "hookworm",
     "ascaris": "roundworm",
     "trichuris": "whipworm",
+    "sch-haematobium": "haematobium",
+    "sch-mansoni-high-burden": "mansoni_high_burden",
+    "sch-mansoni-low-burden": "mansoni_low_burden",
 }
 
 
@@ -118,6 +121,14 @@ def get_sth_worm(file_path):
     file_match = re.search(file_name_regex, file_path)
     return file_match.group("worm")
 
+def get_sch_worm_info(file_path):
+    file_name_regex = r"ntdmc-(?P<iu_id>[A-Z]{3}\d{5})-(?P<worm>[\w]+?)(_(?P<burden>high_burden|low_burden))?-group_001-(?P<scenario>scenario_\w+)-survey_type_kk2-group_001-200_simulations.csv" # noqa 501
+    file_match = re.search(file_name_regex, file_path)
+    return (
+        file_match.group("worm"), file_match.group("burden"),
+        file_match.group("iu_id"), file_match.group("scenario")
+    )
+
 
 def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
     if len(worm_directories) == 0:
@@ -165,21 +176,96 @@ def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
             output_dir, file_info, all_worms_canonical
         )
 
+def _check_iu_in_all_folders(worm_iu_info):
+    info = {}
+    unique_worms = set()
+    for worm, _, iu, scenario in worm_iu_info:
+        unique_worms.add(worm)
+        if scenario not in info:
+            info[scenario] = {}
+        if iu not in info[scenario]:
+            info[scenario][iu] = {}
+        if worm not in info[scenario][iu]:
+            info[scenario][iu][worm] = 0
+        info[scenario][iu][worm] += 1
+        if info[scenario][iu][worm] > 1:
+            raise Exception(
+                f"IU {iu} found multiple times for {worm} in scenario {scenario}."
+            )
 
-def canonicalise_raw_sch_results(input_dir, output_dir):
-    file_iter = get_sch_flat(f"{input_dir}")
+    for scenario in info.keys():
+        for iu in info[scenario].keys():
+            iu_worms = info[scenario][iu].keys()
+            for worm in unique_worms:
+                if worm != "haematobium" and worm not in iu_worms:
+                    raise Exception(
+                        f"IU {iu} not present for {worm}."
+                    )
+
+def canonicalise_raw_sch_results(
+    input_dir,
+    output_dir,
+    worm_directories,
+):
+    if len(worm_directories) < 1:
+        raise Exception(
+            "Expected at least 1 item in the worm_directories parameter," +
+            f"received {len(worm_directories)}."
+        )
+    # Assuming that the first worm only has one burden
+    first_worm = worm_directories[0]
+    file_iter = get_sch_flat(f"{input_dir}{first_worm}")
+
+    all_iu_worm_info = [
+        get_sch_worm_info(file_info.file_path)
+        for worm_dir in worm_directories
+        for file_info in get_sch_flat(f"{input_dir}{worm_dir}")
+    ]
+    _check_iu_in_all_folders(all_iu_worm_info)
 
     all_files = list(file_iter)
-
     if len(all_files) == 0:
         raise Exception(
             "No data for IUs found - see above warnings and check input directory"
         )
 
+    other_worm_directories = worm_directories[1:]
+    other_worms = [
+        get_sch_worm_info(next(get_sch_flat(f"{input_dir}{other_worm_dir}")).file_path)
+        for other_worm_dir in other_worm_directories
+    ]
+
+    all_other_worms_file_paths = set(
+        file_desc.file_path
+        for worm_files_list in (
+            get_sch_flat(f"{input_dir}{worm_dir}")
+            for worm_dir in other_worm_directories
+        )
+        for file_desc in worm_files_list
+    )
+
     for file_info in tqdm(all_files, desc="Canoncialise SCH results"):
-        canonical_result = canoncialise_single_result(file_info)
+        other_worm_file_infos = []
+        for worm, burden, _, _ in other_worms:
+            # folder names are different format than the file name
+            worm_burden = "sch-" + worm + "-" + burden.replace("_", "-")
+            new_file = swap_worm_in_heirachy(file_info, first_worm, worm_burden)
+
+            if new_file.file_path in all_other_worms_file_paths:
+                other_worm_file_infos.append(new_file)
+
+        canonical_result_first_worm = canoncialise_single_result(file_info)
+
+        other_worms_canoncial = [
+            canoncialise_single_result(other_worm_file_info)
+            for other_worm_file_info in other_worm_file_infos
+        ]
+
+        all_worms_canonical = combine_many_worms(
+            canonical_result_first_worm, other_worms_canoncial
+        )
         output_directory_structure.write_canonical(
-            output_dir, file_info, canonical_result
+            output_dir, file_info, all_worms_canonical
         )
 
 
@@ -233,9 +319,16 @@ def run_sth_postprocessing_pipeline(
     pipeline.pipeline(input_dir, output_dir, config)
 
 
-def run_sch_postprocessing_pipeline(input_dir, output_dir, skip_canonical=False):
+def run_sch_postprocessing_pipeline(
+    input_dir,
+    output_dir,
+    skip_canonical=False,
+    worm_directories=[],
+):
     if not skip_canonical:
-        canonicalise_raw_sch_results(input_dir, output_dir)
+        canonicalise_raw_sch_results(
+            input_dir, output_dir, worm_directories
+        )
     config = PipelineConfig(
         disease=Disease.SCH,
         threshold=0.1,
@@ -263,11 +356,18 @@ if __name__ == "__main__":
     #         skip_canonical=False,
     #     )
 
-    root_input_dir = "local_data/sch-pilot/202410b-SCH-test-2-20241022"
-    worm_directories = next(os.walk(root_input_dir))[1]
+    root_input_dir = "local_data/202410b-SCH-test-2-20241022"
+    worm_directories = ["sch-haematobium", "sch-mansoni-high-burden", "sch-mansoni-low-burden"]
     for worm_directory in worm_directories:
         run_sch_postprocessing_pipeline(
-            f"{root_input_dir}/{worm_directory}",
+            f"{root_input_dir}/",
             f"local_data/sch-output-single-worm/{worm_directory}",
             skip_canonical=False,
+            worm_directories=[worm_directory]
         )
+    run_sch_postprocessing_pipeline(
+        f"{root_input_dir}/",
+        "local_data/sch-output-all-worm/",
+        skip_canonical=False,
+        worm_directories=worm_directories,
+    )
