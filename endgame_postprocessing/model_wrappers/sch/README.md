@@ -45,7 +45,28 @@ for worm_directory in worm_directories:
 
 ## Schisto
 
-At the moment, Schisto can only be run on each worm individually: 
+The SCH pipeline can also create an "any worm" result, or a single worm result. 
+
+### Any Worm
+
+Unlike STH, the SCH worm structure is differeny by worm. Haematobium is simulated for for all IUs, however mansoni is split by high or low burden. As such, we need to explicitly state the folder order for the pipeline to properly process the data. 
+
+In this case, the "any worm" functionality will expect that an IU that is in haematobium will appear once in either `mansoni-high-burden` or `mansoni-low-burden`. 
+
+```python
+import endgame_postprocessing.model_wrappers.sch.run_sch as run_sch
+
+root_input_dir = # TODO
+worm_directories = ["sch-haematobium", "sch-mansoni-high-burden", "sch-mansoni-low-burden"]
+run_sch_postprocessing_pipeline(
+  f"{root_input_dir}/",
+  "local_data/sch-output-all-worm/",
+  skip_canonical=False,
+  worm_directories=worm_directories,
+)
+```
+
+### Single Worm
 
 ```python
 import endgame_postprocessing.model_wrappers.sch.run_sch as run_sch
@@ -54,9 +75,10 @@ root_input_dir = # TODO
 worm_directories = next(os.walk(root_input_dir))[1]
 for worm_directory in worm_directories:
     run_sch.run_sch_postprocessing_pipeline(
-        f"{root_input_dir}/{worm_directory}",
+        f"{root_input_dir}/",
         f"local_data/sch-output-single-worm/{worm_directory}",
         skip_canonical=False,
+        worm_directories=[worm_directory]
     )
 ```
 
