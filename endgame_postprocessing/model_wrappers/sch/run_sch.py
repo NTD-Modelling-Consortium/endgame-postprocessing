@@ -276,6 +276,7 @@ def run_sth_postprocessing_pipeline(
     num_jobs: int,
     skip_canonical=False,
     threshold: float = 0.1,
+    run_country_level_summaries = False,
 ):
     """
     Aggregates into standard format the input files found in input_dir.
@@ -315,7 +316,7 @@ def run_sth_postprocessing_pipeline(
     config = PipelineConfig(
         disease=Disease.STH,
         threshold=threshold,
-        include_country_and_continent_summaries=False,
+        include_country_and_continent_summaries=run_country_level_summaries,
     )
     pipeline.pipeline(input_dir, output_dir, config)
 
@@ -326,6 +327,7 @@ def run_sch_postprocessing_pipeline(
     skip_canonical=False,
     worm_directories=[],
     threshold: float = 0.1,
+    run_country_level_summaries = False,
 ):
     if not skip_canonical:
         canonicalise_raw_sch_results(
@@ -334,7 +336,7 @@ def run_sch_postprocessing_pipeline(
     config = PipelineConfig(
         disease=Disease.SCH,
         threshold=threshold,
-        include_country_and_continent_summaries=False,
+        include_country_and_continent_summaries=run_country_level_summaries,
     )
     pipeline.pipeline(input_dir, output_dir, config)
 
@@ -368,12 +370,14 @@ if __name__ == "__main__":
                 f"local_data/sch-output-single-worm/threshold_{threshold}/{worm_directory}",
                 skip_canonical=False,
                 worm_directories=[worm_directory],
-                threshold=threshold
+                threshold=threshold,
+                run_country_level_summaries=True
             )
         run_sch_postprocessing_pipeline(
             f"{root_input_dir}/",
             f"local_data/sch-output-all-worm/threshold_{threshold}/",
             skip_canonical=False,
             worm_directories=worm_directories,
-            threshold=threshold
+            threshold=threshold,
+            run_country_level_summaries=True
         )
