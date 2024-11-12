@@ -275,6 +275,7 @@ def run_sth_postprocessing_pipeline(
     worm_directories: list[str],
     num_jobs: int,
     skip_canonical=False,
+    threshold: float = 0.1,
 ):
     """
     Aggregates into standard format the input files found in input_dir.
@@ -313,7 +314,7 @@ def run_sth_postprocessing_pipeline(
 
     config = PipelineConfig(
         disease=Disease.STH,
-        threshold=0.1,
+        threshold=threshold,
         include_country_and_continent_summaries=False,
     )
     pipeline.pipeline(input_dir, output_dir, config)
@@ -324,6 +325,7 @@ def run_sch_postprocessing_pipeline(
     output_dir,
     skip_canonical=False,
     worm_directories=[],
+    threshold: float = 0.1,
 ):
     if not skip_canonical:
         canonicalise_raw_sch_results(
@@ -331,13 +333,14 @@ def run_sch_postprocessing_pipeline(
         )
     config = PipelineConfig(
         disease=Disease.SCH,
-        threshold=0.1,
+        threshold=threshold,
         include_country_and_continent_summaries=False,
     )
     pipeline.pipeline(input_dir, output_dir, config)
 
 
 if __name__ == "__main__":
+    thresholds_to_process = [0.01, 0.1]
     #     input_dir = "local_data/sth-fresh-backup"
     #     worm_directories = next(os.walk(input_dir))[1]
     #     for worm_directory in worm_directories:
@@ -358,16 +361,19 @@ if __name__ == "__main__":
 
     root_input_dir = "local_data/202410b-SCH-test-2-20241022"
     worm_directories = ["sch-haematobium", "sch-mansoni-high-burden", "sch-mansoni-low-burden"]
-    for worm_directory in worm_directories:
+    for threshold in thresholds_to_process:
+        for worm_directory in worm_directories:
+            run_sch_postprocessing_pipeline(
+                f"{root_input_dir}/",
+                f"local_data/sch-output-single-worm/threshold_{threshold}/{worm_directory}",
+                skip_canonical=False,
+                worm_directories=[worm_directory],
+                threshold=threshold
+            )
         run_sch_postprocessing_pipeline(
             f"{root_input_dir}/",
-            f"local_data/sch-output-single-worm/{worm_directory}",
+            f"local_data/sch-output-all-worm/threshold_{threshold}/",
             skip_canonical=False,
-            worm_directories=[worm_directory]
+            worm_directories=worm_directories,
+            threshold=threshold
         )
-    run_sch_postprocessing_pipeline(
-        f"{root_input_dir}/",
-        "local_data/sch-output-all-worm/",
-        skip_canonical=False,
-        worm_directories=worm_directories,
-    )

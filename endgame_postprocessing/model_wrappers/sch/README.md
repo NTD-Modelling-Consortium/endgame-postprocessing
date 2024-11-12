@@ -21,6 +21,7 @@ run_sch.run_sth_postprocessing_pipeline(
     worm_directories,
     1,
     skip_canonical=False,
+    threshold = 0.01,
 )
 ```
 
@@ -40,6 +41,7 @@ for worm_directory in worm_directories:
         [worm_directory],
         1,
         skip_canonical=False,
+        threshold = 0.01,
     )
 ```
 
@@ -63,6 +65,7 @@ run_sch_postprocessing_pipeline(
   "local_data/sch-output-all-worm/",
   skip_canonical=False,
   worm_directories=worm_directories,
+  threshold = 0.01,
 )
 ```
 
@@ -78,7 +81,8 @@ for worm_directory in worm_directories:
         f"{root_input_dir}/",
         f"local_data/sch-output-single-worm/{worm_directory}",
         skip_canonical=False,
-        worm_directories=[worm_directory]
+        worm_directories=[worm_directory],
+        threshold = 0.01,
     )
 ```
 
