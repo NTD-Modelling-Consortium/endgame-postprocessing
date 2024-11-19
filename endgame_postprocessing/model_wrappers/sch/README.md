@@ -14,6 +14,7 @@ import endgame_postprocessing.model_wrappers.sch.run_sch as run_sch
 
 input_dir = # TODO
 # Collect all of the worm directories that are in the input_dir
+# Note: The first worm directory in the list should contain files for all IUs across the worms
 worm_directories = next(os.walk(input_dir))[1]
 run_sch.run_sth_postprocessing_pipeline(
     input_dir,
