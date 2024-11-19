@@ -48,6 +48,17 @@ def probability_any_worm(probability_for_each_worm: Iterable[float]):
     prob_not_any_worm = reduce(mul, prob_of_not_each_worm, 1.0)
     return 1.0 - prob_not_any_worm
 
+def probability_any_worm_max(probability_for_each_worm: Iterable[float]):
+    """
+    Calculate the probability of having any worm, given by the highest probability
+    among all the worms. Used for SCH.
+
+    Inputs:
+     - probability_for_each_worm: Probability of having each worm
+
+    Returns: the probability of having any worm.
+    """
+    return reduce(lambda x, y: np.maximum(x, y), probability_for_each_worm)
 
 def canoncialise_single_result(file_info, warning_if_no_file=False):
     try:
@@ -66,7 +77,9 @@ def canoncialise_single_result(file_info, warning_if_no_file=False):
         raise FileNotFoundError
 
 
-def combine_many_worms(first_worm, other_worms):
+def combine_many_worms(first_worm, other_worms, combination_function = probability_any_worm):
+    if not callable(combination_function):
+        raise Exception("Need to provide a callable function to combine worms.")
     other_worm_draws = [
         other_worm.loc[:, "draw_0":]
         if not other_worm.empty
@@ -77,7 +90,7 @@ def combine_many_worms(first_worm, other_worms):
         for other_worm in other_worms
     ]
 
-    first_worm.loc[:, "draw_0":] = probability_any_worm(
+    first_worm.loc[:, "draw_0":] = combination_function(
         [first_worm.loc[:, "draw_0":]] + other_worm_draws
     )
     return first_worm
@@ -280,7 +293,8 @@ def canonicalise_raw_sch_results(
         ]
 
         all_worms_canonical = combine_many_worms(
-            canonical_result_first_worm, other_worms_canoncial
+            canonical_result_first_worm, other_worms_canoncial,
+            combination_function=probability_any_worm_max
         )
         output_directory_structure.write_canonical(
             output_dir, file_info, all_worms_canonical
