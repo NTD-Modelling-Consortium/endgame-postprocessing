@@ -189,14 +189,14 @@ def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warnin
         )
 
     for file_info in tqdm(all_files, desc="Canoncialise STH results"):
-        canonical_result_first_worm = canoncialise_single_result(file_info, warning_if_no_file)
+        canonical_result_first_worm = canoncialise_single_result(file_info)
         first_worm = get_sth_worm(file_info.file_path)
         other_worm_file_infos = [
             swap_worm_in_heirachy(file_info, first_worm, worm) for worm in other_worms
         ]
 
         other_worms_canoncial = [
-            canoncialise_single_result(other_worm_file_info)
+            canoncialise_single_result(other_worm_file_info, warning_if_no_file)
             for other_worm_file_info in other_worm_file_infos
         ]
 
@@ -207,7 +207,7 @@ def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warnin
             output_dir, file_info, all_worms_canonical
         )
 
-def _check_iu_in_all_folders(worm_iu_info):
+def _check_iu_in_all_folders(worm_iu_info, warning_if_no_file):
     info = {}
     unique_worms = set()
     for worm, _, iu, scenario in worm_iu_info:
@@ -229,14 +229,18 @@ def _check_iu_in_all_folders(worm_iu_info):
             iu_worms = info[scenario][iu].keys()
             for worm in unique_worms:
                 if worm != "haematobium" and worm not in iu_worms:
-                    raise Exception(
-                        f"IU {iu} not present for {worm}."
-                    )
+                    if warning_if_no_file:
+                        warnings.warn(f"IU not present for {worm}")
+                    else:
+                        raise Exception(
+                            f"IU {iu} not present for {worm}."
+                        )
 
 def canonicalise_raw_sch_results(
     input_dir,
     output_dir,
     worm_directories,
+    warning_if_no_file
 ):
     if len(worm_directories) < 1:
         raise Exception(
@@ -252,7 +256,7 @@ def canonicalise_raw_sch_results(
         for worm_dir in worm_directories
         for file_info in get_sch_flat(f"{input_dir}{worm_dir}")
     ]
-    _check_iu_in_all_folders(all_iu_worm_info)
+    _check_iu_in_all_folders(all_iu_worm_info, warning_if_no_file)
 
     all_files = list(file_iter)
     if len(all_files) == 0:
@@ -288,7 +292,7 @@ def canonicalise_raw_sch_results(
         canonical_result_first_worm = canoncialise_single_result(file_info)
 
         other_worms_canoncial = [
-            canoncialise_single_result(other_worm_file_info)
+            canoncialise_single_result(other_worm_file_info, warning_if_no_file)
             for other_worm_file_info in other_worm_file_infos
         ]
 
@@ -361,10 +365,11 @@ def run_sch_postprocessing_pipeline(
     worm_directories=[],
     threshold: float = 0.1,
     run_country_level_summaries = False,
+    warning_if_no_file = False,
 ):
     if not skip_canonical:
         canonicalise_raw_sch_results(
-            input_dir, output_dir, worm_directories
+            input_dir, output_dir, worm_directories, warning_if_no_file
         )
     config = PipelineConfig(
         disease=Disease.SCH,

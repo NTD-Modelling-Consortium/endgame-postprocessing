@@ -254,14 +254,14 @@ def test_check_iu_in_all_folders_success_multi_scenario():
         ("worm1", None, "iu1", "scenario2"),
         ("worm2", None, "iu1", "scenario2"),
     ]
-    _check_iu_in_all_folders(worm_iu_infos)
+    _check_iu_in_all_folders(worm_iu_infos, warning_if_no_file=False)
 
 def test_check_iu_in_all_folders_success_single_burden():
     worm_iu_infos = [
         ("worm1", None, "iu1", "scenario1"),
         ("worm2", "low_burden", "iu1", "scenario1"),
     ]
-    _check_iu_in_all_folders(worm_iu_infos)
+    _check_iu_in_all_folders(worm_iu_infos, warning_if_no_file=False)
 
 def test_check_iu_in_all_folders_fail_multi_burden():
     worm_iu_infos = [
@@ -270,16 +270,25 @@ def test_check_iu_in_all_folders_fail_multi_burden():
         ("worm2", "high_burden", "iu1", "scenario1"),
     ]
     with pytest.raises(Exception):
-        _check_iu_in_all_folders(worm_iu_infos)
+        _check_iu_in_all_folders(worm_iu_infos, warning_if_no_file=False)
 
-def test_check_iu_in_all_folders_missing_worm():
+def test_check_iu_in_all_folders_missing_worm_exception():
     worm_iu_infos = [
         ("worm1", None, "iu1", "scenario1"),
         ("worm1", None, "iu2", "scenario1"),
         ("worm2", "high_burden", "iu2", "scenario1"),
     ]
     with pytest.raises(Exception):
-        _check_iu_in_all_folders(worm_iu_infos)
+        _check_iu_in_all_folders(worm_iu_infos, warning_if_no_file=False)
+
+def test_check_iu_in_all_folders_missing_worm_warning():
+    worm_iu_infos = [
+        ("worm1", None, "iu1", "scenario1"),
+        ("worm1", None, "iu2", "scenario1"),
+        ("worm2", "high_burden", "iu2", "scenario1"),
+    ]
+    with pytest.warns():
+        _check_iu_in_all_folders(worm_iu_infos, warning_if_no_file=True)
 
 
 def test_canonicalise_raw_sch_results_all_worm_no_worm_directory():
