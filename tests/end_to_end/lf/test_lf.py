@@ -20,7 +20,10 @@ def test_lf_end_to_end(snapshot):
         shutil.rmtree(output_path)
 
     lf_runner.run_postprocessing_pipeline(
-        forward_projection_raw=input_data, output_dir=output_path, num_jobs=1
+        forward_projection_raw=input_data,
+        historic_data_nonstandard=None,
+        output_dir=output_path,
+        num_jobs=1,
     )
 
     # Composite data is not part of the interface so don't check

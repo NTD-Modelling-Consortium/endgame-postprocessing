@@ -76,17 +76,20 @@ def run_postprocessing_pipeline(
         output_dir (str): The directory to store the output files.
 
     """
-    historic_raw_path = f"{historic_data_nonstandard}/raw"
-    perform_historic_standardise_step(historic_data_nonstandard, historic_raw_path)
+    if historic_data_nonstandard != None:
+        historic_raw_path = f"{historic_data_nonstandard}/raw"
+        perform_historic_standardise_step(historic_data_nonstandard, historic_raw_path)
 
-    forward_canonical = f"{forward_projection_raw}/canonical"
-    canonicalise_raw_lf_results(forward_projection_raw, forward_canonical)
-    historic_canonical = f"{historic_raw_path}/canonical"
-    canonicalise_raw_lf_results(historic_raw_path, historic_canonical)
+        forward_canonical = f"{forward_projection_raw}/canonical"
+        canonicalise_raw_lf_results(forward_projection_raw, forward_canonical)
+        historic_canonical = f"{historic_raw_path}/canonical"
+        canonicalise_raw_lf_results(historic_raw_path, historic_canonical)
 
-    combine_historic_and_forward.combine_historic_and_forward(
-        historic_canonical, forward_canonical, output_dir
-    )
+        combine_historic_and_forward.combine_historic_and_forward(
+            historic_canonical, forward_canonical, output_dir
+        )
+    else:
+        canonicalise_raw_lf_results(forward_projection_raw, output_dir)
 
     pipeline.pipeline(
         forward_projection_raw, output_dir, PipelineConfig(disease=Disease.LF)
