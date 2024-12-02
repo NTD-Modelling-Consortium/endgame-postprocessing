@@ -1,4 +1,8 @@
 from tqdm import tqdm
+from endgame_postprocessing.model_wrappers.lf import combine_historic_and_forward
+from endgame_postprocessing.model_wrappers.lf.historic_standardise_step import (
+    perform_historic_standardise_step,
+)
 from endgame_postprocessing.post_processing import (
     canonicalise,
     output_directory_structure,
@@ -41,7 +45,12 @@ def canonicalise_raw_lf_results(input_dir, output_dir):
         )
 
 
-def run_postprocessing_pipeline(input_dir: str, output_dir: str, num_jobs: int):
+def run_postprocessing_pipeline(
+    forward_projection_raw: str,
+    historic_data_nonstandard: str,
+    output_dir: str,
+    num_jobs: int,
+):
     """
     Aggregates into standard format the input files found in input_dir.
     input_dir must have the following substructure:
@@ -67,8 +76,27 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str, num_jobs: int):
         output_dir (str): The directory to store the output files.
 
     """
-    canonicalise_raw_lf_results(input_dir, output_dir)
-    pipeline.pipeline(input_dir, output_dir, PipelineConfig(disease=Disease.LF))
+    historic_raw_path = f"{historic_data_nonstandard}/raw"
+    perform_historic_standardise_step(historic_data_nonstandard, historic_raw_path)
+
+    forward_canonical = f"{forward_projection_raw}/canonical"
+    canonicalise_raw_lf_results(forward_projection_raw, forward_canonical)
+    historic_canonical = f"{historic_raw_path}/canonical"
+    canonicalise_raw_lf_results(historic_raw_path, historic_canonical)
+
+    combine_historic_and_forward.combine_historic_and_forward(
+        historic_canonical, forward_canonical, output_dir
+    )
+
+    pipeline.pipeline(
+        forward_projection_raw, output_dir, PipelineConfig(disease=Disease.LF)
+    )
+
 
 if __name__ == "__main__":
-    run_postprocessing_pipeline("local_data/lf", "local_data/lf-output", 1)
+    run_postprocessing_pipeline(
+        "local_data/lf",
+        "local_data/LF_PrevalenceData_Nov_2024",
+        "local_data/lf-output-combined",
+        1,
+    )
