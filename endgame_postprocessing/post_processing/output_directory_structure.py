@@ -12,7 +12,7 @@ def write_canonical(
     scenario = file_info.scenario
     country = file_info.country
     iu = file_info.iu
-    file_name = f"{iu}_canonical.csv"
+    file_name = f"{iu}_{scenario}_canonical.csv"
     path = Path(f"{get_canonical_dir(root_dir)}/{scenario}/{country}/{iu}/")
     path.mkdir(parents=True, exist_ok=True)
     canonical_result.to_csv(f"{path}/{file_name}", index=False, float_format="%g")
