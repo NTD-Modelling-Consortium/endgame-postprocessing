@@ -1,3 +1,5 @@
+import glob
+import re
 import warnings
 from .dataclasses import CustomFileInfo
 from typing import Generator
@@ -86,3 +88,21 @@ def post_process_file_generator(
                             f"Unexpected file {output_file} in IUs directory {iu_dir_path}, "
                             f"expecting {end_of_file} only"
                         )
+
+
+def get_flat_regex(file_name_regex, input_dir, glob_expression="**/*.csv"):
+    files = glob.glob(glob_expression, root_dir=input_dir, recursive=True)
+    for file in files:
+        file_match = re.search(file_name_regex, file)
+        if not file_match:
+            warnings.warn(f"Unexpected file: {file}")
+            continue
+
+        yield CustomFileInfo(
+            scenario_index=1,  # TODO - note scenarios are not ints, eg 2a
+            total_scenarios=3,  # TODO
+            scenario=file_match.group("scenario"),
+            country=file_match.group("country"),
+            iu=file_match.group("iu_id"),
+            file_path=f"{input_dir}/{file}",
+        )

@@ -4,6 +4,7 @@ from endgame_postprocessing.post_processing import (
     output_directory_structure,
     pipeline,
 )
+from endgame_postprocessing.post_processing import file_util
 from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.file_util import (
     post_process_file_generator,
@@ -13,10 +14,15 @@ import pandas as pd
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 
 
-def canonicalise_raw_lf_results(input_dir, output_dir):
-    file_iter = post_process_file_generator(
-        file_directory=input_dir, end_of_file=".csv"
+def get_lf_standard(input_dir):
+    return file_util.get_flat_regex(
+        r"ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-lf-(?P<scenario>scenario_\d+)-200.csv",
+        input_dir,
     )
+
+
+def canonicalise_raw_lf_results(input_dir, output_dir):
+    file_iter = get_lf_standard(input_dir)
 
     all_files = list(file_iter)
 
