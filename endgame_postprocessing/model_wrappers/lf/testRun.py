@@ -33,11 +33,8 @@ def canonicalise_raw_lf_results(input_dir, output_dir):
 
     for file_info in tqdm(all_files, desc="Canoncialise LF results"):
         raw_iu = pd.read_csv(file_info.file_path)
-
-        raw_without_columns = raw_iu.drop(columns=["espen_loc"], errors="ignore")
-        # TODO: canonical shouldn't need the age_start / age_end but these are assumed present later
         canonical_result = canonicalise.canonicalise_raw(
-            raw_without_columns, file_info, "true mf prevalence (all pop)"
+            raw_iu, file_info, "true mf prevalence (all pop)"
         )
         output_directory_structure.write_canonical(
             output_dir, file_info, canonical_result

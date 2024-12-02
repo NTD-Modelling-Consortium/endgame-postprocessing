@@ -28,6 +28,7 @@ def canonicalise_raw(
         canoncical_columns.COUNTRY_CODE,
         canoncical_columns.IU_NAME,
         canoncical_columns.YEAR_ID,
+        # TODO: canonical shouldn't need the age_start / age_end but these are assumed present later
         "age_start",
         "age_end",
         canoncical_columns.MEASURE,
