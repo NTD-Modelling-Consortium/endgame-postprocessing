@@ -1,5 +1,6 @@
 import pandas as pd
 from endgame_postprocessing.post_processing import (
+    canonical_file_name,
     file_util,
     output_directory_structure,
 )
@@ -26,13 +27,13 @@ def combine_historic_and_forward(
     historic_data_file_infos = {
         file_info.iu: file_info
         for file_info in file_util.get_flat_regex(
-            r"(?P<iu_id>(?P<country>[A-Z]{3})\d{5})_(?P<scenario>scenario_\d+)_canonical.csv",
+            canonical_file_name.get_regex(),
             historic_canonical_data_path,
         )
     }
 
     forward_data_file_infos = file_util.get_flat_regex(
-        r"(?P<iu_id>(?P<country>[A-Z]{3})\d{5})_(?P<scenario>scenario_\d+)_canonical.csv",
+        canonical_file_name.get_regex(),
         forward_canonical_data_path,
     )
     for forward_file in forward_data_file_infos:
