@@ -1,3 +1,4 @@
+import warnings
 import pandas as pd
 from endgame_postprocessing.post_processing import (
     canonical_file_name,
@@ -6,12 +7,12 @@ from endgame_postprocessing.post_processing import (
 )
 
 
-class MissingHistoricDataException(Exception):
+class MissingHistoricDataException(Warning):
     def __init__(self, iu):
         super().__init__(f"Missing IU: {iu} in historic data")
 
 
-class MismatchedColumnsException(Exception):
+class MismatchedColumnsException(Warning):
     def __init__(self, iu):
         super().__init__(f"{iu} different columns in historic and forward projection")
 
@@ -38,13 +39,15 @@ def combine_historic_and_forward(
     )
     for forward_file in forward_data_file_infos:
         if forward_file.iu not in historic_data_file_infos:
-            raise MissingHistoricDataException(forward_file.iu)
+            warnings.warn(MissingHistoricDataException(forward_file.iu))
+            continue
         historic_file = historic_data_file_infos[forward_file.iu]
         historic_data = pd.read_csv(historic_file.file_path)
         forward_data = pd.read_csv(forward_file.file_path)
 
         if not _all_columns_match(historic_data, forward_data):
-            raise (MismatchedColumnsException(forward_file.iu))
+            warnings.warn(MismatchedColumnsException(forward_file.iu))
+            continue
 
         all_data = pd.concat([historic_data, forward_data])
         all_data["scenario"] = forward_file.scenario

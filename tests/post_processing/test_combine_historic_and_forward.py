@@ -1,4 +1,5 @@
 import os
+from warnings import WarningMessage
 import pandas as pd
 import pandas.testing as pdt
 from pyfakefs.fake_filesystem import FakeFilesystem
@@ -81,11 +82,13 @@ def test_combine_historic_and_forward_missing_historic_raises_error(fs: FakeFile
         "forward/AAA12345_scenario_1_canonical.csv",
         contents=forward_canonical.to_csv(index=False),
     )
-    with pytest.raises(combine_historic_and_forward.MissingHistoricDataException) as e:
+    with pytest.warns(
+        combine_historic_and_forward.MissingHistoricDataException,
+        match="Missing IU: AAA12345 in historic data",
+    ) as w:
         combine_historic_and_forward.combine_historic_and_forward(
             "historic", "forward", "output"
         )
-    assert e.match("Missing IU: AAA12345 in historic data")
 
 
 def test_combine_historic_and_forward_non_canonical_file(fs: FakeFilesystem):
@@ -113,8 +116,10 @@ def test_combine_historic_and_forward_non_canonical_file(fs: FakeFilesystem):
         "forward/AAA12345_scenario_1_canonical.csv",
         contents=forward_canonical.to_csv(index=False),
     )
-    with pytest.raises(combine_historic_and_forward.MismatchedColumnsException) as e:
+    with pytest.warns(
+        combine_historic_and_forward.MismatchedColumnsException,
+        match="AAA12345 different columns in historic and forward projection",
+    ):
         combine_historic_and_forward.combine_historic_and_forward(
             "historic", "forward", "output"
         )
-    assert e.match("AAA12345 different columns in historic and forward projection")
