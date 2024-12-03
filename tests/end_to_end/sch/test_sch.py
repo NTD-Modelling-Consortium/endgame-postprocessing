@@ -26,6 +26,7 @@ def test_sch_end_to_end_no_historic_one_worm(snapshot):
 
     run_sch.run_sch_postprocessing_pipeline(
         f"{input_data}/",  # currently requires trailing slash
+        historic_input_dir=None,
         output_dir=output_path,
         worm_directories=["sch-haematobium"],
         run_country_level_summaries=True,
@@ -81,6 +82,7 @@ def test_sch_end_to_end_no_historic_many_worms(snapshot):
 
     run_sch.run_sch_postprocessing_pipeline(
         f"{input_data}/",  # currently requires trailing slash
+        historic_input_dir=None,
         output_dir=output_path,
         worm_directories=[
             "sch-haematobium",

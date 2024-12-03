@@ -8,6 +8,7 @@ import warnings
 from tqdm import tqdm
 from endgame_postprocessing.post_processing import (
     canonicalise,
+    combine_historic_and_forward,
     output_directory_structure,
     pipeline,
 )
@@ -271,12 +272,13 @@ def canonicalise_raw_sch_results(
 
 def run_sth_postprocessing_pipeline(
     input_dir: str,
+    historic_input_dir: str,
     output_dir: str,
     worm_directories: list[str],
     num_jobs: int,
     skip_canonical=False,
     threshold: float = 0.1,
-    run_country_level_summaries = False,
+    run_country_level_summaries=False,
 ):
     """
     Aggregates into standard format the input files found in input_dir.
@@ -311,7 +313,18 @@ def run_sth_postprocessing_pipeline(
 
     """
     if not skip_canonical:
-        canonicalise_raw_sth_results(input_dir, output_dir, worm_directories)
+        if historic_input_dir is not None:
+            forward_canonical = f"{output_dir}/forward_only"
+            canonicalise_raw_sth_results(input_dir, forward_canonical, worm_directories)
+            historic_canonical = f"{output_dir}/historical_only"
+            canonicalise_raw_sth_results(
+                historic_input_dir, historic_canonical, worm_directories
+            )
+            combine_historic_and_forward.combine_historic_and_forward(
+                historic_canonical, forward_canonical, output_dir
+            )
+        else:
+            canonicalise_raw_sth_results(input_dir, output_dir, worm_directories)
 
     config = PipelineConfig(
         disease=Disease.STH,
@@ -323,16 +336,26 @@ def run_sth_postprocessing_pipeline(
 
 def run_sch_postprocessing_pipeline(
     input_dir,
+    historic_input_dir: str,
     output_dir,
     worm_directories,
     skip_canonical=False,
     threshold: float = 0.1,
-    run_country_level_summaries = False,
+    run_country_level_summaries=False,
 ):
     if not skip_canonical:
-        canonicalise_raw_sch_results(
-            input_dir, output_dir, worm_directories
-        )
+        if historic_input_dir is not None:
+            forward_canonical = f"{output_dir}/forward_only"
+            canonicalise_raw_sch_results(input_dir, forward_canonical, worm_directories)
+            historic_canonical = f"{output_dir}/historical_only"
+            canonicalise_raw_sch_results(
+                historic_input_dir, historic_canonical, worm_directories
+            )
+            combine_historic_and_forward.combine_historic_and_forward(
+                historic_canonical, forward_canonical, output_dir
+            )
+        else:
+            canonicalise_raw_sch_results(input_dir, output_dir, worm_directories)
     config = PipelineConfig(
         disease=Disease.SCH,
         threshold=threshold,
