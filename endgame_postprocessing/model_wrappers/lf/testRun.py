@@ -10,9 +10,6 @@ from endgame_postprocessing.post_processing import (
 )
 from endgame_postprocessing.post_processing import file_util
 from endgame_postprocessing.post_processing.disease import Disease
-from endgame_postprocessing.post_processing.file_util import (
-    post_process_file_generator,
-)
 import pandas as pd
 
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
@@ -76,7 +73,7 @@ def run_postprocessing_pipeline(
         output_dir (str): The directory to store the output files.
 
     """
-    if historic_data_nonstandard != None:
+    if historic_data_nonstandard is not None:
         historic_raw_path = f"{historic_data_nonstandard}/raw"
         perform_historic_standardise_step(historic_data_nonstandard, historic_raw_path)
 

@@ -1,7 +1,5 @@
-import dataclasses
 import pandas as pd
 from endgame_postprocessing.post_processing import (
-    canoncical_columns,
     file_util,
     output_directory_structure,
 )
