@@ -5,6 +5,11 @@ from endgame_postprocessing.post_processing import (
 )
 
 
+class MissingHistoricDataException(Exception):
+    def __init__(self, iu):
+        super().__init__(f"Missing IU: {iu} in historic data")
+
+
 def combine_historic_and_forward(
     historic_canonical_data_path, forward_canonical_data_path, output_path
 ):
@@ -21,6 +26,8 @@ def combine_historic_and_forward(
         forward_canonical_data_path,
     )
     for forward_file in forward_data_file_infos:
+        if forward_file.iu not in historic_data_file_infos:
+            raise MissingHistoricDataException(forward_file.iu)
         historic_file = historic_data_file_infos[forward_file.iu]
         historic_data = pd.read_csv(historic_file.file_path)
         forward_data = pd.read_csv(forward_file.file_path)
