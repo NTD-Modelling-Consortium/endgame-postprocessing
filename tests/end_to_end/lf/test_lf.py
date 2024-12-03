@@ -14,7 +14,10 @@ from tests.end_to_end.generate_snapshot_dictionary import (
 )
 
 
-@pytest.mark.parametrize("data_dir,historic_subpath", [("data_no_historic", None)])
+@pytest.mark.parametrize(
+    "data_dir,historic_subpath",
+    [("data_no_historic", None), ("data_with_historic", "example_historic")],
+)
 def test_lf_end_to_end_no_historic(snapshot, data_dir, historic_subpath):
     test_root = Path(__file__).parent / data_dir
     input_data = test_root / "example_input_data"
@@ -23,9 +26,14 @@ def test_lf_end_to_end_no_historic(snapshot, data_dir, historic_subpath):
     if output_path.exists():
         shutil.rmtree(output_path)
 
+    if historic_subpath is None:
+        historic_path = None
+    else:
+        historic_path = test_root / historic_subpath
+
     lf_runner.run_postprocessing_pipeline(
         forward_projection_raw=input_data,
-        historic_data_nonstandard=historic_subpath,
+        historic_data_nonstandard=historic_path,
         output_dir=output_path,
         num_jobs=1,
     )
@@ -33,6 +41,13 @@ def test_lf_end_to_end_no_historic(snapshot, data_dir, historic_subpath):
     # Composite data is not part of the interface so don't check
     composite_path = output_path / "composite"
     shutil.rmtree(composite_path)
+
+    if historic_path is not None:
+        # historic / forward data is not part of the interface so don't check
+        historic_intermediate_files = output_path / "historic_only"
+        shutil.rmtree(historic_intermediate_files)
+        forward_intermediate_files = output_path / "forward_only"
+        shutil.rmtree(forward_intermediate_files)
 
     results = sorted(generate_flat_snapshot_set(output_path))
     expected_results = sorted(
