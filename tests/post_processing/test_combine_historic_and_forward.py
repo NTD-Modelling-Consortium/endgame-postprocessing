@@ -1,5 +1,4 @@
 import os
-from warnings import WarningMessage
 import pandas as pd
 import pandas.testing as pdt
 from pyfakefs.fake_filesystem import FakeFilesystem
@@ -85,7 +84,7 @@ def test_combine_historic_and_forward_missing_historic_raises_error(fs: FakeFile
     with pytest.warns(
         combine_historic_and_forward.MissingHistoricDataException,
         match="Missing IU: AAA12345 in historic data",
-    ) as w:
+    ):
         combine_historic_and_forward.combine_historic_and_forward(
             "historic", "forward", "output"
         )
