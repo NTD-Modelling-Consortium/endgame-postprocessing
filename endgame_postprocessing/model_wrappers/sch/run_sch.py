@@ -71,7 +71,7 @@ def canoncialise_single_result(file_info, warning_if_no_file=False):
     except FileNotFoundError:
         if warning_if_no_file:
             warnings.warn(
-                f"File {file_info.file_path} not found, and `warning_if_no_file` is set to False"
+                f"File {file_info.file_path} not found, and `warning_if_no_file` is set to True"
             )
             return pd.DataFrame()
         raise FileNotFoundError
