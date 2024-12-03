@@ -78,12 +78,12 @@ def run_postprocessing_pipeline(
 
     """
     if historic_data_nonstandard is not None:
-        historic_raw_path = f"{historic_data_nonstandard}/raw"
+        historic_raw_path = f"{output_dir}/historic_only/raw"
         perform_historic_standardise_step(historic_data_nonstandard, historic_raw_path)
 
-        forward_canonical = f"{forward_projection_raw}/canonical"
+        forward_canonical = f"{output_dir}/forward_only/canonical"
         canonicalise_raw_lf_results(forward_projection_raw, forward_canonical)
-        historic_canonical = f"{historic_raw_path}/canonical"
+        historic_canonical = f"{output_dir}/historic_only/canonical"
         canonicalise_raw_lf_results(historic_raw_path, historic_canonical)
 
         combine_historic_and_forward.combine_historic_and_forward(
