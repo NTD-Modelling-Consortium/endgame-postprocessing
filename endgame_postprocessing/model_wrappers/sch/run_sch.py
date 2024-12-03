@@ -324,8 +324,8 @@ def run_sth_postprocessing_pipeline(
 def run_sch_postprocessing_pipeline(
     input_dir,
     output_dir,
+    worm_directories,
     skip_canonical=False,
-    worm_directories=[],
     threshold: float = 0.1,
     run_country_level_summaries = False,
 ):
