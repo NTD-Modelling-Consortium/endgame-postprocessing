@@ -25,5 +25,5 @@ def combine_historic_and_forward(
         historic_data = pd.read_csv(historic_file.file_path)
         forward_data = pd.read_csv(forward_file.file_path)
         all_data = pd.concat([historic_data, forward_data])
-        historic_data["scenario"] = forward_file.scenario
+        all_data["scenario"] = forward_file.scenario
         output_directory_structure.write_canonical(output_path, forward_file, all_data)
