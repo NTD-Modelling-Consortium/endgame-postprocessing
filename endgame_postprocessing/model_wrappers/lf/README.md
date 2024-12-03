@@ -9,7 +9,8 @@ from endgame_postprocessing.model_wrappers.lf import testRun
 testRun.run_postprocessing_pipeline(
     forward_projection_raw,
     historic_data_nonstandard,
-    output_path
+    output_path,
+    1
 )
 ```
 
