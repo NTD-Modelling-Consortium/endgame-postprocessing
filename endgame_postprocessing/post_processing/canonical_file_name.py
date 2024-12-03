@@ -6,4 +6,4 @@ def get_name(file: CustomFileInfo):
 
 
 def get_regex():
-    return r"(?P<iu_id>(?P<country>[A-Z]{3})\d{5})_(?P<scenario>scenario_\d+)_canonical.csv"
+    return r"(?P<iu_id>(?P<country>[A-Z]{3})\d{5})_(?P<scenario>scenario_\w+)_canonical.csv"

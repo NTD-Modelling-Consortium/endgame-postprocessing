@@ -17,7 +17,7 @@ from endgame_postprocessing.post_processing.pipeline_config import PipelineConfi
 
 def get_lf_standard(input_dir):
     return file_util.get_flat_regex(
-        r"ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-lf-(?P<scenario>scenario_\d+)-200.csv",
+        r"ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-lf-(?P<scenario>scenario_\w+)-200.csv",
         input_dir,
     )
 
