@@ -49,13 +49,16 @@ def run_postprocessing_pipeline(
     num_jobs: int,
 ):
     """
-    Aggregates into standard format the input files found in input_dir.
-    input_dir must have the following substructure:
-        scenario1/
-            country1/
-                iu1/
-                    iu.csv
-        scenario2/
+    Aggregates into standard format the input files found in forward_projection_raw.
+    Appended to with historic data found in historic_data_nonstandard
+    forward_projection_raw should contain files (in any structure with names matching):
+        - `ntdmc-AAA12345-lf-scenario_0-200.csv`
+            for IU AAA12345 and scenario 0
+        - `PopulationMetadatafile.csv` (must be at the root)
+
+    historic_data_nonstandard should contain the files Matt generated for historic data
+    which contain just a year column and then draw_0,... where the values are the
+    protocol prevalence.
 
     The output directory must be empty.
     On completion the sub-structure will be:
@@ -69,7 +72,8 @@ def run_postprocessing_pipeline(
             combined-lf-country-lvl-agg.csv - aggregate by country
             combined-lf-africa-lvl-agg.csv - aggregated across Africa
     Arguments:
-        input_dir (str): The directory to search for input files.
+        forward_projection_raw (str): The directory to search for input files.
+        historic_data_nonstandard (str): The directory to search for historic input files
         output_dir (str): The directory to store the output files.
 
     """
