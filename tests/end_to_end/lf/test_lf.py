@@ -1,5 +1,7 @@
 import shutil
 import sys
+
+import pytest
 import endgame_postprocessing.model_wrappers.lf.testRun as lf_runner
 
 from pathlib import Path
@@ -12,8 +14,9 @@ from tests.end_to_end.generate_snapshot_dictionary import (
 )
 
 
-def test_lf_end_to_end_no_historic(snapshot):
-    test_root = Path(__file__).parent / "data_no_historic"
+@pytest.mark.parametrize("data_dir,historic_subpath", [("data_no_historic", None)])
+def test_lf_end_to_end_no_historic(snapshot, data_dir, historic_subpath):
+    test_root = Path(__file__).parent / data_dir
     input_data = test_root / "example_input_data"
     output_path = test_root / "generated_data"
 
@@ -22,7 +25,7 @@ def test_lf_end_to_end_no_historic(snapshot):
 
     lf_runner.run_postprocessing_pipeline(
         forward_projection_raw=input_data,
-        historic_data_nonstandard=None,
+        historic_data_nonstandard=historic_subpath,
         output_dir=output_path,
         num_jobs=1,
     )
