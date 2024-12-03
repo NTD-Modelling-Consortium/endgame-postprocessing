@@ -3,7 +3,7 @@
 Having installed the aggregates pipeline (this repo), there exists functions
 for running the LF pipeline.
 
-```
+```python
 from endgame_postprocessing.model_wrappers.lf import testRun
 
 testRun.run_postprocessing_pipeline(
