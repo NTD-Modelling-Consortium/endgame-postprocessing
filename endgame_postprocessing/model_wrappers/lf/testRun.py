@@ -1,5 +1,5 @@
 from tqdm import tqdm
-from endgame_postprocessing.model_wrappers.lf import combine_historic_and_forward
+from endgame_postprocessing.post_processing import combine_historic_and_forward
 from endgame_postprocessing.model_wrappers.lf.historic_standardise_step import (
     perform_historic_standardise_step,
 )
