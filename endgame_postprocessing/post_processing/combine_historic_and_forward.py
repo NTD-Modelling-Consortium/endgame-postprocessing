@@ -1,6 +1,7 @@
 import warnings
 import pandas as pd
 from endgame_postprocessing.post_processing import (
+    canoncical_columns,
     canonical_file_name,
     file_util,
     output_directory_structure,
@@ -49,6 +50,11 @@ def combine_historic_and_forward(
             warnings.warn(MismatchedColumnsException(forward_file.iu))
             continue
 
-        all_data = pd.concat([historic_data, forward_data])
+        first_year_of_forward_data = forward_data[canoncical_columns.YEAR_ID].min()
+        historic_data_up_to_start = historic_data.loc[
+            historic_data[canoncical_columns.YEAR_ID] < first_year_of_forward_data
+        ]
+
+        all_data = pd.concat([historic_data_up_to_start, forward_data])
         all_data["scenario"] = forward_file.scenario
         output_directory_structure.write_canonical(output_path, forward_file, all_data)
