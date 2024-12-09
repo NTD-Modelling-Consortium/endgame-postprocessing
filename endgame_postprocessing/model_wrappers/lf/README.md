@@ -23,7 +23,19 @@ Appended to with historic data found in `historic_data_nonstandard`
 
 `historic_data_nonstandard` should be a path to the files Matt generated for historic data
 which contain just a year column and then draw_0,... where the values are the
-protocol prevalence.
+protocol prevalence. 
+
+The files should be called the IU ID .csv. E.g.:
+
+**AAA12345.csv:**
+
+```csv
+"IUID","year","draw_0","draw_1","draw_2",...
+"AAA12345","2000","0.0339046","0.0473047"
+...
+```
+
+If `historic_data_nonstandard` is `None` then this step will be omitted.
 
 The output directory must be empty.
 On completion the sub-structure will be:
