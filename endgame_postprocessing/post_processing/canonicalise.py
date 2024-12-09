@@ -23,4 +23,19 @@ def canonicalise_raw(
     if canoncical_columns.MEASURE not in raw.columns:
         raise Exception(f"Could not find {canoncical_columns.MEASURE} column")
 
-    return filtered_data.reset_index(drop=True)
+    canonical_column_names = [
+        canoncical_columns.SCENARIO,
+        canoncical_columns.COUNTRY_CODE,
+        canoncical_columns.IU_NAME,
+        canoncical_columns.YEAR_ID,
+        # TODO: canonical shouldn't need the age_start / age_end but these are assumed present later
+        "age_start",
+        "age_end",
+        canoncical_columns.MEASURE,
+    ]
+    only_canonical_columns = pd.concat(
+        [filtered_data.loc[:, canonical_column_names], filtered_data.loc[:, "draw_0":]],
+        axis="columns",
+    )
+
+    return only_canonical_columns.reset_index(drop=True)
