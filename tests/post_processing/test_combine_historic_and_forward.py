@@ -10,7 +10,7 @@ from endgame_postprocessing.post_processing import combine_historic_and_forward
 def test_combine_historic_and_forward(fs: FakeFilesystem):
     historic_canonical = pd.DataFrame(
         {
-            "year": [2020],
+            "year_id": [2020],
             "scenario": ["scenario_0"],
             "draw_0": [0.1],
             "draw_1": [0.2],
@@ -18,7 +18,7 @@ def test_combine_historic_and_forward(fs: FakeFilesystem):
     )
     forward_canonical = pd.DataFrame(
         {
-            "year": [2021],
+            "year_id": [2021],
             "scenario": ["scenario_1"],
             "draw_0": [0.2],
             "draw_1": [0.3],
@@ -47,7 +47,7 @@ def test_combine_historic_and_forward(fs: FakeFilesystem):
         output_canonical,
         pd.DataFrame(
             {
-                "year": [2020, 2021],
+                "year_id": [2020, 2021],
                 "scenario": ["scenario_1"] * 2,
                 "draw_0": [0.1, 0.2],
                 "draw_1": [0.2, 0.3],
@@ -59,7 +59,7 @@ def test_combine_historic_and_forward(fs: FakeFilesystem):
 def test_combine_historic_and_forward_missing_historic_raises_error(fs: FakeFilesystem):
     historic_canonical = pd.DataFrame(
         {
-            "year": [2020],
+            "year_id": [2020],
             "scenario": ["scenario_0"],
             "draw_0": [0.1],
             "draw_1": [0.2],
@@ -67,7 +67,7 @@ def test_combine_historic_and_forward_missing_historic_raises_error(fs: FakeFile
     )
     forward_canonical = pd.DataFrame(
         {
-            "year": [2021],
+            "year_id": [2021],
             "scenario": ["scenario_1"],
             "draw_0": [0.2],
             "draw_1": [0.3],
@@ -101,7 +101,7 @@ def test_combine_historic_and_forward_non_canonical_file(fs: FakeFilesystem):
     )
     forward_canonical = pd.DataFrame(
         {
-            "year": [2021],
+            "year_id": [2021],
             "scenario": ["scenario_1"],
             "draw_0": [0.2],
             "draw_1": [0.3],
