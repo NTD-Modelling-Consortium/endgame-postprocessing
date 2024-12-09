@@ -23,7 +23,7 @@ def canonicalise_raw(
     if canoncical_columns.MEASURE not in raw.columns:
         raise Exception(f"Could not find {canoncical_columns.MEASURE} column")
 
-    expected_columns = [
+    canonical_column_names = [
         canoncical_columns.SCENARIO,
         canoncical_columns.COUNTRY_CODE,
         canoncical_columns.IU_NAME,
@@ -34,7 +34,7 @@ def canonicalise_raw(
         canoncical_columns.MEASURE,
     ]
     only_canonical_columns = pd.concat(
-        [filtered_data.loc[:, expected_columns], filtered_data.loc[:, "draw_0":]],
+        [filtered_data.loc[:, canonical_column_names], filtered_data.loc[:, "draw_0":]],
         axis="columns",
     )
 
