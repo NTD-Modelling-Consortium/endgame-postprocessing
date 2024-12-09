@@ -122,3 +122,52 @@ def test_combine_historic_and_forward_non_canonical_file(fs: FakeFilesystem):
         combine_historic_and_forward.combine_historic_and_forward(
             "historic", "forward", "output"
         )
+
+
+def test_combine_historic_and_forward_overlap_removed(fs: FakeFilesystem):
+    historic_canonical = pd.DataFrame(
+        {
+            "year_id": [2019, 2020],
+            "scenario": ["scenario_0"] * 2,
+            "draw_0": [0.1] * 2,
+            "draw_1": [0.2] * 2,
+        }
+    )
+    forward_canonical = pd.DataFrame(
+        {
+            "year_id": [2020, 2021],
+            "scenario": ["scenario_1"] * 2,
+            "draw_0": [0.2] * 2,
+            "draw_1": [0.3] * 2,
+        }
+    )
+    fs.create_file(
+        "historic/AAA12345_scenario_0_canonical.csv",
+        contents=historic_canonical.to_csv(index=False),
+    )
+    fs.create_file(
+        "forward/AAA12345_scenario_1_canonical.csv",
+        contents=forward_canonical.to_csv(index=False),
+    )
+
+    combine_historic_and_forward.combine_historic_and_forward(
+        "historic", "forward", "output"
+    )
+
+    assert os.path.exists(
+        "output/canonical_results/scenario_1/AAA/AAA12345/AAA12345_scenario_1_canonical.csv"
+    )
+    output_canonical = pd.read_csv(
+        "output/canonical_results/scenario_1/AAA/AAA12345/AAA12345_scenario_1_canonical.csv"
+    )
+    pdt.assert_frame_equal(
+        output_canonical,
+        pd.DataFrame(
+            {
+                "year_id": [2019, 2020, 2021],
+                "scenario": ["scenario_1"] * 3,
+                "draw_0": [0.1, 0.2, 0.2],
+                "draw_1": [0.2, 0.3, 0.3],
+            }
+        ),
+    )
