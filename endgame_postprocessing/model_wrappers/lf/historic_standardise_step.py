@@ -37,9 +37,3 @@ def perform_historic_standardise_step(nonstandard_input, raw_output):
             index=False,
             float_format="%g",
         )
-
-
-if __name__ == "__main__":
-    input_dir = "local_data/LF_PrevalenceData_Nov_2024"
-    raw_input_data = "local_data/lf-historic-raw"
-    perform_historic_standardise_step(input_dir, raw_input_data)
