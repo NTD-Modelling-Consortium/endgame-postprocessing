@@ -14,6 +14,7 @@ import endgame_postprocessing.model_wrappers.sch.run_sch as run_sch
 
 input_dir = # TODO
 # Collect all of the worm directories that are in the input_dir
+# Note: The first worm directory in the list should contain files for all IUs across the worms
 worm_directories = next(os.walk(input_dir))[1]
 run_sch.run_sth_postprocessing_pipeline(
     input_dir,
@@ -54,6 +55,7 @@ The SCH pipeline can also create an "any worm" result, or a single worm result.
 Unlike STH, the SCH worm structure is differeny by worm. Haematobium is simulated for for all IUs, however mansoni is split by high or low burden. As such, we need to explicitly state the folder order for the pipeline to properly process the data. 
 
 In this case, the "any worm" functionality will expect that an IU that is in haematobium will appear once in either `mansoni-high-burden` or `mansoni-low-burden`. 
+When combining the prevalence of worms for a given run, we choose the max simulated prevalence between mansoni and haematobium.
 
 ```python
 import endgame_postprocessing.model_wrappers.sch.run_sch as run_sch
