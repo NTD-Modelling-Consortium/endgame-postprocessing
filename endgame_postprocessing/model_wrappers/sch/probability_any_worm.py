@@ -1,9 +1,10 @@
 from functools import reduce
 from operator import mul
-from typing import Iterable
+from typing import Callable, Iterable
 
 import numpy as np
 
+WormCombinationFunction = Callable[[Iterable[float]], float]
 
 def independent_probability(probability_for_each_worm: Iterable[float]):
     """

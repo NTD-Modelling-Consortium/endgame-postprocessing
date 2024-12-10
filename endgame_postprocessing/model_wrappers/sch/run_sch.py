@@ -126,7 +126,7 @@ def get_sch_worm_info(file_path):
     )
 
 
-def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file):
+def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file, worm_combination_algorithm):
     if len(worm_directories) == 0:
         raise Exception("Must provide at least one worm directory")
     first_worm_dir = worm_directories[0]
@@ -274,6 +274,7 @@ def run_sth_postprocessing_pipeline(
     input_dir: str,
     output_dir: str,
     worm_directories: list[str],
+    worm_combination_algorithm: probability_any_worm.WormCombinationFunction,
     num_jobs: int,
     skip_canonical=False,
     threshold: float = 0.1,
@@ -313,7 +314,7 @@ def run_sth_postprocessing_pipeline(
 
     """
     if not skip_canonical:
-        canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file)
+        canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file, worm_combination_algorithm)
 
     config = PipelineConfig(
         disease=Disease.STH,
