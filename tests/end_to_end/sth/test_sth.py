@@ -6,7 +6,7 @@ from pathlib import Path
 import pandas as pd
 import pandas.testing as pdt
 
-from endgame_postprocessing.model_wrappers.sch import run_sch
+from endgame_postprocessing.model_wrappers.sch import probability_any_worm, run_sch
 from tests.end_to_end.generate_snapshot_dictionary import (
     generate_flat_snapshot_set,
     generate_snapshot_dictionary,
@@ -26,6 +26,7 @@ def test_sth_end_to_end_no_historic_one_worm(snapshot):
         input_data,
         output_dir=output_path,
         worm_directories=["ascaris"],
+        worm_combination_algorithm=probability_any_worm.independent_probability,
         num_jobs=1,
         run_country_level_summaries=True,
     )
@@ -86,6 +87,7 @@ def test_sth_end_to_end_no_historic_many_worms(snapshot):
             "hookworm",
             "ascaris",
         ],
+        worm_combination_algorithm=probability_any_worm.independent_probability,
         num_jobs=1,
         run_country_level_summaries=True,
     )
