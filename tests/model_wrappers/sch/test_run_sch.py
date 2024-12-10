@@ -9,12 +9,13 @@ from endgame_postprocessing.model_wrappers.sch.run_sch import (
     _check_iu_in_all_folders,
     canonicalise_raw_sch_results,
 )
+from endgame_postprocessing.model_wrappers.sch.sth_worm import STHWorm
 from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
 
 
 def test_combine_many_worms_except_not_callable():
     with pytest.raises(Exception):
-        combine_many_worms([], [], combination_function="123")
+        combine_many_worms({}, combination_function="123")
 
 def test_combine_many_worms_independent_combination():
     first_worm = pd.DataFrame(
@@ -41,43 +42,12 @@ def test_combine_many_worms_independent_combination():
         }
     )
     pdt.assert_frame_equal(
-        combine_many_worms(first_worm, [second_worm, third_worm],
+        combine_many_worms({STHWorm.ASCARIS: first_worm, STHWorm.HOOKWORM:second_worm, STHWorm.WHIPWORM: third_worm},
                            combination_function=probability_any_worm.independent_probability),
         pd.DataFrame(
             {
                 "year": [2010],
                 "draw_0": [1 - 0.125],
-                "draw_1": [1.0],
-            }
-        ),
-    )
-
-def test_combine_many_worms_independent_combination_empty_df():
-    first_worm = pd.DataFrame(
-        {
-            "year": [2010],
-            "draw_0": [0.5],
-            "draw_1": [1.0],
-        }
-    )
-
-    second_worm = pd.DataFrame(
-        {
-            "year": [2010],
-            "draw_0": [0.5],
-            "draw_1": [0.0],
-        }
-    )
-
-    third_worm = pd.DataFrame()
-
-    pdt.assert_frame_equal(
-        combine_many_worms(first_worm, [second_worm, third_worm],
-                           combination_function=probability_any_worm.independent_probability),
-        pd.DataFrame(
-            {
-                "year": [2010],
-                "draw_0": [1 - 0.25],
                 "draw_1": [1.0],
             }
         ),
@@ -109,7 +79,7 @@ def test_combine_many_worms_independent_combination_many_years():
         }
     )
     pdt.assert_frame_equal(
-        combine_many_worms(first_worm, [second_worm, third_worm],
+        combine_many_worms({STHWorm.ASCARIS: first_worm, STHWorm.HOOKWORM:second_worm, STHWorm.WHIPWORM: third_worm},
                            combination_function=probability_any_worm.independent_probability),
         pd.DataFrame(
             {
@@ -139,7 +109,7 @@ def test_combine_many_worms_max_combination():
 
     pdt.assert_frame_equal(
         combine_many_worms(
-            first_worm, [second_worm],
+            {STHWorm.ASCARIS: first_worm, STHWorm.HOOKWORM:second_worm},
             combination_function=probability_any_worm.max_of_any
         ),
         pd.DataFrame(
@@ -151,7 +121,7 @@ def test_combine_many_worms_max_combination():
         ),
     )
 
-def test_combine_many_worms_max_combination_empty_df():
+def test_combine_many_worms_max_combination_only_one_worm():
     first_worm = pd.DataFrame(
         {
             "year": [2010],
@@ -160,11 +130,9 @@ def test_combine_many_worms_max_combination_empty_df():
         }
     )
 
-    second_worm = pd.DataFrame()
-
     pdt.assert_frame_equal(
         combine_many_worms(
-            first_worm, [second_worm],
+            {STHWorm.ASCARIS: first_worm},
             combination_function=probability_any_worm.max_of_any
         ),
         pd.DataFrame(
@@ -196,7 +164,7 @@ def test_combine_many_worms_max_combination_many_years():
 
     pdt.assert_frame_equal(
         combine_many_worms(
-            first_worm, [second_worm],
+            {STHWorm.ASCARIS: first_worm, STHWorm.HOOKWORM:second_worm},
             combination_function=probability_any_worm.max_of_any
         ),
         pd.DataFrame(

@@ -13,7 +13,6 @@ from endgame_postprocessing.post_processing import (
 from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
 import pandas as pd
-import numpy as np
 
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 
@@ -44,25 +43,16 @@ def canoncialise_single_result(file_info, warning_if_no_file=False):
 
 
 def combine_many_worms(
-        first_worm,
-        other_worms,
+        raw_data_by_worm:dict[STHWorm, pd.DataFrame],
         combination_function):
     if not callable(combination_function):
         raise Exception("Need to provide a callable function to combine worms.")
-    other_worm_draws = {
-        STHWorm(index+2): other_worm.loc[:, "draw_0":]
-        if not other_worm.empty
-        else pd.DataFrame(
-            np.zeros(first_worm.loc[:, "draw_0":].shape),
-            columns=first_worm.columns[first_worm.columns.get_loc("draw_0"):]
-        )
-        for index, other_worm in enumerate(other_worms)
-    }
 
-    first_worm.loc[:, "draw_0":] = combination_function(
-        {STHWorm.ASCARIS: first_worm.loc[:, "draw_0":]} | other_worm_draws
-    )
-    return first_worm
+    first_worm_data = next(iter(raw_data_by_worm.values()))
+    first_worm_data.loc[:, "draw_0":] = combination_function(
+        {worm: raw_data.loc[:, "draw_0":] for worm, raw_data in raw_data_by_worm.items()})
+
+    return first_worm_data
 
 
 def swap_worm_in_heirachy(original_file_info, first_worm, new_worm):
@@ -175,8 +165,7 @@ def canonicalise_raw_sth_results(
         ]
 
         all_worms_canonical = combine_many_worms(
-            canonical_result_first_worm,
-            other_worms_canoncial,
+            {STHWorm.ASCARIS: canonical_result_first_worm} | {STHWorm(index+2): data for index, data in enumerate(other_worms_canoncial)},
             combination_function=worm_combination_algorithm
         )
         output_directory_structure.write_canonical(
@@ -273,7 +262,9 @@ def canonicalise_raw_sch_results(
         ]
 
         all_worms_canonical = combine_many_worms(
-            canonical_result_first_worm, other_worms_canoncial,
+            # TODO: this is using STH worms despite being schisto as it currently doesn't matter
+            {STHWorm.ASCARIS: canonical_result_first_worm} |
+              {STHWorm(index+2): data for index, data in enumerate(other_worms_canoncial)},
             combination_function=probability_any_worm.max_of_any
         )
         output_directory_structure.write_canonical(
