@@ -42,7 +42,7 @@ def canoncialise_single_result(file_info, warning_if_no_file=False):
         raise FileNotFoundError
 
 
-def combine_many_worms(first_worm, other_worms, combination_function = probability_any_worm.probability_any_worm):
+def combine_many_worms(first_worm, other_worms, combination_function = probability_any_worm.independent_probability):
     if not callable(combination_function):
         raise Exception("Need to provide a callable function to combine worms.")
     other_worm_draws = [
@@ -263,7 +263,7 @@ def canonicalise_raw_sch_results(
 
         all_worms_canonical = combine_many_worms(
             canonical_result_first_worm, other_worms_canoncial,
-            combination_function=probability_any_worm.probability_any_worm_max
+            combination_function=probability_any_worm.max_of_any
         )
         output_directory_structure.write_canonical(
             output_dir, file_info, all_worms_canonical

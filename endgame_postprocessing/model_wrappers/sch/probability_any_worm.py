@@ -5,7 +5,7 @@ from typing import Iterable
 import numpy as np
 
 
-def probability_any_worm(probability_for_each_worm: Iterable[float]):
+def independent_probability(probability_for_each_worm: Iterable[float]):
     """
     Calculate the probability of having any worm, given probability of
     having each worm.
@@ -25,7 +25,7 @@ def probability_any_worm(probability_for_each_worm: Iterable[float]):
     prob_not_any_worm = reduce(mul, prob_of_not_each_worm, 1.0)
     return 1.0 - prob_not_any_worm
 
-def probability_any_worm_max(probability_for_each_worm: Iterable[float]):
+def max_of_any(probability_for_each_worm: Iterable[float]):
     """
     Calculate the probability of having any worm, given by the highest probability
     among all the worms. Used for SCH.
