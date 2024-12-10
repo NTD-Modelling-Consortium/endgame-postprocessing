@@ -42,7 +42,10 @@ def canoncialise_single_result(file_info, warning_if_no_file=False):
         raise FileNotFoundError
 
 
-def combine_many_worms(first_worm, other_worms, combination_function = probability_any_worm.independent_probability):
+def combine_many_worms(
+        first_worm,
+        other_worms,
+        combination_function = probability_any_worm.independent_probability):
     if not callable(combination_function):
         raise Exception("Need to provide a callable function to combine worms.")
     other_worm_draws = [
@@ -126,7 +129,12 @@ def get_sch_worm_info(file_path):
     )
 
 
-def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file, worm_combination_algorithm):
+def canonicalise_raw_sth_results(
+        input_dir,
+        output_dir,
+        worm_directories,
+        warning_if_no_file,
+        worm_combination_algorithm):
     if len(worm_directories) == 0:
         raise Exception("Must provide at least one worm directory")
     first_worm_dir = worm_directories[0]
@@ -314,7 +322,12 @@ def run_sth_postprocessing_pipeline(
 
     """
     if not skip_canonical:
-        canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file, worm_combination_algorithm)
+        canonicalise_raw_sth_results(
+            input_dir,
+            output_dir,
+            worm_directories,
+            warning_if_no_file,
+            worm_combination_algorithm)
 
     config = PipelineConfig(
         disease=Disease.STH,
