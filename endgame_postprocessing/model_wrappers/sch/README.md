@@ -9,6 +9,14 @@ The STH pipeline can either create a "any worm" result, or a single worm result.
 
 ### Any Worm
 
+Different algorithms can be used for calculating the probability of having any worm,
+given the probability of any one worm. 
+
+Options:
+
+- `worm_combination_algorithm=probability_any_worm.independent_probability,` - **randomSTH**
+- `worm_combination_algorithm=probability_any_worm.max_of_any,` - **maxSTH**
+
 ```python
 import endgame_postprocessing.model_wrappers.sch.run_sch as run_sch
 
@@ -20,7 +28,8 @@ run_sch.run_sth_postprocessing_pipeline(
     input_dir,
     "desired output directory",
     worm_directories,
-    1,
+    worm_combination_algorithm=probability_any_worm.independent_probability,
+    num_jobs=1,
     skip_canonical=False,
     threshold = 0.01,
 )
@@ -40,11 +49,15 @@ for worm_directory in worm_directories:
         input_dir,
         f"local_data/sth-output-single-worm/{worm_directory}",
         [worm_directory],
-        1,
+        worm_combination_algorithm=probability_any_worm.independent_probability,
+        num_jobs=1,
         skip_canonical=False,
         threshold = 0.01,
     )
 ```
+
+_Note the worm combination algorithm must currently be specified, even though it will have no
+effect._
 
 ## Schisto
 
