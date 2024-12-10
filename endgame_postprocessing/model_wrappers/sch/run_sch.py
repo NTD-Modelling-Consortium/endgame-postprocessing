@@ -174,7 +174,9 @@ def canonicalise_raw_sth_results(
         ]
 
         all_worms_canonical = combine_many_worms(
-            canonical_result_first_worm, other_worms_canoncial
+            canonical_result_first_worm,
+            other_worms_canoncial,
+            combination_function=worm_combination_algorithm
         )
         output_directory_structure.write_canonical(
             output_dir, file_info, all_worms_canonical
