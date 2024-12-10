@@ -4,6 +4,7 @@ import re
 import warnings
 from tqdm import tqdm
 from endgame_postprocessing.model_wrappers.sch import probability_any_worm
+from endgame_postprocessing.model_wrappers.sch.sth_worm import STHWorm
 from endgame_postprocessing.post_processing import (
     canonicalise,
     output_directory_structure,
@@ -48,18 +49,18 @@ def combine_many_worms(
         combination_function):
     if not callable(combination_function):
         raise Exception("Need to provide a callable function to combine worms.")
-    other_worm_draws = [
-        other_worm.loc[:, "draw_0":]
+    other_worm_draws = {
+        STHWorm(index+2): other_worm.loc[:, "draw_0":]
         if not other_worm.empty
         else pd.DataFrame(
             np.zeros(first_worm.loc[:, "draw_0":].shape),
             columns=first_worm.columns[first_worm.columns.get_loc("draw_0"):]
         )
-        for other_worm in other_worms
-    ]
+        for index, other_worm in enumerate(other_worms)
+    }
 
     first_worm.loc[:, "draw_0":] = combination_function(
-        [first_worm.loc[:, "draw_0":]] + other_worm_draws
+        {STHWorm.ASCARIS: first_worm.loc[:, "draw_0":]} | other_worm_draws
     )
     return first_worm
 

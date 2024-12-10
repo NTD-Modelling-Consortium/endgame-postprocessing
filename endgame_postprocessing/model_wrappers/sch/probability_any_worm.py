@@ -1,12 +1,14 @@
 from functools import reduce
 from operator import mul
-from typing import Callable, Iterable
+from typing import Callable
 
 import numpy as np
 
-WormCombinationFunction = Callable[[Iterable[float]], float]
+from endgame_postprocessing.model_wrappers.sch.sth_worm import STHWorm
 
-def independent_probability(probability_for_each_worm: Iterable[float]):
+WormCombinationFunction = Callable[dict[STHWorm, float], float]
+
+def independent_probability(probability_for_each_worm: dict[STHWorm, float]):
     """
     Calculate the probability of having any worm, given probability of
     having each worm.
@@ -21,12 +23,12 @@ def independent_probability(probability_for_each_worm: Iterable[float]):
     Returns: the probability of having any worm.
     """
     prob_of_not_each_worm = map(
-        lambda prob_having_worm: 1.0 - prob_having_worm, probability_for_each_worm
+        lambda prob_having_worm: 1.0 - prob_having_worm, probability_for_each_worm.values()
     )
     prob_not_any_worm = reduce(mul, prob_of_not_each_worm, 1.0)
     return 1.0 - prob_not_any_worm
 
-def max_of_any(probability_for_each_worm: Iterable[float]):
+def max_of_any(probability_for_each_worm: dict[STHWorm, float]):
     """
     Calculate the probability of having any worm, given by the highest probability
     among all the worms. Used for SCH.
@@ -36,4 +38,4 @@ def max_of_any(probability_for_each_worm: Iterable[float]):
 
     Returns: the probability of having any worm.
     """
-    return reduce(lambda x, y: np.maximum(x, y), probability_for_each_worm)
+    return reduce(lambda x, y: np.maximum(x, y), probability_for_each_worm.values())
