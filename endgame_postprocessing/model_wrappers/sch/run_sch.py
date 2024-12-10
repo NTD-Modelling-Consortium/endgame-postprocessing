@@ -45,7 +45,7 @@ def canoncialise_single_result(file_info, warning_if_no_file=False):
 def combine_many_worms(
         first_worm,
         other_worms,
-        combination_function = probability_any_worm.independent_probability):
+        combination_function):
     if not callable(combination_function):
         raise Exception("Need to provide a callable function to combine worms.")
     other_worm_draws = [
