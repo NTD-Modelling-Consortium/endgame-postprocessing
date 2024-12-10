@@ -279,7 +279,7 @@ def run_sth_postprocessing_pipeline(
     skip_canonical=False,
     threshold: float = 0.1,
     run_country_level_summaries = False,
-    warning_if_no_file = False
+    warning_if_no_file = False,
 ):
     """
     Aggregates into standard format the input files found in input_dir.
