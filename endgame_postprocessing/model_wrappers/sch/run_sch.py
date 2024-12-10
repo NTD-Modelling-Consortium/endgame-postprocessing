@@ -1,11 +1,9 @@
-from functools import reduce
 import glob
-from operator import mul
 import os
 import re
-from typing import Iterable
 import warnings
 from tqdm import tqdm
+from endgame_postprocessing.model_wrappers.sch import probability_any_worm
 from endgame_postprocessing.post_processing import (
     canonicalise,
     output_directory_structure,
@@ -27,39 +25,6 @@ WORM_MAPPING = {
     "sch-mansoni-low-burden": "mansoni_low_burden",
 }
 
-
-def probability_any_worm(probability_for_each_worm: Iterable[float]):
-    """
-    Calculate the probability of having any worm, given probability of
-    having each worm.
-
-    This assumes that the probability of each worm is statistically independent.
-    Then via de Morgans law we can get the prob of any worm by working out the prob
-    of no worm.
-
-    Inputs:
-     - probability_for_each_worm: Probability of having each worm
-
-    Returns: the probability of having any worm.
-    """
-    prob_of_not_each_worm = map(
-        lambda prob_having_worm: 1.0 - prob_having_worm, probability_for_each_worm
-    )
-    prob_not_any_worm = reduce(mul, prob_of_not_each_worm, 1.0)
-    return 1.0 - prob_not_any_worm
-
-def probability_any_worm_max(probability_for_each_worm: Iterable[float]):
-    """
-    Calculate the probability of having any worm, given by the highest probability
-    among all the worms. Used for SCH.
-
-    Inputs:
-     - probability_for_each_worm: Probability of having each worm
-
-    Returns: the probability of having any worm.
-    """
-    return reduce(lambda x, y: np.maximum(x, y), probability_for_each_worm)
-
 def canoncialise_single_result(file_info, warning_if_no_file=False):
     try:
         raw_iu = pd.read_csv(file_info.file_path)
@@ -77,7 +42,7 @@ def canoncialise_single_result(file_info, warning_if_no_file=False):
         raise FileNotFoundError
 
 
-def combine_many_worms(first_worm, other_worms, combination_function = probability_any_worm):
+def combine_many_worms(first_worm, other_worms, combination_function = probability_any_worm.probability_any_worm):
     if not callable(combination_function):
         raise Exception("Need to provide a callable function to combine worms.")
     other_worm_draws = [
@@ -298,7 +263,7 @@ def canonicalise_raw_sch_results(
 
         all_worms_canonical = combine_many_worms(
             canonical_result_first_worm, other_worms_canoncial,
-            combination_function=probability_any_worm_max
+            combination_function=probability_any_worm.probability_any_worm_max
         )
         output_directory_structure.write_canonical(
             output_dir, file_info, all_worms_canonical
