@@ -16,7 +16,7 @@ def test_combine_many_worms_except_not_callable():
     with pytest.raises(Exception):
         combine_many_worms([], [], combination_function="123")
 
-def test_combine_many_worms_default_combination():
+def test_combine_many_worms_independent_combination():
     first_worm = pd.DataFrame(
         {
             "year": [2010],
@@ -41,7 +41,8 @@ def test_combine_many_worms_default_combination():
         }
     )
     pdt.assert_frame_equal(
-        combine_many_worms(first_worm, [second_worm, third_worm]),
+        combine_many_worms(first_worm, [second_worm, third_worm],
+                           combination_function=probability_any_worm.independent_probability),
         pd.DataFrame(
             {
                 "year": [2010],
@@ -51,7 +52,7 @@ def test_combine_many_worms_default_combination():
         ),
     )
 
-def test_combine_many_worms_default_combination_empty_df():
+def test_combine_many_worms_independent_combination_empty_df():
     first_worm = pd.DataFrame(
         {
             "year": [2010],
@@ -71,7 +72,8 @@ def test_combine_many_worms_default_combination_empty_df():
     third_worm = pd.DataFrame()
 
     pdt.assert_frame_equal(
-        combine_many_worms(first_worm, [second_worm, third_worm]),
+        combine_many_worms(first_worm, [second_worm, third_worm],
+                           combination_function=probability_any_worm.independent_probability),
         pd.DataFrame(
             {
                 "year": [2010],
@@ -82,7 +84,7 @@ def test_combine_many_worms_default_combination_empty_df():
     )
 
 
-def test_combine_many_worms_default_combination_many_years():
+def test_combine_many_worms_independent_combination_many_years():
     first_worm = pd.DataFrame(
         {
             "year": [2010, 2011],
@@ -107,7 +109,8 @@ def test_combine_many_worms_default_combination_many_years():
         }
     )
     pdt.assert_frame_equal(
-        combine_many_worms(first_worm, [second_worm, third_worm]),
+        combine_many_worms(first_worm, [second_worm, third_worm],
+                           combination_function=probability_any_worm.independent_probability),
         pd.DataFrame(
             {
                 "year": [2010, 2011],
