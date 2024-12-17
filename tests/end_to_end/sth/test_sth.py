@@ -7,7 +7,7 @@ import pandas as pd
 import pandas.testing as pdt
 
 from endgame_postprocessing.model_wrappers.sch import probability_any_worm, run_sch
-from endgame_postprocessing.model_wrappers.sch.sth_worm import STHWorm
+from endgame_postprocessing.model_wrappers.sch.worm import Worm
 from tests.end_to_end.generate_snapshot_dictionary import (
     generate_flat_snapshot_set,
     generate_snapshot_dictionary,
@@ -66,7 +66,7 @@ def test_sth_end_to_end_no_historic_one_worm(snapshot):
     run_sch.run_sth_postprocessing_pipeline(
         input_data,
         output_dir=output_path,
-        worm_directories=run_sch.STHWormConfiguration(worm_paths={STHWorm.ASCARIS: "ascaris"}),
+        worm_directories=run_sch.STHWormConfiguration(worm_paths={Worm.ASCARIS: "ascaris"}),
         worm_combination_algorithm=probability_any_worm.independent_probability,
         num_jobs=1,
         run_country_level_summaries=True,
@@ -89,8 +89,8 @@ def test_sth_end_to_end_no_historic_many_worms(snapshot):
         f"{input_data}/",  # currently requires trailing slash
         output_dir=output_path,
         worm_directories=run_sch.STHWormConfiguration(worm_paths={
-            STHWorm.ASCARIS: "ascaris",
-            STHWorm.HOOKWORM: "hookworm"}),
+            Worm.ASCARIS: "ascaris",
+            Worm.HOOKWORM: "hookworm"}),
         worm_combination_algorithm=probability_any_worm.independent_probability,
         num_jobs=1,
         run_country_level_summaries=True,
@@ -112,8 +112,8 @@ def test_sth_end_to_end_no_historic_many_worms_max_combination(snapshot):
         f"{input_data}/",  # currently requires trailing slash
         output_dir=output_path,
         worm_directories=run_sch.STHWormConfiguration(worm_paths={
-            STHWorm.ASCARIS: "ascaris",
-            STHWorm.HOOKWORM: "hookworm"}),
+            Worm.ASCARIS: "ascaris",
+            Worm.HOOKWORM: "hookworm"}),
         worm_combination_algorithm=probability_any_worm.max_of_any,
         num_jobs=1,
         run_country_level_summaries=True,
@@ -135,9 +135,9 @@ def test_sth_end_to_end_no_historic_many_worms_linear_combination(snapshot):
         f"{input_data}/",  # currently requires trailing slash
         output_dir=output_path,
         worm_directories=run_sch.STHWormConfiguration(worm_paths={
-            STHWorm.ASCARIS: "ascaris",
-            STHWorm.HOOKWORM: "hookworm",
-            STHWorm.WHIPWORM: "hookworm"}), # For testing just going to use hookworms folder
+            Worm.ASCARIS: "ascaris",
+            Worm.HOOKWORM: "hookworm",
+            Worm.WHIPWORM: "hookworm"}), # For testing just going to use hookworms folder
         worm_combination_algorithm=probability_any_worm.linear_model,
         num_jobs=1,
         run_country_level_summaries=True,

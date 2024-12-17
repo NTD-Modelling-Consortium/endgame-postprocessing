@@ -6,7 +6,7 @@ import re
 import warnings
 from tqdm import tqdm
 from endgame_postprocessing.model_wrappers.sch import probability_any_worm
-from endgame_postprocessing.model_wrappers.sch.sth_worm import STHWorm
+from endgame_postprocessing.model_wrappers.sch.worm import Worm
 from endgame_postprocessing.post_processing import (
     canonicalise,
     output_directory_structure,
@@ -20,7 +20,7 @@ from endgame_postprocessing.post_processing.pipeline_config import PipelineConfi
 
 @dataclass
 class STHWormConfiguration:
-    worm_paths: dict[STHWorm, str]
+    worm_paths: dict[Worm, str]
 
 WORM_MAPPING = {
     "hookworm": "hookworm",
@@ -49,8 +49,8 @@ def canoncialise_single_result(file_info, warning_if_no_file=False):
 
 
 def combine_many_worms(
-        raw_data_by_worm:dict[STHWorm, pd.DataFrame],
-        combination_function):
+        raw_data_by_worm:dict[Worm, pd.DataFrame],
+        combination_function: probability_any_worm.WormCombinationFunction):
     if not callable(combination_function):
         raise Exception("Need to provide a callable function to combine worms.")
 
@@ -129,7 +129,7 @@ def get_sch_worm_info(file_path):
 @dataclass
 class STHFile:
     file_info: CustomFileInfo
-    worm: STHWorm
+    worm: Worm
 
 def group_by_full(iterable, key_func):
     sorted_by_key = sorted(iterable, key=key_func)
@@ -141,7 +141,7 @@ def canonicalise_raw_sth_results(
         output_dir,
         worm_directories: STHWormConfiguration,
         warning_if_no_file,
-        worm_combination_algorithm):
+        worm_combination_algorithm: probability_any_worm.WormCombinationFunction):
     if len(worm_directories.worm_paths) == 0:
         raise Exception("Must provide at least one worm directory")
 
@@ -267,9 +267,8 @@ def canonicalise_raw_sch_results(
         ]
 
         all_worms_canonical = combine_many_worms(
-            # TODO: this is using STH worms despite being schisto as it currently doesn't matter
-            {STHWorm.ASCARIS: canonical_result_first_worm} |
-              {STHWorm(index+2): data for index, data in enumerate(other_worms_canoncial)},
+              {Worm.HAEMATOBIUM: canonical_result_first_worm} |
+              {Worm(index+Worm.HAEMATOBIUM.value+1): data for index, data in enumerate(other_worms_canoncial)},
             combination_function=probability_any_worm.max_of_any
         )
         output_directory_structure.write_canonical(

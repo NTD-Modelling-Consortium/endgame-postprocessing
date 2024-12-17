@@ -4,11 +4,11 @@ from typing import Callable
 
 import numpy as np
 
-from endgame_postprocessing.model_wrappers.sch.sth_worm import STHWorm
+from endgame_postprocessing.model_wrappers.sch.worm import Worm
 
-WormCombinationFunction = Callable[[dict[STHWorm, float]], float]
+WormCombinationFunction = Callable[[dict[Worm, float]], float]
 
-def independent_probability(probability_for_each_worm: dict[STHWorm, float]):
+def independent_probability(probability_for_each_worm: dict[Worm, float]):
     """
     Calculate the probability of having any worm, given probability of
     having each worm.
@@ -28,7 +28,7 @@ def independent_probability(probability_for_each_worm: dict[STHWorm, float]):
     prob_not_any_worm = reduce(mul, prob_of_not_each_worm, 1.0)
     return 1.0 - prob_not_any_worm
 
-def max_of_any(probability_for_each_worm: dict[STHWorm, float]):
+def max_of_any(probability_for_each_worm: dict[Worm, float]):
     """
     Calculate the probability of having any worm, given by the highest probability
     among all the worms. Used for SCH.
@@ -40,19 +40,19 @@ def max_of_any(probability_for_each_worm: dict[STHWorm, float]):
     """
     return reduce(lambda x, y: np.maximum(x, y), probability_for_each_worm.values())
 
-def linear_model(probability_for_each_worm: dict[STHWorm, float]):
+def linear_model(probability_for_each_worm: dict[Worm, float]):
     """
     Calculate the probability of having any worm by using a generalized linear
     model to estimate the correlation between the different worms
     """
-    required_worms = {STHWorm.ASCARIS, STHWorm.HOOKWORM, STHWorm.WHIPWORM}
+    required_worms = {Worm.ASCARIS, Worm.HOOKWORM, Worm.WHIPWORM}
     missing_worms = required_worms - probability_for_each_worm.keys()
     if len(missing_worms) > 0:
         raise ValueError(f"Missing worm prevalence: {missing_worms}")
 
-    Asc = probability_for_each_worm[STHWorm.ASCARIS]
-    Hk = probability_for_each_worm[STHWorm.HOOKWORM]
-    TT = probability_for_each_worm[STHWorm.WHIPWORM]
+    Asc = probability_for_each_worm[Worm.ASCARIS]
+    Hk = probability_for_each_worm[Worm.HOOKWORM]
+    TT = probability_for_each_worm[Worm.WHIPWORM]
     return (
         1.10078 +
         (0.41845 * Asc) +
