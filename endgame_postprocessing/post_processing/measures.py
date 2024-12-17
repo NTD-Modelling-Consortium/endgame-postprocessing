@@ -2,7 +2,7 @@ import numpy as np
 from .constants import PERCENTILES_TO_CALC
 
 def _extract_percentiles(
-    percentiles_dict: dict[str : list[int]], percentile_names: list[str]
+    percentiles_dict: dict[str, list[int]], percentile_names: list[str]
 ) -> np.ndarray:
     """
     Helper function to extract percentiles from a dictionary of percentile names to a list of values
@@ -42,7 +42,7 @@ def build_summary(
     age_end: list[int],
     measure_name: list[str],
     mean: list[int],
-    percentiles_dict: dict[str : list[int]],
+    percentiles_dict: dict[str, list[int]],
     percentile_name_order: list[str],
     standard_deviation: list[int],
     median: list[int],
