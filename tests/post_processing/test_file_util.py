@@ -1,6 +1,6 @@
 import warnings
 import pytest
-from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
+from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 import endgame_postprocessing.post_processing.file_util as file_util
 
 

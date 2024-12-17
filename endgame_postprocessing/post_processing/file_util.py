@@ -1,7 +1,7 @@
 import glob
 import re
 import warnings
-from .dataclasses import CustomFileInfo
+from .custom_file_info import CustomFileInfo
 from typing import Generator
 import os
 

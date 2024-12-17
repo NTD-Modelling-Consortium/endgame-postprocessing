@@ -1,6 +1,6 @@
 import pandas as pd
 
-from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
+from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 from endgame_postprocessing.post_processing import canoncical_columns
 
 
