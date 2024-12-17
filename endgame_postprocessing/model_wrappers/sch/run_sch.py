@@ -149,8 +149,12 @@ def canonicalise_raw_sth_results(
             raise Exception(
                 f"Could not find worm directory {worm_dir} inside {input_dir} for worm {worm}"
             )
-    data_by_worm = {worm: list(get_sth_flat(f"{input_dir}/{worm_dir}")) for worm, directory in worm_directories.worm_paths.items()}
-    sth_file_infos_by_worm = [[STHFile(file_info, worm) for file_info in file_infos] for worm, file_infos in data_by_worm.items()]
+    data_by_worm = {
+        worm: list(get_sth_flat(f"{input_dir}/{worm_dir}"))
+        for worm, directory in worm_directories.worm_paths.items()}
+    sth_file_infos_by_worm = [
+        [STHFile(file_info, worm) for file_info in file_infos]
+        for worm, file_infos in data_by_worm.items()]
     all_files  = chain.from_iterable(sth_file_infos_by_worm)
     files_by_scenario = group_by_full(all_files, lambda file: file.file_info.scenario)
     for scenario, files_for_scenario in files_by_scenario.items():
