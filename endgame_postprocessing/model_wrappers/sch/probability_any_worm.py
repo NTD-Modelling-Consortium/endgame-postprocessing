@@ -46,6 +46,9 @@ def linear_model(probability_for_each_worm: dict[Worm, float]):
     model to estimate the correlation between the different worms
     """
     required_worms = {Worm.ASCARIS, Worm.HOOKWORM, Worm.WHIPWORM}
+    excess_worms = probability_for_each_worm.keys() - required_worms
+    if len(excess_worms) > 0:
+        raise ValueError(f"{linear_model.__name__} does not support worms: {excess_worms}")
     missing_worms = required_worms - probability_for_each_worm.keys()
     if len(missing_worms) > 0:
         raise ValueError(f"Missing worm prevalence: {missing_worms}")

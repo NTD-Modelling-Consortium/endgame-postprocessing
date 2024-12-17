@@ -47,3 +47,11 @@ def test_probability_any_worm_weighted_regression():
 def test_probability_any_worm_only_one_worm_raises_exception():
     with pytest.raises(ValueError):
         probability_any_worm.linear_model({Worm.ASCARIS: 0.5})
+
+def test_probability_with_other_worms():
+    with pytest.raises(ValueError):
+        probability_any_worm.linear_model({
+        Worm.ASCARIS: 0.5,
+        Worm.HOOKWORM: 0.7,
+        Worm.WHIPWORM: 0.3,
+        Worm.MANSONI_HIGH_BURDEN: 0.2})
