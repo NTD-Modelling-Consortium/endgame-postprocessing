@@ -33,13 +33,13 @@ def canoncialise_single_result(file_info, warning_if_no_file=False):
         return canonicalise.canonicalise_raw(
             raw_without_columns, file_info, "Prevalence SAC"
         )
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         if warning_if_no_file:
             warnings.warn(
                 f"File {file_info.file_path} not found, and `warning_if_no_file` is set to True"
             )
             return pd.DataFrame()
-        raise FileNotFoundError
+        raise e
 
 
 def combine_many_worms(
