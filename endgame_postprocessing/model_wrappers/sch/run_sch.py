@@ -164,7 +164,9 @@ def canonicalise_raw_sth_results(
                 "No data for IUs found - see above warnings and check input directory"
             )
         for iu_id, iu_file_infos in tqdm(files_by_iu.items(), desc="Canoncialise STH results"):
-            canonical_data = {sth_file.worm: canoncialise_single_result(sth_file.file_info) for sth_file in iu_file_infos}
+            canonical_data = {
+                sth_file.worm: canoncialise_single_result(sth_file.file_info)
+                for sth_file in iu_file_infos}
 
             all_worms_canonical = combine_many_worms(
                 canonical_data,
