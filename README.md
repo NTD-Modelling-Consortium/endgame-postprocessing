@@ -30,7 +30,7 @@ Currently only implemented LF and Oncho.
 
 | Disease | Priority population | Processed prevalence | Protocol Threshold | IU Inclusion Criteria |
 | ------- | ------------------- | -------------------- | ------------------ | --------------------- |
-| LF | $\geq 5$ Years Old | True mf Prevalence | $\leq 1$% | All IUs |
+| LF | $\geq 5$ Years Old | Sampled mf prevalence | $\leq 1$% | All IUs |
 | Oncho | $\geq 5$ Years Old | True mf prevalence | $\leq 1$% | All IUs |
 
 

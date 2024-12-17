@@ -15,6 +15,7 @@ from endgame_postprocessing.post_processing import (
 from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
 import pandas as pd
+import numpy as np
 
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 
@@ -48,19 +49,49 @@ def probability_any_worm(probability_for_each_worm: Iterable[float]):
     prob_not_any_worm = reduce(mul, prob_of_not_each_worm, 1.0)
     return 1.0 - prob_not_any_worm
 
+def probability_any_worm_max(probability_for_each_worm: Iterable[float]):
+    """
+    Calculate the probability of having any worm, given by the highest probability
+    among all the worms. Used for SCH.
 
-def canoncialise_single_result(file_info):
-    raw_iu = pd.read_csv(file_info.file_path)
-    raw_without_columns = raw_iu.drop(columns=["intensity", "species"])
-    # TODO: canonical shouldn't need the age_start / age_end but these are assumed present later
-    return canonicalise.canonicalise_raw(
-        raw_without_columns, file_info, "Prevalence SAC"
-    )
+    Inputs:
+     - probability_for_each_worm: Probability of having each worm
+
+    Returns: the probability of having any worm.
+    """
+    return reduce(lambda x, y: np.maximum(x, y), probability_for_each_worm)
+
+def canoncialise_single_result(file_info, warning_if_no_file=False):
+    try:
+        raw_iu = pd.read_csv(file_info.file_path)
+        raw_without_columns = raw_iu.drop(columns=["intensity", "species"])
+        # TODO: canonical shouldn't need the age_start / age_end but these are assumed present later
+        return canonicalise.canonicalise_raw(
+            raw_without_columns, file_info, "Prevalence SAC"
+        )
+    except FileNotFoundError:
+        if warning_if_no_file:
+            warnings.warn(
+                f"File {file_info.file_path} not found, and `warning_if_no_file` is set to True"
+            )
+            return pd.DataFrame()
+        raise FileNotFoundError
 
 
-def combine_many_worms(first_worm, other_worms):
-    other_worm_draws = [other_worm.loc[:, "draw_0":] for other_worm in other_worms]
-    first_worm.loc[:, "draw_0":] = probability_any_worm(
+def combine_many_worms(first_worm, other_worms, combination_function = probability_any_worm):
+    if not callable(combination_function):
+        raise Exception("Need to provide a callable function to combine worms.")
+    other_worm_draws = [
+        other_worm.loc[:, "draw_0":]
+        if not other_worm.empty
+        else pd.DataFrame(
+            np.zeros(first_worm.loc[:, "draw_0":].shape),
+            columns=first_worm.columns[first_worm.columns.get_loc("draw_0"):]
+        )
+        for other_worm in other_worms
+    ]
+
+    first_worm.loc[:, "draw_0":] = combination_function(
         [first_worm.loc[:, "draw_0":]] + other_worm_draws
     )
     return first_worm
@@ -131,7 +162,7 @@ def get_sch_worm_info(file_path):
     )
 
 
-def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
+def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file):
     if len(worm_directories) == 0:
         raise Exception("Must provide at least one worm directory")
     first_worm_dir = worm_directories[0]
@@ -166,7 +197,7 @@ def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
         ]
 
         other_worms_canoncial = [
-            canoncialise_single_result(other_worm_file_info)
+            canoncialise_single_result(other_worm_file_info, warning_if_no_file)
             for other_worm_file_info in other_worm_file_infos
         ]
 
@@ -177,7 +208,7 @@ def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories):
             output_dir, file_info, all_worms_canonical
         )
 
-def _check_iu_in_all_folders(worm_iu_info):
+def _check_iu_in_all_folders(worm_iu_info, warning_if_no_file):
     info = {}
     unique_worms = set()
     for worm, _, iu, scenario in worm_iu_info:
@@ -199,14 +230,18 @@ def _check_iu_in_all_folders(worm_iu_info):
             iu_worms = info[scenario][iu].keys()
             for worm in unique_worms:
                 if worm != "haematobium" and worm not in iu_worms:
-                    raise Exception(
-                        f"IU {iu} not present for {worm}."
-                    )
+                    if warning_if_no_file:
+                        warnings.warn(f"IU not present for {worm}")
+                    else:
+                        raise Exception(
+                            f"IU {iu} not present for {worm}."
+                        )
 
 def canonicalise_raw_sch_results(
     input_dir,
     output_dir,
     worm_directories,
+    warning_if_no_file
 ):
     if len(worm_directories) < 1:
         raise Exception(
@@ -222,7 +257,7 @@ def canonicalise_raw_sch_results(
         for worm_dir in worm_directories
         for file_info in get_sch_flat(f"{input_dir}{worm_dir}")
     ]
-    _check_iu_in_all_folders(all_iu_worm_info)
+    _check_iu_in_all_folders(all_iu_worm_info, warning_if_no_file)
 
     all_files = list(file_iter)
     if len(all_files) == 0:
@@ -258,12 +293,13 @@ def canonicalise_raw_sch_results(
         canonical_result_first_worm = canoncialise_single_result(file_info)
 
         other_worms_canoncial = [
-            canoncialise_single_result(other_worm_file_info)
+            canoncialise_single_result(other_worm_file_info, warning_if_no_file)
             for other_worm_file_info in other_worm_file_infos
         ]
 
         all_worms_canonical = combine_many_worms(
-            canonical_result_first_worm, other_worms_canoncial
+            canonical_result_first_worm, other_worms_canoncial,
+            combination_function=probability_any_worm_max
         )
         output_directory_structure.write_canonical(
             output_dir, file_info, all_worms_canonical
@@ -279,6 +315,7 @@ def run_sth_postprocessing_pipeline(
     skip_canonical=False,
     threshold: float = 0.1,
     run_country_level_summaries=False,
+    warning_if_no_file = False
 ):
     """
     Aggregates into standard format the input files found in input_dir.
@@ -315,7 +352,7 @@ def run_sth_postprocessing_pipeline(
     if not skip_canonical:
         if historic_input_dir is not None:
             forward_canonical = f"{output_dir}/forward_only"
-            canonicalise_raw_sth_results(input_dir, forward_canonical, worm_directories)
+            canonicalise_raw_sth_results(input_dir, forward_canonical, worm_directories, warning_if_no_file)
             historic_canonical = f"{output_dir}/historical_only"
             canonicalise_raw_sth_results(
                 historic_input_dir, historic_canonical, worm_directories
@@ -324,7 +361,7 @@ def run_sth_postprocessing_pipeline(
                 historic_canonical, forward_canonical, output_dir
             )
         else:
-            canonicalise_raw_sth_results(input_dir, output_dir, worm_directories)
+            canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file)
 
     config = PipelineConfig(
         disease=Disease.STH,
@@ -342,6 +379,7 @@ def run_sch_postprocessing_pipeline(
     skip_canonical=False,
     threshold: float = 0.1,
     run_country_level_summaries=False,
+    warning_if_no_file = False,
 ):
     if not skip_canonical:
         if historic_input_dir is not None:
@@ -349,7 +387,7 @@ def run_sch_postprocessing_pipeline(
             canonicalise_raw_sch_results(input_dir, forward_canonical, worm_directories)
             historic_canonical = f"{output_dir}/historical_only"
             canonicalise_raw_sch_results(
-                historic_input_dir, historic_canonical, worm_directories
+                historic_input_dir, historic_canonical, worm_directories, warning_if_no_file
             )
             combine_historic_and_forward.combine_historic_and_forward(
                 historic_canonical, forward_canonical, output_dir

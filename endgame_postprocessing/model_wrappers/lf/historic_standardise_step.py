@@ -20,7 +20,7 @@ def perform_historic_standardise_step(nonstandard_input, raw_output):
     the name is just the IU ID, it doesn't specify what the measure is
     or include any of the standard columns.
     This is a custom function to fix this up by:
-    Adding measure column with measure set to true mf prevalence (all pop) for all rows
+    Adding measure column with measure set to sampled mf prevalence (all pop) for all rows
     Adding a age_start and age_end with 5-100
     Renaming the year to the conventional year_id
     Naming the file according to the usual convention, labelling as scenario_0
@@ -28,7 +28,7 @@ def perform_historic_standardise_step(nonstandard_input, raw_output):
     Path(raw_output).mkdir(parents=True, exist_ok=True)
     for matt_file in get_lf_matt_flat(nonstandard_input):
         raw_iu = pd.read_csv(matt_file.file_path)
-        raw_iu.insert(2, "measure", "true mf prevalence (all pop)")
+        raw_iu.insert(2, "measure", "sampled mf prevalence (all pop)")
         raw_iu.insert(2, "age_start", 5)
         raw_iu.insert(2, "age_end", 100)
         raw_iu_renamed = raw_iu.rename(columns={"year": "year_id"})
@@ -37,9 +37,3 @@ def perform_historic_standardise_step(nonstandard_input, raw_output):
             index=False,
             float_format="%g",
         )
-
-
-if __name__ == "__main__":
-    input_dir = "local_data/LF_PrevalenceData_Nov_2024"
-    raw_input_data = "local_data/lf-historic-raw"
-    perform_historic_standardise_step(input_dir, raw_input_data)
