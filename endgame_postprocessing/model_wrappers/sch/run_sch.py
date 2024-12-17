@@ -138,19 +138,18 @@ def group_by_full(iterable, key_func):
 def canonicalise_raw_sth_results(
         input_dir,
         output_dir,
-        worm_directories: list[str],
+        worm_directories: STHWormConfiguration,
         warning_if_no_file,
         worm_combination_algorithm):
-    if len(worm_directories) == 0:
+    if len(worm_directories.worm_paths) == 0:
         raise Exception("Must provide at least one worm directory")
-    first_worm_dir = worm_directories[0]
 
-    if not os.path.exists(f"{input_dir}/{first_worm_dir}"):
-        raise Exception(
-            f"Could not find worm directory {first_worm_dir} inside {input_dir}"
-        )
-    wormery = STHWormConfiguration(worm_paths={STHWorm(index+1): f"{input_dir}/{path}" for index, path in enumerate(worm_directories)})
-    data_by_worm = {worm: list(get_sth_flat(directory)) for worm, directory in wormery.worm_paths.items()}
+    for worm, worm_dir in worm_directories.worm_paths.items():
+        if not os.path.exists(f"{input_dir}/{worm_dir}"):
+            raise Exception(
+                f"Could not find worm directory {worm_dir} inside {input_dir} for worm {worm}"
+            )
+    data_by_worm = {worm: list(get_sth_flat(f"{input_dir}/{worm_dir}")) for worm, directory in worm_directories.worm_paths.items()}
     sth_file_infos_by_worm = [[STHFile(file_info, worm) for file_info in file_infos] for worm, file_infos in data_by_worm.items()]
     all_files  = chain.from_iterable(sth_file_infos_by_worm)
     files_by_scenario = group_by_full(all_files, lambda file: file.file_info.scenario)
@@ -274,7 +273,7 @@ def canonicalise_raw_sch_results(
 def run_sth_postprocessing_pipeline(
     input_dir: str,
     output_dir: str,
-    worm_directories: list[str],
+    worm_directories: STHWormConfiguration,
     worm_combination_algorithm: probability_any_worm.WormCombinationFunction,
     num_jobs: int,
     skip_canonical=False,
