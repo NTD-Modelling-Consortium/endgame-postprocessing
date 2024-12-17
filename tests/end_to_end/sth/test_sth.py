@@ -120,3 +120,27 @@ def test_sth_end_to_end_no_historic_many_worms_max_combination(snapshot):
     )
 
     _validate_expected_dir(snapshot, test_root, output_path, known_good_subpath)
+
+def test_sth_end_to_end_no_historic_many_worms_linear_combination(snapshot):
+    data_dir = "data_no_historic"
+    test_root = Path(__file__).parent / data_dir
+    input_data = test_root / "example_input_data"
+    output_path = test_root / "generated_data_combined_worms_with_linear_model"
+    known_good_subpath = "known_good_output_combined_worms_with_linear_model"
+
+    if output_path.exists():
+        shutil.rmtree(output_path)
+
+    run_sch.run_sth_postprocessing_pipeline(
+        f"{input_data}/",  # currently requires trailing slash
+        output_dir=output_path,
+        worm_directories=run_sch.STHWormConfiguration(worm_paths={
+            STHWorm.ASCARIS: "ascaris",
+            STHWorm.HOOKWORM: "hookworm",
+            STHWorm.WHIPWORM: "hookworm"}), # For testing just going to use hookworms folder
+        worm_combination_algorithm=probability_any_worm.linear_model,
+        num_jobs=1,
+        run_country_level_summaries=True,
+    )
+
+    _validate_expected_dir(snapshot, test_root, output_path, known_good_subpath)
