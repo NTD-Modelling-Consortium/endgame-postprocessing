@@ -45,6 +45,11 @@ def linear_model(probability_for_each_worm: dict[STHWorm, float]):
     Calculate the probability of having any worm by using a generalized linear
     model to estimate the correlation between the different worms
     """
+    required_worms = {STHWorm.ASCARIS, STHWorm.HOOKWORM, STHWorm.WHIPWORM}
+    missing_worms = required_worms - probability_for_each_worm.keys()
+    if len(missing_worms) > 0:
+        raise ValueError(f"Missing worm prevalence: {missing_worms}")
+
     Asc = probability_for_each_worm[STHWorm.ASCARIS]
     Hk = probability_for_each_worm[STHWorm.HOOKWORM]
     TT = probability_for_each_worm[STHWorm.WHIPWORM]
