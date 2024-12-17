@@ -43,7 +43,7 @@ class IUData:
         input_data: pd.DataFrame,
         disease: Disease,
         iu_selection_criteria: IUSelectionCriteria,
-        simulated_IUs: set[str] = None,
+        simulated_IUs: set[str] | None = None,
     ):
         self.disease = disease
         self.input_data = input_data

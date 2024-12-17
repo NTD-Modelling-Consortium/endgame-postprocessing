@@ -69,4 +69,4 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str):
     pipeline.pipeline(input_dir, output_dir, PipelineConfig(disease=Disease.ONCHO))
 
 if __name__ == "__main__":
-    run_postprocessing_pipeline("local_data/oncho", "local_data/oncho-output", 1)
+    run_postprocessing_pipeline("local_data/oncho", "local_data/oncho-output")
