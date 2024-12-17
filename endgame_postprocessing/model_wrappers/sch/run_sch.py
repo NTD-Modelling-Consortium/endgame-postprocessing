@@ -119,11 +119,20 @@ def get_sch_worm_info(file_path):
         file_match.group("iu_id"), file_match.group("scenario")
     )
 
+@dataclass
+class STHFile:
+    file_info: CustomFileInfo
+    worm: STHWorm
+
+def group_by_full(iterable, key_func):
+    sorted_by_key = sorted(iterable, key=key_func)
+    grouped = groupby(sorted_by_key, key_func)
+    return {k: list(v) for k, v in grouped}
 
 def canonicalise_raw_sth_results(
         input_dir,
         output_dir,
-        worm_directories,
+        worm_directories: list[str],
         warning_if_no_file,
         worm_combination_algorithm):
     if len(worm_directories) == 0:
@@ -134,43 +143,27 @@ def canonicalise_raw_sth_results(
         raise Exception(
             f"Could not find worm directory {first_worm_dir} inside {input_dir}"
         )
+    wormery = STHWormConfiguration(worm_paths={STHWorm(index+1): f"{input_dir}/{path}" for index, path in enumerate(worm_directories)})
+    data_by_worm = {worm: list(get_sth_flat(directory)) for worm, directory in wormery.worm_paths.items()}
+    sth_file_infos_by_worm = [[STHFile(file_info, worm) for file_info in file_infos] for worm, file_infos in data_by_worm.items()]
+    all_files  = chain.from_iterable(sth_file_infos_by_worm)
+    files_by_scenario = group_by_full(all_files, lambda file: file.file_info.scenario)
+    for scenario, files_for_scenario in files_by_scenario.items():
+        files_by_iu = group_by_full(files_for_scenario, lambda file: file.file_info.iu)
+        if len(files_by_iu) == 0:
+            raise Exception(
+                "No data for IUs found - see above warnings and check input directory"
+            )
+        for iu_id, iu_file_infos in tqdm(files_by_iu.items(), desc="Canoncialise STH results"):
+            canonical_data = {sth_file.worm: canoncialise_single_result(sth_file.file_info) for sth_file in iu_file_infos}
 
-    other_worms_dirs = worm_directories[1:]
-    other_worms = [
-        get_sth_worm(next(get_sth_flat(f"{input_dir}/{other_worm_dir}")).file_path)
-        for other_worm_dir in other_worms_dirs
-    ]
-    # file_iter = post_process_file_generator(
-    #     file_directory=f"{input_dir}/{first_worm_dir}", end_of_file=".csv"
-    # )
-    file_iter = get_sth_flat(f"{input_dir}/{first_worm_dir}")
-
-    all_files = list(file_iter)
-
-    if len(all_files) == 0:
-        raise Exception(
-            "No data for IUs found - see above warnings and check input directory"
-        )
-
-    for file_info in tqdm(all_files, desc="Canoncialise STH results"):
-        canonical_result_first_worm = canoncialise_single_result(file_info)
-        first_worm = get_sth_worm(file_info.file_path)
-        other_worm_file_infos = [
-            swap_worm_in_heirachy(file_info, first_worm, worm) for worm in other_worms
-        ]
-
-        other_worms_canoncial = [
-            canoncialise_single_result(other_worm_file_info, warning_if_no_file)
-            for other_worm_file_info in other_worm_file_infos
-        ]
-
-        all_worms_canonical = combine_many_worms(
-            {STHWorm.ASCARIS: canonical_result_first_worm} | {STHWorm(index+2): data for index, data in enumerate(other_worms_canoncial)},
-            combination_function=worm_combination_algorithm
-        )
-        output_directory_structure.write_canonical(
-            output_dir, file_info, all_worms_canonical
-        )
+            all_worms_canonical = combine_many_worms(
+                canonical_data,
+                combination_function=worm_combination_algorithm
+            )
+            output_directory_structure.write_canonical(
+                output_dir, next(iter(iu_file_infos)).file_info, all_worms_canonical
+            )
 
 def _check_iu_in_all_folders(worm_iu_info, warning_if_no_file):
     info = {}
