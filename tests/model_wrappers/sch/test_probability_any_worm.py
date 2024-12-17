@@ -1,3 +1,4 @@
+import pytest
 from endgame_postprocessing.model_wrappers.sch import probability_any_worm
 from endgame_postprocessing.model_wrappers.sch.sth_worm import STHWorm
 
@@ -35,3 +36,14 @@ def test_probability_any_worm_diff_prev():
         STHWorm.ASCARIS: 0.5,
         STHWorm.HOOKWORM: 0.7,
         STHWorm.WHIPWORM: 0.3}) == 0.7
+
+
+def test_probability_any_worm_weighted_regression():
+    assert probability_any_worm.linear_model({
+        STHWorm.ASCARIS: 0.5,
+        STHWorm.HOOKWORM: 0.7,
+        STHWorm.WHIPWORM: 0.3}) == pytest.approx(1.43352825)
+
+def test_probability_any_worm_only_one_worm_raises_exception():
+    with pytest.raises(ValueError):
+        probability_any_worm.linear_model({STHWorm.ASCARIS: 0.5})
