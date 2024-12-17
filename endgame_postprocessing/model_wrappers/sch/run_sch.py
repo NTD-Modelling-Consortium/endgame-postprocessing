@@ -1,4 +1,6 @@
+from dataclasses import dataclass
 import glob
+from itertools import chain, groupby
 import os
 import re
 import warnings
@@ -15,6 +17,10 @@ from endgame_postprocessing.post_processing.disease import Disease
 import pandas as pd
 
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
+
+@dataclass
+class STHWormConfiguration:
+    worm_paths: dict[STHWorm, str]
 
 WORM_MAPPING = {
     "hookworm": "hookworm",
