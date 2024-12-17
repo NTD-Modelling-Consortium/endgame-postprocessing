@@ -268,7 +268,8 @@ def canonicalise_raw_sch_results(
 
         all_worms_canonical = combine_many_worms(
               {Worm.HAEMATOBIUM: canonical_result_first_worm} |
-              {Worm(index+Worm.HAEMATOBIUM.value+1): data for index, data in enumerate(other_worms_canoncial)},
+              {Worm(index+Worm.HAEMATOBIUM.value+1): data
+               for index, data in enumerate(other_worms_canoncial)},
             combination_function=probability_any_worm.max_of_any
         )
         output_directory_structure.write_canonical(
