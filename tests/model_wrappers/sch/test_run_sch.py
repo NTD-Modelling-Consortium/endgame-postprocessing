@@ -42,7 +42,7 @@ def test_combine_many_worms_independent_combination():
         }
     )
     pdt.assert_frame_equal(
-        combine_many_worms({STHWorm.ASCARIS: first_worm, STHWorm.HOOKWORM:second_worm, STHWorm.WHIPWORM: third_worm},
+        combine_many_worms({STHWorm.ASCARIS: first_worm, STHWorm.HOOKWORM:second_worm, STHWorm.WHIPWORM: third_worm}, # noqa
                            combination_function=probability_any_worm.independent_probability),
         pd.DataFrame(
             {
@@ -79,7 +79,7 @@ def test_combine_many_worms_independent_combination_many_years():
         }
     )
     pdt.assert_frame_equal(
-        combine_many_worms({STHWorm.ASCARIS: first_worm, STHWorm.HOOKWORM:second_worm, STHWorm.WHIPWORM: third_worm},
+        combine_many_worms({STHWorm.ASCARIS: first_worm, STHWorm.HOOKWORM:second_worm, STHWorm.WHIPWORM: third_worm}, # noqa
                            combination_function=probability_any_worm.independent_probability),
         pd.DataFrame(
             {
