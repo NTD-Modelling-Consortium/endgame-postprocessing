@@ -55,8 +55,9 @@ def combine_many_worms(
         raise Exception("Need to provide a callable function to combine worms.")
 
     first_worm_data = next(iter(raw_data_by_worm.values()))
-    first_worm_data.loc[:, "draw_0":] = combination_function(
-        {worm: raw_data.loc[:, "draw_0":] for worm, raw_data in raw_data_by_worm.items()})
+    if(len(raw_data_by_worm) > 1):
+        first_worm_data.loc[:, "draw_0":] = combination_function(
+            {worm: raw_data.loc[:, "draw_0":] for worm, raw_data in raw_data_by_worm.items()})
 
     return first_worm_data
 
