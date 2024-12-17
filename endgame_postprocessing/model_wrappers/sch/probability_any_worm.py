@@ -39,3 +39,21 @@ def max_of_any(probability_for_each_worm: dict[STHWorm, float]):
     Returns: the probability of having any worm.
     """
     return reduce(lambda x, y: np.maximum(x, y), probability_for_each_worm.values())
+
+def linear_model(probability_for_each_worm: dict[STHWorm, float]):
+    """
+    Calculate the probability of having any worm by using a generalized linear
+    model to estimate the correlation between the different worms
+    """
+    Asc = probability_for_each_worm[STHWorm.ASCARIS]
+    Hk = probability_for_each_worm[STHWorm.HOOKWORM]
+    TT = probability_for_each_worm[STHWorm.WHIPWORM]
+    return (
+        1.10078 +
+        (0.41845 * Asc) +
+        (0.05568 * Hk) +
+        (0.28897 * TT) +
+        (-0.07097 * Asc * Hk) +
+        (0.10423 * Asc * TT) +
+        (0.01396 * Hk * TT) +
+        (0.03933 * Asc * Hk * TT))
