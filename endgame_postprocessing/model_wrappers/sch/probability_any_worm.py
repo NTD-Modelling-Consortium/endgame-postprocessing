@@ -6,7 +6,7 @@ import numpy as np
 
 from endgame_postprocessing.model_wrappers.sch.sth_worm import STHWorm
 
-WormCombinationFunction = Callable[dict[STHWorm, float], float]
+WormCombinationFunction = Callable[[dict[STHWorm, float]], float]
 
 def independent_probability(probability_for_each_worm: dict[STHWorm, float]):
     """
