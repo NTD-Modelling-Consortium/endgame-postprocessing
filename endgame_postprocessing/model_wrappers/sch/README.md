@@ -9,22 +9,36 @@ The STH pipeline can either create a "any worm" result, or a single worm result.
 
 ### Any Worm
 
+Different algorithms can be used for calculating the probability of having any worm,
+given the probability of any one worm. 
+
+Options:
+
+- `worm_combination_algorithm=probability_any_worm.independent_probability,` - **randomSTH**
+- `worm_combination_algorithm=probability_any_worm.max_of_any,` - **maxSTH**
+- `worm_combination_algorithm=probability_any_worm.linear_model,` - **weightedSTH**
+
 ```python
 import endgame_postprocessing.model_wrappers.sch.run_sch as run_sch
 
 input_dir = # TODO
-# Collect all of the worm directories that are in the input_dir
-# Note: The first worm directory in the list should contain files for all IUs across the worms
-worm_directories = next(os.walk(input_dir))[1]
+# These should be the subdirectories that each of the worms is stored in within the input directory
+worm_directories=run_sch.STHWormConfiguration(worm_paths={
+    STHWorm.ASCARIS: "ascaris",
+    STHWorm.HOOKWORM: "hookworm",
+    STHWorm.WHIPWORM: "whipworm"}), 
 run_sch.run_sth_postprocessing_pipeline(
     input_dir,
     "desired output directory",
     worm_directories,
-    1,
+    worm_combination_algorithm=probability_any_worm.independent_probability,
+    num_jobs=1,
     skip_canonical=False,
     threshold = 0.01,
 )
 ```
+
+_Note: if weightedSTH is used, all three worms must be specified._
 
 ### Single Worm
 
@@ -34,17 +48,24 @@ Alternatively, can be run for each worm separately:
 import endgame_postprocessing.model_wrappers.sch.run_sch as run_sch
 
 input_dir = # TODO
-worm_directories = next(os.walk(input_dir))[1]
-for worm_directory in worm_directories:
+worm_directories=run_sch.STHWormConfiguration(worm_paths={
+    STHWorm.ASCARIS: "ascaris",
+    STHWorm.HOOKWORM: "hookworm",
+    STHWorm.WHIPWORM: "whipworm"}), 
+for worm in worm_directories.worm_paths:
     run_sch.run_sth_postprocessing_pipeline(
         input_dir,
         f"local_data/sth-output-single-worm/{worm_directory}",
-        [worm_directory],
-        1,
+        run_sch.STHWormConfiguration(worm_paths={worm: worm_directories[worm]}),
+        worm_combination_algorithm=probability_any_worm.independent_probability,
+        num_jobs=1,
         skip_canonical=False,
         threshold = 0.01,
     )
 ```
+
+_Note the worm combination algorithm must currently be specified, even though it will have no
+effect._
 
 ## Schisto
 

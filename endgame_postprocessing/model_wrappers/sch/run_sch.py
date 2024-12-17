@@ -1,11 +1,12 @@
-from functools import reduce
+from dataclasses import dataclass
 import glob
-from operator import mul
+from itertools import chain, groupby
 import os
 import re
-from typing import Iterable
 import warnings
 from tqdm import tqdm
+from endgame_postprocessing.model_wrappers.sch import probability_any_worm
+from endgame_postprocessing.model_wrappers.sch.worm import Worm
 from endgame_postprocessing.post_processing import (
     canonicalise,
     output_directory_structure,
@@ -14,9 +15,12 @@ from endgame_postprocessing.post_processing import (
 from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
 import pandas as pd
-import numpy as np
 
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
+
+@dataclass
+class STHWormConfiguration:
+    worm_paths: dict[Worm, str]
 
 WORM_MAPPING = {
     "hookworm": "hookworm",
@@ -27,39 +31,6 @@ WORM_MAPPING = {
     "sch-mansoni-low-burden": "mansoni_low_burden",
 }
 
-
-def probability_any_worm(probability_for_each_worm: Iterable[float]):
-    """
-    Calculate the probability of having any worm, given probability of
-    having each worm.
-
-    This assumes that the probability of each worm is statistically independent.
-    Then via de Morgans law we can get the prob of any worm by working out the prob
-    of no worm.
-
-    Inputs:
-     - probability_for_each_worm: Probability of having each worm
-
-    Returns: the probability of having any worm.
-    """
-    prob_of_not_each_worm = map(
-        lambda prob_having_worm: 1.0 - prob_having_worm, probability_for_each_worm
-    )
-    prob_not_any_worm = reduce(mul, prob_of_not_each_worm, 1.0)
-    return 1.0 - prob_not_any_worm
-
-def probability_any_worm_max(probability_for_each_worm: Iterable[float]):
-    """
-    Calculate the probability of having any worm, given by the highest probability
-    among all the worms. Used for SCH.
-
-    Inputs:
-     - probability_for_each_worm: Probability of having each worm
-
-    Returns: the probability of having any worm.
-    """
-    return reduce(lambda x, y: np.maximum(x, y), probability_for_each_worm)
-
 def canoncialise_single_result(file_info, warning_if_no_file=False):
     try:
         raw_iu = pd.read_csv(file_info.file_path)
@@ -68,32 +39,27 @@ def canoncialise_single_result(file_info, warning_if_no_file=False):
         return canonicalise.canonicalise_raw(
             raw_without_columns, file_info, "Prevalence SAC"
         )
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         if warning_if_no_file:
             warnings.warn(
                 f"File {file_info.file_path} not found, and `warning_if_no_file` is set to True"
             )
             return pd.DataFrame()
-        raise FileNotFoundError
+        raise e
 
 
-def combine_many_worms(first_worm, other_worms, combination_function = probability_any_worm):
+def combine_many_worms(
+        raw_data_by_worm:dict[Worm, pd.DataFrame],
+        combination_function: probability_any_worm.WormCombinationFunction):
     if not callable(combination_function):
         raise Exception("Need to provide a callable function to combine worms.")
-    other_worm_draws = [
-        other_worm.loc[:, "draw_0":]
-        if not other_worm.empty
-        else pd.DataFrame(
-            np.zeros(first_worm.loc[:, "draw_0":].shape),
-            columns=first_worm.columns[first_worm.columns.get_loc("draw_0"):]
-        )
-        for other_worm in other_worms
-    ]
 
-    first_worm.loc[:, "draw_0":] = combination_function(
-        [first_worm.loc[:, "draw_0":]] + other_worm_draws
-    )
-    return first_worm
+    first_worm_data = next(iter(raw_data_by_worm.values()))
+    if(len(raw_data_by_worm) > 1):
+        first_worm_data.loc[:, "draw_0":] = combination_function(
+            {worm: raw_data.loc[:, "draw_0":] for worm, raw_data in raw_data_by_worm.items()})
+
+    return first_worm_data
 
 
 def swap_worm_in_heirachy(original_file_info, first_worm, new_worm):
@@ -160,52 +126,56 @@ def get_sch_worm_info(file_path):
         file_match.group("iu_id"), file_match.group("scenario")
     )
 
+@dataclass
+class STHFile:
+    file_info: CustomFileInfo
+    worm: Worm
 
-def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file):
-    if len(worm_directories) == 0:
+def group_by_full(iterable, key_func):
+    sorted_by_key = sorted(iterable, key=key_func)
+    grouped = groupby(sorted_by_key, key_func)
+    return {k: list(v) for k, v in grouped}
+
+def canonicalise_raw_sth_results(
+        input_dir,
+        output_dir,
+        worm_directories: STHWormConfiguration,
+        warning_if_no_file,
+        worm_combination_algorithm: probability_any_worm.WormCombinationFunction):
+    if len(worm_directories.worm_paths) == 0:
         raise Exception("Must provide at least one worm directory")
-    first_worm_dir = worm_directories[0]
 
-    if not os.path.exists(f"{input_dir}/{first_worm_dir}"):
-        raise Exception(
-            f"Could not find worm directory {first_worm_dir} inside {input_dir}"
-        )
+    for worm, worm_dir in worm_directories.worm_paths.items():
+        if not os.path.exists(f"{input_dir}/{worm_dir}"):
+            raise Exception(
+                f"Could not find worm directory {worm_dir} inside {input_dir} for worm {worm}"
+            )
+    data_by_worm = {
+        worm: list(get_sth_flat(f"{input_dir}/{worm_dir}"))
+        for worm, directory in worm_directories.worm_paths.items()}
+    sth_file_infos_by_worm = [
+        [STHFile(file_info, worm) for file_info in file_infos]
+        for worm, file_infos in data_by_worm.items()]
+    all_files  = chain.from_iterable(sth_file_infos_by_worm)
+    files_by_scenario = group_by_full(all_files, lambda file: file.file_info.scenario)
+    for scenario, files_for_scenario in files_by_scenario.items():
+        files_by_iu = group_by_full(files_for_scenario, lambda file: file.file_info.iu)
+        if len(files_by_iu) == 0:
+            raise Exception(
+                "No data for IUs found - see above warnings and check input directory"
+            )
+        for iu_id, iu_file_infos in tqdm(files_by_iu.items(), desc="Canoncialise STH results"):
+            canonical_data = {
+                sth_file.worm: canoncialise_single_result(sth_file.file_info)
+                for sth_file in iu_file_infos}
 
-    other_worms_dirs = worm_directories[1:]
-    other_worms = [
-        get_sth_worm(next(get_sth_flat(f"{input_dir}/{other_worm_dir}")).file_path)
-        for other_worm_dir in other_worms_dirs
-    ]
-    # file_iter = post_process_file_generator(
-    #     file_directory=f"{input_dir}/{first_worm_dir}", end_of_file=".csv"
-    # )
-    file_iter = get_sth_flat(f"{input_dir}/{first_worm_dir}")
-
-    all_files = list(file_iter)
-
-    if len(all_files) == 0:
-        raise Exception(
-            "No data for IUs found - see above warnings and check input directory"
-        )
-
-    for file_info in tqdm(all_files, desc="Canoncialise STH results"):
-        canonical_result_first_worm = canoncialise_single_result(file_info)
-        first_worm = get_sth_worm(file_info.file_path)
-        other_worm_file_infos = [
-            swap_worm_in_heirachy(file_info, first_worm, worm) for worm in other_worms
-        ]
-
-        other_worms_canoncial = [
-            canoncialise_single_result(other_worm_file_info, warning_if_no_file)
-            for other_worm_file_info in other_worm_file_infos
-        ]
-
-        all_worms_canonical = combine_many_worms(
-            canonical_result_first_worm, other_worms_canoncial
-        )
-        output_directory_structure.write_canonical(
-            output_dir, file_info, all_worms_canonical
-        )
+            all_worms_canonical = combine_many_worms(
+                canonical_data,
+                combination_function=worm_combination_algorithm
+            )
+            output_directory_structure.write_canonical(
+                output_dir, next(iter(iu_file_infos)).file_info, all_worms_canonical
+            )
 
 def _check_iu_in_all_folders(worm_iu_info, warning_if_no_file):
     info = {}
@@ -297,8 +267,10 @@ def canonicalise_raw_sch_results(
         ]
 
         all_worms_canonical = combine_many_worms(
-            canonical_result_first_worm, other_worms_canoncial,
-            combination_function=probability_any_worm_max
+              {Worm.HAEMATOBIUM: canonical_result_first_worm} |
+              {Worm(index+Worm.HAEMATOBIUM.value+1): data
+               for index, data in enumerate(other_worms_canoncial)},
+            combination_function=probability_any_worm.max_of_any
         )
         output_directory_structure.write_canonical(
             output_dir, file_info, all_worms_canonical
@@ -308,12 +280,13 @@ def canonicalise_raw_sch_results(
 def run_sth_postprocessing_pipeline(
     input_dir: str,
     output_dir: str,
-    worm_directories: list[str],
+    worm_directories: STHWormConfiguration,
+    worm_combination_algorithm: probability_any_worm.WormCombinationFunction,
     num_jobs: int,
     skip_canonical=False,
     threshold: float = 0.1,
     run_country_level_summaries = False,
-    warning_if_no_file = False
+    warning_if_no_file = False,
 ):
     """
     Aggregates into standard format the input files found in input_dir.
@@ -348,7 +321,12 @@ def run_sth_postprocessing_pipeline(
 
     """
     if not skip_canonical:
-        canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file)
+        canonicalise_raw_sth_results(
+            input_dir,
+            output_dir,
+            worm_directories,
+            warning_if_no_file,
+            worm_combination_algorithm)
 
     config = PipelineConfig(
         disease=Disease.STH,
