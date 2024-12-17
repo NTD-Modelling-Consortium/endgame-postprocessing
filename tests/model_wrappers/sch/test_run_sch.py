@@ -10,7 +10,7 @@ from endgame_postprocessing.model_wrappers.sch.run_sch import (
     canonicalise_raw_sch_results,
     probability_any_worm_max,
 )
-from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
+from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 
 def test_probability_any_worm_zero_for_all_worms():
     assert probability_any_worm([0.0, 0.0, 0.0]) == 0.0

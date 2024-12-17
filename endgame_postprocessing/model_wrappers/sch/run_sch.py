@@ -11,7 +11,7 @@ from endgame_postprocessing.post_processing import (
     output_directory_structure,
     pipeline,
 )
-from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
+from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
 import pandas as pd
 import numpy as np

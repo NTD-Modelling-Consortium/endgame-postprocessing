@@ -1,4 +1,4 @@
-from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
+from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 
 
 def get_name(file: CustomFileInfo):

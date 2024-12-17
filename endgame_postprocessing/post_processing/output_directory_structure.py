@@ -3,7 +3,7 @@ from pathlib import Path
 import pandas as pd
 
 from endgame_postprocessing.post_processing import canonical_file_name
-from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
+from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
 
 
