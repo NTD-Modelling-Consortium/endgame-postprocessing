@@ -106,3 +106,6 @@ def get_flat_regex(file_name_regex, input_dir, glob_expression="**/*.csv"):
             iu=file_match.group("iu_id"),
             file_path=f"{input_dir}/{file}",
         )
+
+def get_matching_csv(path: str, country_code: str, iu_number: str):
+    return glob.glob(os.path.join(path, f"*{country_code}*{iu_number}.csv"))

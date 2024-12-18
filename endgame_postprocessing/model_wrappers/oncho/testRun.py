@@ -7,13 +7,14 @@ from endgame_postprocessing.post_processing import (
 from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.file_util import (
     post_process_file_generator,
+    get_matching_csv,
 )
 import pandas as pd
 
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 
 
-def canonicalise_raw_oncho_results(input_dir, output_dir, start_year=1970, stop_year=2041):
+def canonicalise_raw_oncho_results(input_dir, output_dir, start_year=1970, stop_year=2041, historic_dir=None):
     file_iter = post_process_file_generator(
         file_directory=input_dir, end_of_file=".csv"
     )
@@ -27,6 +28,19 @@ def canonicalise_raw_oncho_results(input_dir, output_dir, start_year=1970, stop_
 
     for file_info in tqdm(all_files, desc="Canoncialise Oncho results"):
         raw_iu = pd.read_csv(file_info.file_path)
+        #post_2026_file_path = file_info.file_path.replace(input_dir, input_dir_post_2026)
+        #raw_iu_post_2026 = pd.read_csv(post_2026_file_path)
+        if historic_dir is not None:
+            # Note: for oncho the historic files have no folder structure
+            # The IU names in the historic files use the long code.
+            # The IU parameter in the file_info object contains the country code, which we need to remove to properly search
+            historic_iu_file_path = get_matching_csv(historic_dir, file_info.country, file_info.iu.replace(file_info.country, ""))
+            if len(historic_iu_file_path) != 1:
+                raise Exception(
+                    f"Expected exactly one historic file for {file_info.country}{file_info.iu}, found {len(historic_iu_file_path)}"
+                )
+            raw_iu_historic = pd.read_csv(historic_iu_file_path[0])
+            raw_iu = pd.concat([raw_iu_historic, raw_iu])
         raw_iu_filtered = raw_iu[
             (raw_iu['year_id'] >= start_year) & (raw_iu['year_id'] <= stop_year)
         ].copy()
@@ -39,7 +53,7 @@ def canonicalise_raw_oncho_results(input_dir, output_dir, start_year=1970, stop_
         )
 
 
-def run_postprocessing_pipeline(input_dir: str, output_dir: str):
+def run_postprocessing_pipeline(input_dir: str, output_dir: str, historic_dir: str = None):
     """
     Aggregates into standard format the input files found in input_dir.
     input_dir must have the following substructure:
@@ -48,6 +62,9 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str):
                 iu1/
                     iu.csv
         scenario2/
+
+    historic_dir does not need a specific structure, however if provided,
+    all IUs in input_dir, must have ONLY 1 related file in the historic_dir
 
     The output directory must be empty.
     On completion the sub-structure will be:
@@ -63,10 +80,11 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str):
     Arguments:
         input_dir (str): The directory to search for input files.
         output_dir (str): The directory to store the output files.
+        historic_dir (str, optional): The directory to search for historic IU data. Defaults to None.
 
     """
-    canonicalise_raw_oncho_results(input_dir, output_dir)
+    canonicalise_raw_oncho_results(input_dir, output_dir, historic_dir=historic_dir)
     pipeline.pipeline(input_dir, output_dir, PipelineConfig(disease=Disease.ONCHO))
 
 if __name__ == "__main__":
-    run_postprocessing_pipeline("local_data/oncho", "local_data/oncho-output", 1)
+    run_postprocessing_pipeline("local_data/oncho", "local_data/oncho-output", historic_dir="local_data/historic-oncho")
