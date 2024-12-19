@@ -384,7 +384,8 @@ def run_sch_postprocessing_pipeline(
     if not skip_canonical:
         if historic_input_dir is not None:
             forward_canonical = f"{output_dir}/forward_only"
-            canonicalise_raw_sch_results(input_dir, forward_canonical, worm_directories)
+            canonicalise_raw_sch_results(
+                input_dir, forward_canonical, worm_directories, warning_if_no_file)
             historic_canonical = f"{output_dir}/historical_only"
             canonicalise_raw_sch_results(
                 historic_input_dir, historic_canonical, worm_directories, warning_if_no_file
@@ -393,7 +394,8 @@ def run_sch_postprocessing_pipeline(
                 historic_canonical, forward_canonical, output_dir
             )
         else:
-            canonicalise_raw_sch_results(input_dir, output_dir, worm_directories)
+            canonicalise_raw_sch_results(
+                input_dir, output_dir, worm_directories, warning_if_no_file)
     config = PipelineConfig(
         disease=Disease.SCH,
         threshold=threshold,
