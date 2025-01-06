@@ -31,23 +31,17 @@ def canonicalise_raw_oncho_results(
 
     for file_info in tqdm(all_files, desc="Canoncialise Oncho results"):
         raw_iu = pd.read_csv(file_info.file_path)
-        #post_2026_file_path = file_info.file_path.replace(input_dir, input_dir_post_2026)
-        #raw_iu_post_2026 = pd.read_csv(post_2026_file_path)
         if historic_dir is not None:
             # Note: for oncho the historic files have no folder structure
             # The IU names in the historic files use the long code.
             # The IU parameter in the file_info object contains the country code, which we need
             # to remove to properly search
+            # See: https://github.com/NTD-Modelling-Consortium/endgame-project/issues/166
             historic_iu_file_path = get_matching_csv(
                 historic_dir,
                 file_info.country,
                 file_info.iu.replace(file_info.country, "")
             )
-            if len(historic_iu_file_path) != 1:
-                raise Exception(
-                    f"Expected exactly one historic file for {file_info.country}{file_info.iu}," +
-                    f"found {len(historic_iu_file_path)}"
-                )
             raw_iu_historic = pd.read_csv(historic_iu_file_path[0])
             raw_iu = pd.concat([raw_iu_historic, raw_iu])
         raw_iu_filtered = raw_iu[
