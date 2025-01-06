@@ -14,7 +14,10 @@ import pandas as pd
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 
 
-def canonicalise_raw_oncho_results(input_dir, output_dir, start_year=1970, stop_year=2041, historic_dir=None):
+def canonicalise_raw_oncho_results(
+        input_dir, output_dir,
+        start_year=1970, stop_year=2041, historic_dir=None
+):
     file_iter = post_process_file_generator(
         file_directory=input_dir, end_of_file=".csv"
     )
@@ -33,11 +36,17 @@ def canonicalise_raw_oncho_results(input_dir, output_dir, start_year=1970, stop_
         if historic_dir is not None:
             # Note: for oncho the historic files have no folder structure
             # The IU names in the historic files use the long code.
-            # The IU parameter in the file_info object contains the country code, which we need to remove to properly search
-            historic_iu_file_path = get_matching_csv(historic_dir, file_info.country, file_info.iu.replace(file_info.country, ""))
+            # The IU parameter in the file_info object contains the country code, which we need
+            # to remove to properly search
+            historic_iu_file_path = get_matching_csv(
+                historic_dir,
+                file_info.country,
+                file_info.iu.replace(file_info.country, "")
+            )
             if len(historic_iu_file_path) != 1:
                 raise Exception(
-                    f"Expected exactly one historic file for {file_info.country}{file_info.iu}, found {len(historic_iu_file_path)}"
+                    f"Expected exactly one historic file for {file_info.country}{file_info.iu}," +
+                    f"found {len(historic_iu_file_path)}"
                 )
             raw_iu_historic = pd.read_csv(historic_iu_file_path[0])
             raw_iu = pd.concat([raw_iu_historic, raw_iu])
@@ -80,11 +89,14 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str, historic_dir: s
     Arguments:
         input_dir (str): The directory to search for input files.
         output_dir (str): The directory to store the output files.
-        historic_dir (str, optional): The directory to search for historic IU data. Defaults to None.
+        historic_dir (str, optional): The directory to search for historic IU data.Defaults to None.
 
     """
     canonicalise_raw_oncho_results(input_dir, output_dir, historic_dir=historic_dir)
     pipeline.pipeline(input_dir, output_dir, PipelineConfig(disease=Disease.ONCHO))
 
 if __name__ == "__main__":
-    run_postprocessing_pipeline("local_data/oncho", "local_data/oncho-output", historic_dir="local_data/historic-oncho")
+    run_postprocessing_pipeline("local_data/oncho",
+                                "local_data/oncho-output",
+                                historic_dir="local_data/historic-oncho"
+    )
