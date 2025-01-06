@@ -114,4 +114,4 @@ def get_matching_csv(path: str, country_code: str, iu_number: str):
             f"Expected exactly one file for {country_code}{iu_number}," +
             f"found {len(matching_values)}"
         )
-    return matching_values
+    return matching_values[0]

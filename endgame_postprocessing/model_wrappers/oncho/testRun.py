@@ -42,7 +42,7 @@ def canonicalise_raw_oncho_results(
                 file_info.country,
                 file_info.iu.replace(file_info.country, "")
             )
-            raw_iu_historic = pd.read_csv(historic_iu_file_path[0])
+            raw_iu_historic = pd.read_csv(historic_iu_file_path)
             raw_iu = pd.concat([raw_iu_historic, raw_iu])
         raw_iu_filtered = raw_iu[
             (raw_iu['year_id'] >= start_year) & (raw_iu['year_id'] <= stop_year)
