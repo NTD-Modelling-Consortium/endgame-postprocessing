@@ -5,6 +5,7 @@ from endgame_postprocessing.model_wrappers.sch.run_sch import (
     canoncialise_single_result,
     combine_many_worms,
     get_sth_flat,
+    get_sth_or_sch_historic,
     probability_any_worm,
     _check_iu_in_all_folders,
     canonicalise_raw_sch_results,
@@ -309,5 +310,31 @@ def test_flat_walk(fs):
             country="AGO",
             iu="AGO02049",
             file_path="foo/ntdmc-AGO02049-hookworm-group_001-scenario_2a-group_001-200_simulations.csv",
+        )
+    ]
+
+def test_flat_historic_data(fs):
+    fs.create_file(
+        "foo/PrevDataset_Hook_AAA00001.csv"),
+    fs.create_file(
+        "foo/PrevDataset_Hook_BBB00002.csv"
+    )
+    results = list(get_sth_or_sch_historic("foo"))
+    assert results == [
+        CustomFileInfo(
+            scenario_index=1,
+            total_scenarios=3,  # TODO
+            scenario="scenario_0",
+            country="AAA",
+            iu="AAA00001",
+            file_path="foo/PrevDataset_Hook_AAA00001.csv",
+        ),
+        CustomFileInfo(
+            scenario_index=1,
+            total_scenarios=3,  # TODO
+            scenario="scenario_0",
+            country="BBB",
+            iu="BBB00002",
+            file_path="foo/PrevDataset_Hook_BBB00002.csv",
         )
     ]

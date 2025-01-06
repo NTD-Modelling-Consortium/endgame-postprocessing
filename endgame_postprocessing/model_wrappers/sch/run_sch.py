@@ -114,9 +114,9 @@ def swap_worm_in_heirachy(original_file_info, first_worm, new_worm):
     )
 
 
-def _get_flat_regex(file_name_regex, input_dir):
+def _get_flat_regex(file_name_regex, input_dir, glob_path = "**/ntdmc-*-group_001-200_simulations.csv"):
     files = glob.glob(
-        "**/ntdmc-*-group_001-200_simulations.csv", root_dir=input_dir, recursive=True
+        glob_path, root_dir=input_dir, recursive=True
     )
     for file in files:
         file_match = re.search(file_name_regex, file)
@@ -146,6 +146,19 @@ def get_sch_flat(input_dir):
         r"ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-(?P<worm>[\w_]+)-group_001-(?P<scenario>scenario_\w+)-survey_type_kk2-group_001-200_simulations.csv",
         input_dir,
     )
+
+def get_sth_or_sch_historic(input_dir):
+    # The scenario is not in the file name so we add an empty group
+    # and then provide the scenario
+    file_infos = _get_flat_regex(
+        r"PrevDataset_(?P<worm>\w+)_(?P<iu_id>(?P<country>[A-Z]{3})\d{5})(?P<scenario>).csv",
+        input_dir,
+        glob_path="**/*.csv"
+    )
+    for file_info in file_infos:
+        file_info.scenario = "scenario_0"
+        yield file_info
+
 
 
 def get_sth_worm(file_path):
