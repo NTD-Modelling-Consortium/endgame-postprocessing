@@ -13,9 +13,11 @@ oncho_runner.run_postprocessing_pipeline(
     )
 ```
 
-Here the `input_dir` is the directory of the forward projections. 
+Here the `input_dir` is the directory of the forward projections *and* the 
+Population file - see main [README](../../../README.md#iu-meta-data-file) for the format:
 This is expected to be in the following format:
 
+ - PopulationMetadatafile.csv
  - scenario_1/
    - AAA/
      - AAA00001/
