@@ -3,7 +3,7 @@ import pandas as pd
 import pandas.testing as pdt
 import pytest
 from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
-from endgame_postprocessing.post_processing.replicate_historic_data_from_scenario import replicate_historic_data_in_all_scenarios
+from endgame_postprocessing.post_processing.replicate_historic_data_from_scenario import replicate_historic_data_in_all_scenarios # noqa E501
 from endgame_postprocessing.post_processing import canoncical_columns
 
 def test_replicate_historic_data_in_all_scenarios_one_scenario_copied_to_other():
@@ -12,13 +12,15 @@ def test_replicate_historic_data_in_all_scenarios_one_scenario_copied_to_other()
         canoncical_columns.SCENARIO: ["scenario_-1"] * 3,
         "draw_0": [0.1, 0.2, 0.3]
     })
-    source_file_info = CustomFileInfo(scenario="scenario_-1", scenario_index=0, total_scenarios=1, country="AAA", iu="AAA00001", file_path='')
+    source_file_info = CustomFileInfo(scenario="scenario_-1", scenario_index=0, total_scenarios=1,
+                                      country="AAA", iu="AAA00001", file_path='')
     target_scenario = pd.DataFrame({
         canoncical_columns.YEAR_ID: [2012],
         canoncical_columns.SCENARIO: ["scenario_1"],
         "draw_0": [0.4]
     })
-    target_file_info = CustomFileInfo(scenario="scenario_1", scenario_index=0, total_scenarios=1, country="AAA", iu="AAA00001", file_path='')
+    target_file_info = CustomFileInfo(scenario="scenario_1", scenario_index=0, total_scenarios=1,
+                                      country="AAA", iu="AAA00001", file_path='')
 
     results = {
         "scenario_-1": {"AAA00001": (source_file_info, source_scenario)},
@@ -42,13 +44,15 @@ def test_replicate_historic_data_with_non_overlapping_data():
         canoncical_columns.SCENARIO: ["scenario_-1"] * 3,
         "draw_0": [0.1, 0.2, 0.3]
     })
-    source_file_info = CustomFileInfo(scenario="scenario_-1", scenario_index=0, total_scenarios=1, country="AAA", iu="AAA00001", file_path='')
+    source_file_info = CustomFileInfo(scenario="scenario_-1", scenario_index=0, total_scenarios=1,
+                                      country="AAA", iu="AAA00001", file_path='')
     target_scenario = pd.DataFrame({
         canoncical_columns.YEAR_ID: [2014],
         canoncical_columns.SCENARIO: ["scenario_1"],
         "draw_0": [0.4]
     })
-    target_file_info = CustomFileInfo(scenario="scenario_1", scenario_index=0, total_scenarios=1, country="AAA", iu="AAA00001", file_path='')
+    target_file_info = CustomFileInfo(scenario="scenario_1", scenario_index=0, total_scenarios=1,
+                                      country="AAA", iu="AAA00001", file_path='')
 
     results = {
         "scenario_-1": {"AAA00001": (source_file_info, source_scenario)},
@@ -72,7 +76,9 @@ def test_replicate_historic_data_missing_forward_iu():
         canoncical_columns.SCENARIO: ["scenario_-1"] * 3,
         "draw_0": [0.1, 0.2, 0.3]
     })
-    source_file_info = CustomFileInfo(scenario="scenario_-1", scenario_index=0, total_scenarios=1, country="AAA", iu="AAA00001", file_path='')
+    source_file_info = CustomFileInfo(
+        scenario="scenario_-1", scenario_index=0, total_scenarios=1,
+        country="AAA", iu="AAA00001", file_path='')
 
     results = {
         "scenario_-1": {"AAA00001": (source_file_info, source_scenario)},
@@ -94,7 +100,9 @@ def test_replicate_historic_data_missing_iu_from_history():
         canoncical_columns.SCENARIO: ["scenario_1"],
         "draw_0": [0.4]
     })
-    target_file_info = CustomFileInfo(scenario="scenario_1", scenario_index=0, total_scenarios=1, country="AAA", iu="AAA00001", file_path='')
+    target_file_info = CustomFileInfo(
+        scenario="scenario_1", scenario_index=0, total_scenarios=1,
+        country="AAA", iu="AAA00001", file_path='')
 
     results = {
         "scenario_-1": {},
@@ -115,5 +123,6 @@ def test_replicate_historic_data_missing_iu_from_history():
 
 def test_replicate_historic_data_in_all_scenarios_scenario_missing_raises_exception():
     with pytest.raises(Exception) as e:
-        modified_results = replicate_historic_data_in_all_scenarios({"scenario_1": {}}, 'scenario_-1')
+        _ = replicate_historic_data_in_all_scenarios(
+            {"scenario_1": {}}, 'scenario_-1')
     assert e.match(r"Invalid source_scenario: 'scenario_-1' as not in \['scenario_1'\]")
