@@ -16,7 +16,8 @@ from endgame_postprocessing.post_processing.pipeline_config import PipelineConfi
 
 def canonicalise_raw_oncho_results(
         input_dir, output_dir,
-        start_year=1970, stop_year=2041, historic_dir=None
+        start_year=1970, stop_year=2041,
+        historic_dir=None, historic_prefix = ""
 ):
     file_iter = post_process_file_generator(
         file_directory=input_dir, end_of_file=".csv"
@@ -39,6 +40,7 @@ def canonicalise_raw_oncho_results(
             # See: https://github.com/NTD-Modelling-Consortium/endgame-project/issues/166
             historic_iu_file_path = get_matching_csv(
                 historic_dir,
+                historic_prefix,
                 file_info.country,
                 file_info.iu.replace(file_info.country, "")
             )
@@ -56,7 +58,10 @@ def canonicalise_raw_oncho_results(
         )
 
 
-def run_postprocessing_pipeline(input_dir: str, output_dir: str, historic_dir: str = None):
+def run_postprocessing_pipeline(
+        input_dir: str, output_dir: str,
+        historic_dir: str = None, historic_prefix: str ="*"
+    ):
     """
     Aggregates into standard format the input files found in input_dir.
     input_dir must have the following substructure:
@@ -83,14 +88,22 @@ def run_postprocessing_pipeline(input_dir: str, output_dir: str, historic_dir: s
     Arguments:
         input_dir (str): The directory to search for input files.
         output_dir (str): The directory to store the output files.
-        historic_dir (str, optional): The directory to search for historic IU data.Defaults to None.
+        historic_dir (str, optional): The directory to search for historic IU data.
+            Defaults to None.
+        historic_prefix (str, optional): The prefix for the historic IU files.
+            This is the value that comes before the country code, i.e raw_outputs_ if the file name
+            is raw_outputs_AAAXXXX00002. Defaults to "*".
 
     """
-    canonicalise_raw_oncho_results(input_dir, output_dir, historic_dir=historic_dir)
+    canonicalise_raw_oncho_results(
+        input_dir, output_dir,
+        historic_dir=historic_dir, historic_prefix=historic_prefix
+    )
     pipeline.pipeline(input_dir, output_dir, PipelineConfig(disease=Disease.ONCHO))
 
 if __name__ == "__main__":
     run_postprocessing_pipeline("local_data/oncho",
                                 "local_data/oncho-output",
-                                historic_dir="local_data/historic-oncho"
+                                historic_dir="local_data/historic-oncho",
+                                historic_prefix="raw_outputs_"
     )

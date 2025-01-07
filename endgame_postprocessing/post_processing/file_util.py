@@ -107,11 +107,13 @@ def get_flat_regex(file_name_regex, input_dir, glob_expression="**/*.csv"):
             file_path=f"{input_dir}/{file}",
         )
 
-def get_matching_csv(path: str, country_code: str, iu_number: str):
-    matching_values = glob.glob(os.path.join(path, f"*{country_code}*{iu_number}.csv"))
+def get_matching_csv(path: str, historic_prefix: str, country_code: str, iu_number: str):
+    matching_values = glob.glob(
+        os.path.join(path, f"{historic_prefix}{country_code}*{iu_number}.csv")
+    )
     if len(matching_values) != 1:
         raise Exception(
-            f"Expected exactly one file for {country_code}{iu_number}," +
+            f"Expected exactly one file for {historic_prefix}{country_code}{iu_number}," +
             f"found {len(matching_values)}"
         )
     return matching_values[0]
