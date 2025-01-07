@@ -25,6 +25,20 @@ def test_oncho_empty_input_directory(mocker):
 
     assert "No data for IUs found - see above warnings and check input directory" in str(exception)
 
+def test_oncho_bad_historic_prefix():
+    input_data = Path(__file__).parent / "example_input_data" / "oncho"
+    output_path = Path(__file__).parent / "generated_data"
+    historic_data = Path(__file__).parent / "example_input_data" / "historic-oncho"
+
+    if output_path.exists():
+        shutil.rmtree(output_path)
+
+    with pytest.raises(Exception):
+        oncho_runner.run_postprocessing_pipeline(
+            input_dir=input_data, output_dir=output_path, historic_dir=historic_data,
+            historic_prefix="*"
+        )
+
 def test_oncho_end_to_end(snapshot):
     input_data = Path(__file__).parent / "example_input_data" / "oncho"
     output_path = Path(__file__).parent / "generated_data"
