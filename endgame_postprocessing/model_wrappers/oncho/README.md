@@ -9,7 +9,8 @@ It can concatenate historic data and forward projections.
 import endgame_postprocessing.model_wrappers.oncho.testRun as oncho_runner
 
 oncho_runner.run_postprocessing_pipeline(
-        input_dir=input_data, output_dir=output_path, historic_dir=historic_data
+        input_dir=input_directory, output_dir=output_path,
+        historic_dir=historic_directory, historic_prefix="raw_outputs_"
     )
 ```
 
@@ -36,6 +37,13 @@ This is expected to be in the following format:
  The `historic_data` is the directory containing the pre-2026 historic data that will 
  be prepended before each forward projection. 
  This can be set to `None` if no historic data to concatenate.
+
+ The `historic_prefix` is the prefix of the file names containing the pre-2026 historic data.
+ This is defaulted to "*", but can be configured to a specific prefix if multiple types of files
+ are within the directory. The prefix must include all characters up to the start of the country code.
+ I.e: if the file name is `output_full_MTP_AAAXXXX00001.csv`, the historic_prefix value would be
+ `"output_full_MTP_"`. The prefix can also include regex - i.e `"*output_full*"` or `"output_full_MTP_*"`,
+ etc.
 
  **ATTENTION: The structure and file names for this are different - it is expected to be just flat.**
 
