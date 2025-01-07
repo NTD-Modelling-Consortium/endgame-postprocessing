@@ -1,3 +1,4 @@
+import warnings
 import pandas as pd
 import pandas.testing as pdt
 import pytest
@@ -78,7 +79,11 @@ def test_replicate_historic_data_missing_forward_iu():
         "scenario_1": {},
     }
 
-    modified_results = replicate_historic_data_in_all_scenarios(results, 'scenario_-1')
+    with warnings.catch_warnings(record=True) as w:
+        modified_results = replicate_historic_data_in_all_scenarios(results, 'scenario_-1')
+        assert [str(warning.message) for warning in w] == [
+            "IU AAA00001 found in scenario_-1 but not found in scenario_1"
+        ]
 
     assert modified_results["scenario_-1"]["AAA00001"] == (source_file_info, source_scenario)
     assert "scenario_1" not in modified_results
