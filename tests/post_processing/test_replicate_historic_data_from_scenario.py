@@ -88,6 +88,31 @@ def test_replicate_historic_data_missing_forward_iu():
     assert modified_results["scenario_-1"]["AAA00001"] == (source_file_info, source_scenario)
     assert "scenario_1" not in modified_results
 
+def test_replicate_historic_data_missing_iu_from_history():
+    target_scenario = pd.DataFrame({
+        canoncical_columns.YEAR_ID: [2012],
+        canoncical_columns.SCENARIO: ["scenario_1"],
+        "draw_0": [0.4]
+    })
+    target_file_info = CustomFileInfo(scenario="scenario_1", scenario_index=0, total_scenarios=1, country="AAA", iu="AAA00001", file_path='')
+
+    results = {
+        "scenario_-1": {},
+        "scenario_1": {"AAA00001": (target_file_info,target_scenario)},
+    }
+
+    with warnings.catch_warnings(record=True) as w:
+        modified_results = replicate_historic_data_in_all_scenarios(results, 'scenario_-1')
+        assert [str(warning.message) for warning in w] == [
+            "IU AAA00001 was not found in scenario_-1 and as such will not have the historic data"
+        ]
+
+    assert modified_results == {
+        "scenario_-1": {},
+        "scenario_1": {"AAA00001": (target_file_info,target_scenario)},
+    }
+
+
 def test_replicate_historic_data_in_all_scenarios_scenario_missing_raises_exception():
     with pytest.raises(Exception) as e:
         modified_results = replicate_historic_data_in_all_scenarios({"scenario_1": {}}, 'scenario_-1')

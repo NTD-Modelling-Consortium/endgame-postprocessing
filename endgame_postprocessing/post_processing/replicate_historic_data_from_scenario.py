@@ -25,4 +25,13 @@ def replicate_historic_data_in_all_scenarios(results: CanonicalResults, source_s
             new_scenario_data = pd.concat([source_scenario_data_up_to_start, other_scenario_data])
             new_scenario_data["scenario"] = other_scenario_file.scenario
             updated_results[other_scenario][iu] = (other_scenario_file, new_scenario_data)
+
+    for scenario in results:
+        if scenario == source_scenario:
+            continue
+        ius_without_historic_data = results[scenario].keys() - results[source_scenario].keys()
+        for iu in ius_without_historic_data:
+            warnings.warn(f"IU {iu} was not found in {source_scenario} and as such will not have the historic data")
+            updated_results[scenario][iu] = results[scenario][iu]
+
     return updated_results
