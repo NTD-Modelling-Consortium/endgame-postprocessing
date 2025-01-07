@@ -1,7 +1,7 @@
 from collections import defaultdict
-from pandas import DataFrame
 from tqdm import tqdm
 from endgame_postprocessing.post_processing import combine_historic_and_forward
+from endgame_postprocessing.post_processing.canonical_results import CanonicalResults
 from endgame_postprocessing.model_wrappers.lf.historic_standardise_step import (
     perform_historic_standardise_step,
 )
@@ -11,13 +11,10 @@ from endgame_postprocessing.post_processing import (
     pipeline,
 )
 from endgame_postprocessing.post_processing import file_util
-from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
 import pandas as pd
 
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
-
-CanonicalResults = dict[str, dict[str, tuple[CustomFileInfo, DataFrame]]]
 
 def get_lf_standard(input_dir):
     return file_util.get_flat_regex(
@@ -52,6 +49,8 @@ def write_canonical_results(results: CanonicalResults, output_dir):
             output_directory_structure.write_canonical(
                 output_dir, file_info, canonical_result
             )
+
+
 
 def run_postprocessing_pipeline(
     forward_projection_raw: str,
