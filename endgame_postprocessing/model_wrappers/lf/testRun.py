@@ -11,7 +11,7 @@ from endgame_postprocessing.post_processing.disease import Disease
 import pandas as pd
 
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
-from endgame_postprocessing.post_processing.replicate_historic_data_from_scenario import replicate_historic_data_in_all_scenarios
+from endgame_postprocessing.post_processing.replicate_historic_data_from_scenario import replicate_historic_data_in_all_scenarios # noqa E501
 
 def get_lf_standard(input_dir):
     return file_util.get_flat_regex(
@@ -57,7 +57,7 @@ def run_postprocessing_pipeline(
 ):
     """
     Aggregates into standard format the input files found in forward_projection_raw.
-    Data specified in scenario_with_historic_data will be prepended to all other scenarios 
+    Data specified in scenario_with_historic_data will be prepended to all other scenarios
     (use None to disable this behaviour)
     forward_projection_raw should contain files (in any structure with names matching):
         - `ntdmc-AAA12345-lf-scenario_0-200.csv`
