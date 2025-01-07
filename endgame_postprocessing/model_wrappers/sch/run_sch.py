@@ -3,6 +3,7 @@ import glob
 from operator import mul
 import os
 import re
+import shutil
 from typing import Iterable
 import warnings
 from tqdm import tqdm
@@ -147,6 +148,27 @@ def get_sch_flat(input_dir):
         input_dir,
     )
 
+
+
+def rename_historic_file(historic_input_dir, historic_renamed_raw_dir):
+    shutil.copytree(historic_input_dir, historic_renamed_raw_dir)
+    old_file_name_regex = r"PrevDataset_(?P<worm>\w+)_(?P<iu_id>(?P<country>[A-Z]{3})\d{5})(?P<scenario>).csv"
+    files = glob.glob(
+        "**/*.csv", root_dir=historic_renamed_raw_dir, recursive=True
+    )
+    for file_name in files:
+        file_match = re.search(old_file_name_regex, file_name)
+        if not file_match:
+            continue
+        scenario=file_match.group("scenario")
+        iu=file_match.group("iu_id")
+        worm = file_match.group("worm")
+        new_file_name = rf"ntdmc-{iu}-{worm}-group_001-{scenario}-group_001-200_simulations.csv"
+        old_file_path = f"{historic_renamed_raw_dir}/{file_name}"
+        new_file_path = f"{historic_renamed_raw_dir}/{new_file_name}"
+        shutil.move(old_file_path, new_file_path)
+
+
 def get_sth_or_sch_historic(input_dir):
     # The scenario is not in the file name so we add an empty group
     # and then provide the scenario
@@ -174,6 +196,17 @@ def get_sch_worm_info(file_path):
         file_match.group("iu_id"), file_match.group("scenario")
     )
 
+
+def gather_specific_worm(first_worm_dir):
+    file_iter = get_sth_flat(f"{first_worm_dir}")
+
+    all_files = list(file_iter)
+
+    if len(all_files) == 0:
+        raise Exception(
+            "No data for IUs found - see above warnings and check input directory"
+        )
+    return all_files
 
 def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file):
     if len(worm_directories) == 0:
@@ -363,6 +396,7 @@ def run_sth_postprocessing_pipeline(
 
     """
     if not skip_canonical:
+
         if historic_input_dir is not None:
             forward_canonical = f"{output_dir}/forward_only"
             canonicalise_raw_sth_results(

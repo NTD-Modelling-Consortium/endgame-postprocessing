@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 import pandas.testing as pdt
 import pytest
@@ -10,6 +11,7 @@ from endgame_postprocessing.model_wrappers.sch.run_sch import (
     _check_iu_in_all_folders,
     canonicalise_raw_sch_results,
     probability_any_worm_max,
+    rename_historic_file,
 )
 from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
 
@@ -338,3 +340,14 @@ def test_flat_historic_data(fs):
             file_path="foo/PrevDataset_Hook_BBB00002.csv",
         )
     ]
+
+
+def test_rename_flat_historic_data(fs):
+    fs.create_file(
+        "foo/PrevDataset_Hook_AAA00001.csv"),
+    fs.create_file(
+        "foo/PrevDataset_Hook_BBB00002.csv"
+    )
+    rename_historic_file("foo", "bar")
+    assert os.path.exists("bar/ntdmc-AAA00001-hookworm-group_001-scenario_0_survey_type_kk2-group_001-200_simulations.csv")
+    assert os.path.exists("bar/ntdmc-BBB00002-hookworm-group_001-scenario_0_survey_type_kk2-group_001-200_simulations.csv")
