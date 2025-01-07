@@ -1,3 +1,5 @@
+from collections import defaultdict
+from pandas import DataFrame
 from tqdm import tqdm
 from endgame_postprocessing.post_processing import combine_historic_and_forward
 from endgame_postprocessing.model_wrappers.lf.historic_standardise_step import (
@@ -9,11 +11,13 @@ from endgame_postprocessing.post_processing import (
     pipeline,
 )
 from endgame_postprocessing.post_processing import file_util
+from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
 import pandas as pd
 
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 
+CanonicalResults = dict[str, dict[str, tuple[CustomFileInfo, DataFrame]]]
 
 def get_lf_standard(input_dir):
     return file_util.get_flat_regex(
@@ -21,8 +25,7 @@ def get_lf_standard(input_dir):
         input_dir,
     )
 
-
-def canonicalise_raw_lf_results(input_dir, output_dir):
+def canonicalise_raw_lf_results(input_dir) -> CanonicalResults:
     file_iter = get_lf_standard(input_dir)
 
     all_files = list(file_iter)
@@ -32,15 +35,23 @@ def canonicalise_raw_lf_results(input_dir, output_dir):
             "No data for IUs found - see above warnings and check input directory"
         )
 
+    results = defaultdict(dict)
+
     for file_info in tqdm(all_files, desc="Canoncialise LF results"):
         raw_iu = pd.read_csv(file_info.file_path)
         canonical_result = canonicalise.canonicalise_raw(
             raw_iu, file_info, "sampled mf prevalence (all pop)"
         )
-        output_directory_structure.write_canonical(
-            output_dir, file_info, canonical_result
-        )
+        results[file_info.scenario][file_info.iu] = (file_info, canonical_result)
+    return results
 
+def write_canonical_results(results: CanonicalResults, output_dir):
+    for scenario in results:
+        for iu in results[scenario]:
+            file_info, canonical_result = results[scenario][iu]
+            output_directory_structure.write_canonical(
+                output_dir, file_info, canonical_result
+            )
 
 def run_postprocessing_pipeline(
     forward_projection_raw: str,
@@ -82,15 +93,19 @@ def run_postprocessing_pipeline(
         perform_historic_standardise_step(historic_data_nonstandard, historic_raw_path)
 
         forward_canonical = f"{output_dir}/forward_only/canonical"
-        canonicalise_raw_lf_results(forward_projection_raw, forward_canonical)
+        forward_results = canonicalise_raw_lf_results(forward_projection_raw)
+        write_canonical_results(forward_results, forward_canonical)
         historic_canonical = f"{output_dir}/historic_only/canonical"
-        canonicalise_raw_lf_results(historic_raw_path, historic_canonical)
+        historic_results = canonicalise_raw_lf_results(historic_raw_path)
+        write_canonical_results(historic_results, historic_canonical)
 
         combine_historic_and_forward.combine_historic_and_forward(
             historic_canonical, forward_canonical, output_dir
         )
     else:
-        canonicalise_raw_lf_results(forward_projection_raw, output_dir)
+        results = canonicalise_raw_lf_results(forward_projection_raw)
+        write_canonical_results(results, output_dir)
+
 
     pipeline.pipeline(
         forward_projection_raw, output_dir, PipelineConfig(disease=Disease.LF)
