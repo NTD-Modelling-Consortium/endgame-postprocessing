@@ -60,7 +60,8 @@ def canonicalise_raw_oncho_results(
 
 def run_postprocessing_pipeline(
         input_dir: str, output_dir: str,
-        historic_dir: str = None, historic_prefix: str ="*"
+        historic_dir: str = None, historic_prefix: str ="*",
+        start_year=1970, stop_year=2041,
     ):
     """
     Aggregates into standard format the input files found in input_dir.
@@ -93,11 +94,14 @@ def run_postprocessing_pipeline(
         historic_prefix (str, optional): The prefix for the historic IU files.
             This is the value that comes before the country code, i.e raw_outputs_ if the file name
             is raw_outputs_AAAXXXX00002. Defaults to "*".
+        start_year: The first year to be included in the results
+        stop_year: The last year to be included in the results
 
     """
     canonicalise_raw_oncho_results(
         input_dir, output_dir,
-        historic_dir=historic_dir, historic_prefix=historic_prefix
+        historic_dir=historic_dir, historic_prefix=historic_prefix,
+        start_year=start_year, stop_year=stop_year
     )
     pipeline.pipeline(input_dir, output_dir, PipelineConfig(disease=Disease.ONCHO))
 
