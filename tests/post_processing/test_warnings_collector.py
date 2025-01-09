@@ -1,5 +1,5 @@
 import warnings
-from endgame_postprocessing.post_processing.warnings_collector import CollectAndPrintWarnings
+from endgame_postprocessing.post_processing.warnings_collector import CollectAndPrintWarnings, warning_to_dictionary
 
 class PrintCollection:
     def __init__(self):
@@ -31,3 +31,11 @@ def test_outer_warning_collector_restored():
 
     assert [str(warning.message) for warning in outer_warnings] == ["Outer"]
     assert [str(warning.message) for warning in inner_warnings] == ["Inner"]
+
+def test_build_dictionary():
+    message = warnings.WarningMessage("My warning", Warning, __file__, 12)
+    assert warning_to_dictionary(message) == {
+        "message": "My warning",
+        "file": "../tests/post_processing/test_warnings_collector.py",
+        "line": 12
+    }
