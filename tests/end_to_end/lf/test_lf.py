@@ -56,17 +56,19 @@ def test_lf_end_to_end_no_historic(snapshot, data_dir, scenario_with_historic_da
         full_actual_path = output_path / actual_file_path
         full_expected_file_path = test_root / "known_good_output" / expected_file_path
 
-        actual_csv = pd.read_csv(full_actual_path)
-        expected_csv = pd.read_csv(full_expected_file_path)
+        if actual_file_path.endswith(".csv"):
+            actual_csv = pd.read_csv(full_actual_path)
+            expected_csv = pd.read_csv(full_expected_file_path)
 
-        try:
-            pdt.assert_frame_equal(
-                actual_csv,
-                expected_csv,
-            )
-        except AssertionError as pandas_error:
-            print(f"Mismatch in file {actual_file_path}:", file=sys.stderr)
-            print(pandas_error, file=sys.stderr)
-            snapshot.assert_match_dir(
-                generate_snapshot_dictionary(output_path), "known_good_output"
-            )
+            try:
+                pdt.assert_frame_equal(
+                    actual_csv,
+                    expected_csv,
+                )
+            except AssertionError as pandas_error:
+                print(f"Mismatch in file {actual_file_path}:", file=sys.stderr)
+                print(pandas_error, file=sys.stderr)
+                break
+    snapshot.assert_match_dir(
+        generate_snapshot_dictionary(output_path), "known_good_output"
+    )
