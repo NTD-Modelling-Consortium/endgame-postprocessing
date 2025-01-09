@@ -113,9 +113,13 @@ def test_replicate_historic_data_missing_iu_from_one_scenario():
         "scenario_2": {},
     }
 
-    modified_results = replicate_historic_data_in_all_scenarios(results, 'scenario_-1')
+    with warnings.catch_warnings(record=True) as w:
+        modified_results = replicate_historic_data_in_all_scenarios(results, 'scenario_-1')
+        assert modified_results == {"scenario_-1": {}, "scenario_1":{}, "scenario_2":{}}
 
-    assert modified_results == {"scenario_-1": {}, "scenario_1":{}, "scenario_2":{}}
+        assert [str(warning.message) for warning in w] == [
+            "IU AAA00001 found in scenario_-1 but not found in scenario_2"
+        ]
 
 
 def test_replicate_historic_data_missing_iu_from_one_scenario_different_iu_present():
@@ -140,19 +144,24 @@ def test_replicate_historic_data_missing_iu_from_one_scenario_different_iu_prese
         "scenario_2": {"AAA00002": scenario2_result2},
     }
 
-    modified_results = replicate_historic_data_in_all_scenarios(results, 'scenario_-1')
+    with warnings.catch_warnings(record=True) as w:
+        modified_results = replicate_historic_data_in_all_scenarios(results, 'scenario_-1')
 
-    _assert_results_match(modified_results, {
-        "scenario_-1": {"AAA00002": source_result2},
-        "scenario_1": {"AAA00002": (scenario1_result2[0], pd.DataFrame({
-            canoncical_columns.YEAR_ID: [2010, 2011, 2012],
-            canoncical_columns.SCENARIO: ["scenario_1"] * 3,
-            "draw_0": [0.1, 0.2, 0.4]}))},
-        "scenario_2": {"AAA00002": (scenario2_result2[0], pd.DataFrame({
-            canoncical_columns.YEAR_ID: [2010, 2011, 2012],
-            canoncical_columns.SCENARIO: ["scenario_2"] * 3,
-            "draw_0": [0.1, 0.2, 0.5]}))},
-    })
+        _assert_results_match(modified_results, {
+            "scenario_-1": {"AAA00002": source_result2},
+            "scenario_1": {"AAA00002": (scenario1_result2[0], pd.DataFrame({
+                canoncical_columns.YEAR_ID: [2010, 2011, 2012],
+                canoncical_columns.SCENARIO: ["scenario_1"] * 3,
+                "draw_0": [0.1, 0.2, 0.4]}))},
+            "scenario_2": {"AAA00002": (scenario2_result2[0], pd.DataFrame({
+                canoncical_columns.YEAR_ID: [2010, 2011, 2012],
+                canoncical_columns.SCENARIO: ["scenario_2"] * 3,
+                "draw_0": [0.1, 0.2, 0.5]}))},
+        })
+
+        assert [str(warning.message) for warning in w] == [
+            "IU AAA00001 found in scenario_-1 but not found in scenario_2",
+        ]
 
 def test_replicate_historic_data_in_all_scenarios_scenario_missing_raises_exception():
     with pytest.raises(Exception) as e:
