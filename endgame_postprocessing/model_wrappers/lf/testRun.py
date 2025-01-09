@@ -10,6 +10,7 @@ from endgame_postprocessing.post_processing import file_util
 from endgame_postprocessing.post_processing.disease import Disease
 import pandas as pd
 
+from endgame_postprocessing.post_processing.generation_metadata import produce_generation_metadata
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 from endgame_postprocessing.post_processing.replicate_historic_data_from_scenario import replicate_historic_data_in_all_scenarios # noqa: E501
 from endgame_postprocessing.post_processing.warnings_collector import CollectAndPrintWarnings # noqa: E501
@@ -94,10 +95,10 @@ def run_postprocessing_pipeline(
             forward_projection_raw, output_dir, PipelineConfig(disease=Disease.LF)
         )
 
-    metadata_file = {
-        "warnings": collected_warnings
-    }
-    output_directory_structure.write_results_metadata_file(output_dir, metadata_file)
+
+    output_directory_structure.write_results_metadata_file(
+        output_dir,
+        produce_generation_metadata(warnings=collected_warnings))
 
 
 if __name__ == "__main__":
