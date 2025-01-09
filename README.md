@@ -126,6 +126,7 @@ Each row should correspond to a single IU.
      - [{scenario_N}\_{IU code}\_post_processed.csv](#per-iu--combined-iu-level-file-)
      - ... for each IU, for each scenario
    - iu_metadata.csv
+   - aggregation_info.json
  - ... for each disease
 
 #### File Contents
@@ -187,6 +188,17 @@ _Note: because the pct of IUs passing under the threshold is taken over the incl
 
 ###### Measures
 - **processed_prevalence** - the composite prevalence in Africa. The prevalence for a specific draw is worked out by taking the prevalence for each IU we have results for, multiplying it by its priority population, summing across the IUs, then dividing by the priority population of all included IUs.
+
+
+##### aggregation_info.json
+
+This file contains information about the post processing that was performed
+on the raw data from the models. 
+
+Right now it contains a single array, "warnings" that is a list of all
+the warnings raised whilst running this pipeline. 
+
+This is currently only generated for LF at the moment.
 
 ## Tests
 
