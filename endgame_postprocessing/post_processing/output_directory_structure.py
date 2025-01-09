@@ -96,3 +96,5 @@ def write_results_metadata_file(root_dir, results_meta_data):
                 return warnings_collector.warning_to_dictionary(w)
             raise TypeError(f"Unsupported type: {type(w)}")
         json.dump(results_meta_data, file, default=warning_printer, indent=4)
+        # Add the terminating new line
+        file.write("\n")
