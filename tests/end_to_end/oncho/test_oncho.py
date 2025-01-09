@@ -49,7 +49,8 @@ def test_oncho_end_to_end(snapshot):
 
     oncho_runner.run_postprocessing_pipeline(
         input_dir=input_data, output_dir=output_path, historic_dir=historic_data,
-        historic_prefix="output_full_MTP_"
+        historic_prefix="output_full_MTP_",
+        start_year=2000
     )
 
     # Composite data is not part of the interface so don't check
