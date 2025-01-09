@@ -92,7 +92,7 @@ def write_results_metadata_file(root_dir, results_meta_data):
     file_name = "aggregation_info.json"
     with open(f"{root_dir}/{file_name}", "w") as file:
         def warning_printer(w):
-            if type(w) == warnings.WarningMessage:
+            if w is warnings.WarningMessage:
                 return warnings_collector.warning_to_dictionary(w)
             raise TypeError(f"Unsupported type: {type(w)}")
         json.dump(results_meta_data, file, default=warning_printer, indent=4)

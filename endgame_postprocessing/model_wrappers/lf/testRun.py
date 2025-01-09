@@ -11,8 +11,8 @@ from endgame_postprocessing.post_processing.disease import Disease
 import pandas as pd
 
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
-from endgame_postprocessing.post_processing.replicate_historic_data_from_scenario import replicate_historic_data_in_all_scenarios
-from endgame_postprocessing.post_processing.warnings_collector import CollectAndPrintWarnings # noqa E501
+from endgame_postprocessing.post_processing.replicate_historic_data_from_scenario import replicate_historic_data_in_all_scenarios # noqa: E501
+from endgame_postprocessing.post_processing.warnings_collector import CollectAndPrintWarnings # noqa: E501
 
 
 def get_lf_standard(input_dir):

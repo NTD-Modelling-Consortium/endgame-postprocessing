@@ -1,5 +1,5 @@
 import warnings
-from endgame_postprocessing.post_processing.warnings_collector import CollectAndPrintWarnings, warning_to_dictionary
+from endgame_postprocessing.post_processing.warnings_collector import CollectAndPrintWarnings, warning_to_dictionary # noqa: E501
 
 class PrintCollection:
     def __init__(self):
