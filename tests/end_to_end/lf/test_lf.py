@@ -68,7 +68,17 @@ def test_lf_end_to_end_no_historic(snapshot, data_dir, scenario_with_historic_da
             except AssertionError as pandas_error:
                 print(f"Mismatch in file {actual_file_path}:", file=sys.stderr)
                 print(pandas_error, file=sys.stderr)
-                break
-    snapshot.assert_match_dir(
-        generate_snapshot_dictionary(output_path), "known_good_output"
-    )
+                snapshot.assert_match_dir(
+                    generate_snapshot_dictionary(output_path), "known_good_output"
+                )
+        else:
+            actual_file_contents = Path(full_actual_path).read_text()
+            expected_file_contents = Path(full_expected_file_path).read_text()
+            try:
+                assert actual_file_contents == expected_file_contents
+            except AssertionError as mismatch_error:
+                print(f"Mismatch in file {actual_file_path}:", file=sys.stderr)
+                print(mismatch_error, file=sys.stderr)
+                snapshot.assert_match_dir(
+                    generate_snapshot_dictionary(output_path), "known_good_output"
+                )
