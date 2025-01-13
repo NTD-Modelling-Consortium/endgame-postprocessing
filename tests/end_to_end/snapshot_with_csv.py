@@ -3,7 +3,7 @@ import sys
 
 import pandas as pd
 import pandas.testing as pdt
-from tests.end_to_end.generate_snapshot_dictionary import generate_flat_snapshot_set, generate_snapshot_dictionary
+from tests.end_to_end.generate_snapshot_dictionary import generate_flat_snapshot_set, generate_snapshot_dictionary # noqa: E501
 
 
 def validate_expected_dir(snapshot, test_root, output_path, known_good_subpath):
