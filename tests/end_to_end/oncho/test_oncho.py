@@ -47,7 +47,8 @@ def test_oncho_end_to_end(snapshot):
     with warnings.catch_warnings(record=True) as w:
         oncho_runner.run_postprocessing_pipeline(
             input_dir=input_data, output_dir=output_path, historic_dir=historic_data,
-            historic_prefix="output_full_MTP_"
+            historic_prefix="output_full_MTP_",
+            start_year=2000
         )
         assert (
             "IU AAA00007 found in scenario_1 but not found in histories." in
