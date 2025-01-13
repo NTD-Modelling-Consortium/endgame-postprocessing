@@ -1,3 +1,4 @@
+import warnings
 from tqdm import tqdm
 from endgame_postprocessing.post_processing import (
     canonicalise,
@@ -8,6 +9,7 @@ from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.file_util import (
     post_process_file_generator,
     get_matching_csv,
+    list_all_historic_ius,
 )
 import pandas as pd
 
@@ -30,6 +32,14 @@ def canonicalise_raw_oncho_results(
             "No data for IUs found - see above warnings and check input directory"
         )
 
+    all_historic_ius = list_all_historic_ius(
+        historic_dir,
+        historic_prefix
+    )
+    excluded_ius = {
+        "not_in_historic": set(),
+        "not_in_forward_projections": set()
+    }
     for file_info in tqdm(all_files, desc="Canoncialise Oncho results"):
         raw_iu = pd.read_csv(file_info.file_path)
         if historic_dir is not None:
@@ -42,8 +52,15 @@ def canonicalise_raw_oncho_results(
                 historic_dir,
                 historic_prefix,
                 file_info.country,
-                file_info.iu.replace(file_info.country, "")
+                file_info.iu.replace(file_info.country, ""),
+                file_info.scenario
             )
+            if (historic_iu_file_path is None):
+                excluded_ius["not_in_historic"].add(file_info.iu)
+                continue
+            else:
+                if (file_info.iu in all_historic_ius):
+                    all_historic_ius.remove(file_info.iu)
             raw_iu_historic = pd.read_csv(historic_iu_file_path)
             raw_iu = pd.concat([raw_iu_historic, raw_iu])
         raw_iu_filtered = raw_iu[
@@ -55,6 +72,12 @@ def canonicalise_raw_oncho_results(
         )
         output_directory_structure.write_canonical(
             output_dir, file_info, canonical_result
+        )
+    for iu in all_historic_ius:
+        excluded_ius["not_in_forward_projections"].add(iu)
+        warnings.warn(
+            f"IU {iu} was not found in forward_projections " +
+            "and as such will not have the historic data"
         )
 
 
