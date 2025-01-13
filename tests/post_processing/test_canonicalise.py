@@ -1,7 +1,7 @@
 import pandas as pd
 import pandas.testing as pdt
 from endgame_postprocessing.post_processing import canonicalise
-from endgame_postprocessing.post_processing.dataclasses import CustomFileInfo
+from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 
 
 def test_canonicalise():
