@@ -189,6 +189,16 @@ _Note: because the pct of IUs passing under the threshold is taken over the incl
 ###### Measures
 - **processed_prevalence** - the composite prevalence in Africa. The prevalence for a specific draw is worked out by taking the prevalence for each IU we have results for, multiplying it by its priority population, summing across the IUs, then dividing by the priority population of all included IUs.
 
+## Setup
+
+Setting up the project requires Python (3.10+) and [Poetry](https://python-poetry.org) to be installed.
+
+Once Poetry is installed, the following command can be run at the root of the project directory to install dependencies and finish setup.
+
+```text
+poetry install
+```
+
 
 ##### aggregation_info.json
 
