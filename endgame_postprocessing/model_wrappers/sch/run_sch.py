@@ -184,19 +184,6 @@ def rename_historic_file(historic_input_dir, historic_renamed_raw_dir):
         shutil.copy(old_file_path, new_file_path)
 
 
-def get_sth_or_sch_historic(input_dir):
-    # The scenario is not in the file name so we add an empty group
-    # and then provide the scenario
-    file_infos = _get_flat_regex(
-        r"PrevDataset_(?P<worm>\w+)_(?P<iu_id>(?P<country>[A-Z]{3})\d{5})(?P<scenario>).csv",
-        input_dir,
-        glob_path="**/*.csv"
-    )
-    for file_info in file_infos:
-        file_info.scenario = "scenario_0"
-        yield file_info
-
-
 
 def get_sth_worm(file_path):
     file_name_regex = r"ntdmc-[A-Z]{3}\d{5}-(?P<worm>\w+)-group_001-scenario_\w+-group_001-200_simulations.csv"  # noqa 501
