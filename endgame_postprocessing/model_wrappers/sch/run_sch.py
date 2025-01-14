@@ -2,6 +2,7 @@ from functools import reduce
 import glob
 from operator import mul
 import os
+from pathlib import Path
 import re
 import shutil
 from typing import Iterable
@@ -149,24 +150,38 @@ def get_sch_flat(input_dir):
     )
 
 
+def _raw_file_name(iu, worm, scenario):
+    return f"ntdmc-{iu}-{worm}-group_001-{scenario}_survey_type_kk2-group_001-200_simulations.csv"
+
+def _standard_worm_from_historic(historic_worm_name):
+    historic_worm_remapping = {
+        "Asc": "ascaris",
+        "Hook": "hookworm",
+        "Tri": "trichuris"
+    }
+    if historic_worm_name not in historic_worm_remapping:
+        raise Exception(f"Unexpected worm: {historic_worm_name}")
+    return historic_worm_remapping[historic_worm_name]
 
 def rename_historic_file(historic_input_dir, historic_renamed_raw_dir):
-    shutil.copytree(historic_input_dir, historic_renamed_raw_dir)
+    Path(historic_renamed_raw_dir).mkdir(parents=True)
     old_file_name_regex = r"PrevDataset_(?P<worm>\w+)_(?P<iu_id>(?P<country>[A-Z]{3})\d{5})(?P<scenario>).csv"
     files = glob.glob(
-        "**/*.csv", root_dir=historic_renamed_raw_dir, recursive=True
+        "**/*.csv", root_dir=historic_input_dir, recursive=True
     )
+
     for file_name in files:
         file_match = re.search(old_file_name_regex, file_name)
         if not file_match:
             continue
-        scenario=file_match.group("scenario")
+        scenario="scenario_0"
         iu=file_match.group("iu_id")
-        worm = file_match.group("worm")
-        new_file_name = rf"ntdmc-{iu}-{worm}-group_001-{scenario}-group_001-200_simulations.csv"
-        old_file_path = f"{historic_renamed_raw_dir}/{file_name}"
+        historic_worm_name = file_match.group("worm")
+        standard_worm_name = _standard_worm_from_historic(historic_worm_name)
+        new_file_name = _raw_file_name(iu, standard_worm_name, scenario)
+        old_file_path = f"{historic_input_dir}/{file_name}"
         new_file_path = f"{historic_renamed_raw_dir}/{new_file_name}"
-        shutil.move(old_file_path, new_file_path)
+        shutil.copy(old_file_path, new_file_path)
 
 
 def get_sth_or_sch_historic(input_dir):
