@@ -138,7 +138,7 @@ def list_all_historic_ius(
     )
     for file in files:
         file_match = re.search(
-            re.escape(historic_prefix) + r"(?P<country>[A-Z]{3}).{0,5}(?P<iu_id>[\d]{5}).csv",
+            r"(?P<country>[A-Z]{3}).{0,5}(?P<iu_id>[\d]{5}).csv",
             file
         )
         all_files.add(file_match.group("country") + file_match.group("iu_id"))
