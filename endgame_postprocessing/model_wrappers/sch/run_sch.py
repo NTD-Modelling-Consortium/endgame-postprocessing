@@ -114,7 +114,9 @@ def swap_worm_in_heirachy(original_file_info, first_worm, new_worm):
     )
 
 
-def _get_flat_regex(file_name_regex, input_dir, glob_path = "**/ntdmc-*-group_001-200_simulations.csv"):
+def _get_flat_regex(
+    file_name_regex, input_dir, glob_path="**/ntdmc-*-group_001-200_simulations.csv"
+):
     files = glob.glob(
         glob_path, root_dir=input_dir, recursive=True
     )
