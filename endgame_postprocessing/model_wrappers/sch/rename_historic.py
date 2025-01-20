@@ -1,4 +1,3 @@
-
 import glob
 from pathlib import Path
 import re
@@ -6,13 +5,13 @@ import shutil
 
 
 def _raw_file_name(iu, worm, scenario):
-    return f"ntdmc-{iu}-{worm}-group_001-{scenario}_survey_type_kk2-group_001-200_simulations.csv"
+    return f"ntdmc-{iu}-{worm}-group_001-{scenario}-group_001-200_simulations.csv"
 
 def _standard_worm_from_historic(historic_worm_name):
     historic_worm_remapping = {
         "Asc": "ascaris",
         "Hook": "hookworm",
-        "Tri": "trichuris"
+        "Tri": "trichuris",
     }
     if historic_worm_name not in historic_worm_remapping:
         raise Exception(f"Unexpected worm: {historic_worm_name}")
