@@ -33,13 +33,23 @@ def get_standard_name_for_historic_sth_file(historic_file_name):
 
 
 def rename_historic_sth_files(historic_input_dir, historic_renamed_raw_dir):
+    return rename_historic_files(
+        historic_input_dir,
+        historic_renamed_raw_dir,
+        get_standard_name_for_historic_sth_file,
+    )
+
+
+def rename_historic_files(
+    historic_input_dir, historic_renamed_raw_dir, rename_function
+):
     Path(historic_renamed_raw_dir).mkdir(parents=True)
     files = glob.glob(
         "**/*.csv", root_dir=historic_input_dir, recursive=True
     )
 
     for file_name in files:
-        new_file_name = get_standard_name_for_historic_sth_file(file_name)
+        new_file_name = rename_function(file_name)
         if new_file_name is None:
             continue
         old_file_path = f"{historic_input_dir}/{file_name}"
