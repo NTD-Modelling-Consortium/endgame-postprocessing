@@ -1,5 +1,5 @@
-from enum import Enum
 import re
+from enum import Enum
 
 import pandas as pd
 
@@ -22,6 +22,8 @@ def _get_capitalised_disease(disease: Disease):
         return "STH"
     elif disease is Disease.SCH:
         return "Schisto"
+    elif disease is Disease.TRACHOMA:
+        return "Trachoma"
     raise Exception(f"Invalid disease {disease}")
 
 

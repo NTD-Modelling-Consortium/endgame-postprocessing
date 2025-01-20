@@ -1,8 +1,9 @@
-from enum import Enum
+from enum import Enum, auto
 
 
 class Disease(Enum):
-    ONCHO = 1
-    LF = 2
-    STH = 3
-    SCH = 4
+    ONCHO = auto()
+    LF = auto()
+    STH = auto()
+    SCH = auto()
+    TRACHOMA = auto()
