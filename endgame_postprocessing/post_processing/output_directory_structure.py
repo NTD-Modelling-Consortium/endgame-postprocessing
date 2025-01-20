@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -85,3 +86,10 @@ def write_meta_data_file(root_dir, iu_metadata_file):
     iu_metadata_file.to_csv(
         f"{root_dir}/iu_metadata.csv", index=False, float_format="%g"
     )
+
+def write_results_metadata_file(root_dir, results_meta_data):
+    file_name = "aggregation_info.json"
+    with open(f"{root_dir}/{file_name}", "w") as file:
+        json.dump(results_meta_data, file, indent=4)
+        # Add the terminating new line
+        file.write("\n")
