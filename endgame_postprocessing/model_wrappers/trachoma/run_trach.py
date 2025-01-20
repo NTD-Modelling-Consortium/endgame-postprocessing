@@ -32,7 +32,7 @@ def canonicalise_raw_trachoma_results(
     stop_year: int = 2041,
 ):
     file_iter = file_util.get_flat_regex(
-        file_name_regex=r"ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-(?P<disease>\w+)-(?P<scenario>scenario_\w+)-200(\S*\w*).csv",
+        file_name_regex=r"ntdmc-(?P<iu_id>(?P<country>[A-Z]{3})\d{5})-(?P<disease>\w+)-(?P<scenario>scenario_\w+)-200(.*).csv",
         input_dir=input_dir,
     )
 
@@ -47,7 +47,6 @@ def canonicalise_raw_trachoma_results(
     for file_info in tqdm(all_files, desc="Canonicalise Trachoma results"):
         raw_iu = pd.read_csv(file_info.file_path)
 
-        # TODO(16.1.2025): Implement historic data handling here
         if historic_dir is not None:
             historic_iu_file_path = get_matching_csv(
                 historic_dir,
