@@ -109,3 +109,68 @@ def test_no_csvs_in_iu_dir_raises_warning(fs):
         assert [str(warning.message) for warning in w] == [
             "No IU data files found for IU input-data/scenario1/country/iu1"
         ]
+
+def test_write_to_csv_success(fs):
+    fs.create_dir("input-data/historic_disease/")
+    test_file = "input-data/historic_disease/random_test_AAA0000012345.csv"
+    fs.create_file(test_file)
+    match = file_util.get_matching_csv(
+        "input-data/historic_disease/",
+        "random_test_",
+        country_code = "AAA",
+        iu_number = "12345",
+        scenario = "test_scenario"
+    )
+    assert match == test_file
+
+def test_write_to_csv_warning_no_file_match(fs):
+    fs.create_dir("input-data/historic_disease/")
+    test_file = "input-data/historic_disease/random_test_AAA0000012345.csv"
+    fs.create_file(test_file)
+    with warnings.catch_warnings(record=True) as w:
+        match = file_util.get_matching_csv(
+            "input-data/historic_disease/",
+            "random_test_",
+            country_code = "AAA",
+            iu_number = "12346",
+            scenario = "test_scenario"
+        )
+        assert [str(warning.message) for warning in w] == [
+            "IU AAA12346 found in test_scenario but not found in histories."
+        ]
+        assert match is None
+
+def test_write_to_csv_exception_multiple_matches(fs):
+    fs.create_dir("input-data/historic_disease/")
+    test_file = "input-data/historic_disease/random_test_AAA0000012346.csv"
+    test_file = "input-data/historic_disease/random_test_AAA0001012346.csv"
+    fs.create_file(test_file)
+    with pytest.raises(Exception) as e:
+        file_util.get_matching_csv(
+            "input-data/historic_disease/",
+            "random_test_",
+            country_code = "AAA",
+            iu_number = "12346",
+            scenario = "test_scenario"
+        )
+        str(e.value) == "Expected exactly one file for random_test_AAA12345, found 2"
+
+def test_list_all_historic_ius_long_iu_numbers(fs):
+    fs.create_dir("historic_disease/")
+    fs.create_file("historic_disease/random_prefix_AAA0000012345.csv")
+    fs.create_file("historic_disease/random_prefix_AAA0000012346.csv")
+    matches = file_util.list_all_historic_ius("historic_disease/", "random_prefix_")
+    assert matches == set([
+        "AAA12345",
+        "AAA12346"
+    ])
+
+def test_list_all_historic_ius_short_iu_numbers(fs):
+    fs.create_dir("historic_disease/")
+    fs.create_file("historic_disease/random_prefix_AAA12345.csv")
+    fs.create_file("historic_disease/random_prefix_AAA12346.csv")
+    matches = file_util.list_all_historic_ius("historic_disease/", "random_prefix_")
+    assert matches == set([
+        "AAA12345",
+        "AAA12346"
+    ])

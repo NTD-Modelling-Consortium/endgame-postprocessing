@@ -54,9 +54,15 @@ def canonicalise_raw_trachoma_results(
                 historic_prefix,
                 file_info.country,
                 file_info.iu.replace(file_info.country, ""),
+                file_info.scenario,
             )
-            raw_iu_historic = pd.read_csv(historic_iu_file_path)
-            raw_iu = pd.concat([raw_iu_historic, raw_iu])
+
+            if historic_iu_file_path is not None:
+                raw_iu_historic = pd.read_csv(historic_iu_file_path)
+                raw_iu = pd.concat([raw_iu_historic, raw_iu])
+            else:
+                # Skip the IU if it's missing from the historic data
+                continue
 
         raw_iu_filtered = raw_iu[
             (raw_iu["Time"] >= start_year) & (raw_iu["Time"] <= stop_year)

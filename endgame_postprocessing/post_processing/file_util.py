@@ -107,13 +107,40 @@ def get_flat_regex(file_name_regex, input_dir, glob_expression="**/*.csv"):
             file_path=f"{input_dir}/{file}",
         )
 
-def get_matching_csv(path: str, historic_prefix: str, country_code: str, iu_number: str):
+def get_matching_csv(
+        path: str, historic_prefix: str, country_code: str,
+        iu_number: str, scenario: str
+):
     matching_values = glob.glob(
         os.path.join(path, f"{historic_prefix}{country_code}*{iu_number}.csv")
     )
-    if len(matching_values) != 1:
+    if len(matching_values) == 0:
+        warnings.warn(
+            f"IU {country_code}{iu_number} found in {scenario} but not found in histories."
+        )
+        return None
+    if len(matching_values) > 1:
         raise Exception(
             f"Expected exactly one file for {historic_prefix}{country_code}{iu_number}," +
             f"found {len(matching_values)}"
         )
     return matching_values[0]
+
+def list_all_historic_ius(
+        historic_dir: str,
+        historic_prefix: str
+    ):
+    all_files = set()
+    if (historic_dir) is None:
+        return all_files
+    files = glob.glob(
+        os.path.join(historic_dir, f"{historic_prefix}*.csv"), recursive=True
+    )
+    for file in files:
+        file_match = re.search(
+            re.escape(historic_prefix) + r"(?P<country>[A-Z]{3}).{0,5}(?P<iu_id>[\d]{5}).csv",
+            file
+        )
+        all_files.add(file_match.group("country") + file_match.group("iu_id"))
+
+    return all_files
