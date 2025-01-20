@@ -8,6 +8,7 @@ import warnings
 from tqdm import tqdm
 from endgame_postprocessing.post_processing import (
     canonicalise,
+    combine_historic_and_forward,
     output_directory_structure,
     pipeline,
 )
@@ -113,9 +114,11 @@ def swap_worm_in_heirachy(original_file_info, first_worm, new_worm):
     )
 
 
-def _get_flat_regex(file_name_regex, input_dir):
+def _get_flat_regex(
+    file_name_regex, input_dir, glob_path="**/ntdmc-*-group_001-200_simulations.csv"
+):
     files = glob.glob(
-        "**/ntdmc-*-group_001-200_simulations.csv", root_dir=input_dir, recursive=True
+        glob_path, root_dir=input_dir, recursive=True
     )
     for file in files:
         file_match = re.search(file_name_regex, file)
@@ -160,6 +163,17 @@ def get_sch_worm_info(file_path):
         file_match.group("iu_id"), file_match.group("scenario")
     )
 
+
+def gather_specific_worm(first_worm_dir):
+    file_iter = get_sth_flat(f"{first_worm_dir}")
+
+    all_files = list(file_iter)
+
+    if len(all_files) == 0:
+        raise Exception(
+            "No data for IUs found - see above warnings and check input directory"
+        )
+    return all_files
 
 def canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file):
     if len(worm_directories) == 0:
@@ -307,12 +321,13 @@ def canonicalise_raw_sch_results(
 
 def run_sth_postprocessing_pipeline(
     input_dir: str,
+    historic_input_dir: str,
     output_dir: str,
     worm_directories: list[str],
     num_jobs: int,
     skip_canonical=False,
     threshold: float = 0.1,
-    run_country_level_summaries = False,
+    run_country_level_summaries=False,
     warning_if_no_file = False
 ):
     """
@@ -348,7 +363,21 @@ def run_sth_postprocessing_pipeline(
 
     """
     if not skip_canonical:
-        canonicalise_raw_sth_results(input_dir, output_dir, worm_directories, warning_if_no_file)
+
+        if historic_input_dir is not None:
+            forward_canonical = f"{output_dir}/forward_only"
+            canonicalise_raw_sth_results(
+                input_dir, forward_canonical, worm_directories, warning_if_no_file)
+            historic_canonical = f"{output_dir}/historical_only"
+            canonicalise_raw_sth_results(
+                historic_input_dir, historic_canonical, worm_directories
+            )
+            combine_historic_and_forward.combine_historic_and_forward(
+                historic_canonical, forward_canonical, output_dir
+            )
+        else:
+            canonicalise_raw_sth_results(
+                input_dir, output_dir, worm_directories, warning_if_no_file)
 
     config = PipelineConfig(
         disease=Disease.STH,
@@ -360,17 +389,29 @@ def run_sth_postprocessing_pipeline(
 
 def run_sch_postprocessing_pipeline(
     input_dir,
+    historic_input_dir: str,
     output_dir,
     worm_directories,
     skip_canonical=False,
     threshold: float = 0.1,
-    run_country_level_summaries = False,
+    run_country_level_summaries=False,
     warning_if_no_file = False,
 ):
     if not skip_canonical:
-        canonicalise_raw_sch_results(
-            input_dir, output_dir, worm_directories, warning_if_no_file
-        )
+        if historic_input_dir is not None:
+            forward_canonical = f"{output_dir}/forward_only"
+            canonicalise_raw_sch_results(
+                input_dir, forward_canonical, worm_directories, warning_if_no_file)
+            historic_canonical = f"{output_dir}/historical_only"
+            canonicalise_raw_sch_results(
+                historic_input_dir, historic_canonical, worm_directories, warning_if_no_file
+            )
+            combine_historic_and_forward.combine_historic_and_forward(
+                historic_canonical, forward_canonical, output_dir
+            )
+        else:
+            canonicalise_raw_sch_results(
+                input_dir, output_dir, worm_directories, warning_if_no_file)
     config = PipelineConfig(
         disease=Disease.SCH,
         threshold=threshold,
