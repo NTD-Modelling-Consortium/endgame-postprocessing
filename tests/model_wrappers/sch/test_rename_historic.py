@@ -21,7 +21,7 @@ import endgame_postprocessing.model_wrappers.sch.rename_historic as rename_histo
         ),
     ],
 )
-def test_get_standard_name_for_historic_file(historic_name, new_name):
+def test_get_standard_name_for_historic_sth_file(historic_name, new_name):
     assert new_name == rename_historic.get_standard_name_for_historic_sth_file(
         historic_name
     )
