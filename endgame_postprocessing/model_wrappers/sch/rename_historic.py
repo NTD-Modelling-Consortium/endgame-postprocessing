@@ -95,5 +95,4 @@ def rename_historic_files(
             continue
         old_file_path = f"{historic_input_dir}/{file_name}"
         new_file_path = f"{historic_renamed_raw_dir}/{new_file_name}"
-        print(new_file_path)
         shutil.copy(old_file_path, new_file_path)
