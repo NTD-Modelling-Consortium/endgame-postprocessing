@@ -14,7 +14,13 @@ from endgame_postprocessing.post_processing import (
 )
 from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.file_util import get_matching_csv
+from endgame_postprocessing.post_processing.generation_metadata import (
+    produce_generation_metadata,
+)
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
+from endgame_postprocessing.post_processing.warnings_collector import (
+    CollectAndPrintWarnings,
+)
 
 
 def canonicalise_raw_trachoma_results(
@@ -79,16 +85,22 @@ def run_postprocessing_pipeline(
     start_year: int = 1970,
     stop_year: int = 2041,
 ):
-    canonicalise_raw_trachoma_results(
-        input_dir=input_dir,
-        output_dir=output_dir,
-        historic_dir=historic_dir,
-        historic_prefix=historic_prefix,
-        start_year=start_year,
-        stop_year=stop_year,
-    )
-    pipeline.pipeline(
-        input_dir=input_dir,
-        working_directory=output_dir,
-        pipeline_config=PipelineConfig(disease=Disease.TRACHOMA, threshold=0.05),
+    with CollectAndPrintWarnings() as collected_warnings:
+        canonicalise_raw_trachoma_results(
+            input_dir=input_dir,
+            output_dir=output_dir,
+            historic_dir=historic_dir,
+            historic_prefix=historic_prefix,
+            start_year=start_year,
+            stop_year=stop_year,
+        )
+
+        pipeline.pipeline(
+            input_dir=input_dir,
+            working_directory=output_dir,
+            pipeline_config=PipelineConfig(disease=Disease.TRACHOMA, threshold=0.05),
+        )
+
+    output_directory_structure.write_results_metadata_file(
+        output_dir, produce_generation_metadata(warnings=collected_warnings)
     )
