@@ -4,7 +4,7 @@ import re
 import shutil
 
 
-def _raw_file_name(iu, worm, scenario):
+def _raw_sth_file_name(iu, worm, scenario):
     return f"ntdmc-{iu}-{worm}-group_001-{scenario}-group_001-200_simulations.csv"
 
 
@@ -28,7 +28,7 @@ def get_standard_name_for_historic_sth_file(historic_file_name):
     iu=file_match.group("iu_id")
     historic_worm_name = file_match.group("worm")
     standard_worm_name = _standard_sth_worm_from_historic(historic_worm_name)
-    new_file_name = _raw_file_name(iu, standard_worm_name, scenario)
+    new_file_name = _raw_sth_file_name(iu, standard_worm_name, scenario)
     return new_file_name
 
 
