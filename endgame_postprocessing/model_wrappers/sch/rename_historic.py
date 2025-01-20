@@ -45,7 +45,9 @@ def _standard_worm_from_historic(historic_worm_name, config: Configuration):
 
 
 def _get_standard_name_for_historic_file(historic_file_name, config: Configuration):
-    old_file_name_regex = r"PrevDataset_(?P<worm>\w+)_(?P<iu_id>(?P<country>[A-Z]{3})\d{5})(?P<scenario>).csv"
+    old_file_name_regex = (
+        r"PrevDataset_(?P<worm>\w+)_(?P<iu_id>(?P<country>[A-Z]{3})\d{5}).csv"
+    )
     file_match = re.search(old_file_name_regex, historic_file_name)
     if not file_match:
         return None
