@@ -8,11 +8,26 @@ def _raw_sth_file_name(iu, worm, scenario):
     return f"ntdmc-{iu}-{worm}-group_001-{scenario}-group_001-200_simulations.csv"
 
 
+def _raw_sch_file_name(iu, worm, scenario):
+    return f"ntdmc-{iu}-{worm}-group_001-{scenario}-survey_type_kk2-group_001-200_simulations.csv"
+
+
 def _standard_sth_worm_from_historic(historic_worm_name):
     historic_worm_remapping = {
         "Asc": "ascaris",
         "Hook": "hookworm",
         "Tri": "trichuris",
+    }
+    if historic_worm_name not in historic_worm_remapping:
+        raise Exception(f"Unexpected worm: {historic_worm_name}")
+    return historic_worm_remapping[historic_worm_name]
+
+
+def _standard_sch_worm_from_historic(historic_worm_name):
+    historic_worm_remapping = {
+        "Haema": "haematobium",
+        "Man_Low": "mansoni_low_burden",
+        "Man_High": "mansoni_high_burden",
     }
     if historic_worm_name not in historic_worm_remapping:
         raise Exception(f"Unexpected worm: {historic_worm_name}")
@@ -32,11 +47,32 @@ def get_standard_name_for_historic_sth_file(historic_file_name):
     return new_file_name
 
 
+def get_standard_name_for_historic_sch_file(historic_file_name):
+    old_file_name_regex = r"PrevDataset_(?P<worm>\w+)_(?P<iu_id>(?P<country>[A-Z]{3})\d{5})(?P<scenario>).csv"
+    file_match = re.search(old_file_name_regex, historic_file_name)
+    if not file_match:
+        return None
+    scenario = "scenario_0"
+    iu = file_match.group("iu_id")
+    historic_worm_name = file_match.group("worm")
+    standard_worm_name = _standard_sch_worm_from_historic(historic_worm_name)
+    new_file_name = _raw_sch_file_name(iu, standard_worm_name, scenario)
+    return new_file_name
+
+
 def rename_historic_sth_files(historic_input_dir, historic_renamed_raw_dir):
     return rename_historic_files(
         historic_input_dir,
         historic_renamed_raw_dir,
         get_standard_name_for_historic_sth_file,
+    )
+
+
+def rename_historic_sch_files(historic_input_dir, historic_renamed_raw_dir):
+    return rename_historic_files(
+        historic_input_dir,
+        historic_renamed_raw_dir,
+        get_standard_name_for_historic_sch_file,
     )
 
 
@@ -54,4 +90,5 @@ def rename_historic_files(
             continue
         old_file_path = f"{historic_input_dir}/{file_name}"
         new_file_path = f"{historic_renamed_raw_dir}/{new_file_name}"
+        print(new_file_path)
         shutil.copy(old_file_path, new_file_path)
