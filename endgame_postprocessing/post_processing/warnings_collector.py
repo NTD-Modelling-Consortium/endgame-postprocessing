@@ -2,7 +2,6 @@ import os
 import sys
 import warnings
 
-import endgame_postprocessing
 
 
 class CollectAndPrintWarnings:
@@ -28,11 +27,3 @@ class CollectAndPrintWarnings:
         self.warnings.append(warning_message)
         short_file_name = os.path.basename(filename)
         print(f"Warning: {message} ({short_file_name}:{lineno})", file=self.output)
-
-def warning_to_dictionary(warning: warnings.WarningMessage):
-    root = os.path.dirname(endgame_postprocessing.__file__)
-    return {
-        "message": str(warning.message),
-        "file": os.path.relpath(warning.filename, root),
-        "line": warning.lineno
-    }

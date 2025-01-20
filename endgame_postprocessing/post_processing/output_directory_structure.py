@@ -1,10 +1,9 @@
 import json
 from pathlib import Path
-import warnings
 
 import pandas as pd
 
-from endgame_postprocessing.post_processing import canonical_file_name, warnings_collector
+from endgame_postprocessing.post_processing import canonical_file_name
 from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
 
@@ -91,10 +90,6 @@ def write_meta_data_file(root_dir, iu_metadata_file):
 def write_results_metadata_file(root_dir, results_meta_data):
     file_name = "aggregation_info.json"
     with open(f"{root_dir}/{file_name}", "w") as file:
-        def warning_printer(w):
-            if type(w) is warnings.WarningMessage:
-                return warnings_collector.warning_to_dictionary(w)
-            raise TypeError(f"Unsupported type: {type(w)}")
-        json.dump(results_meta_data, file, default=warning_printer, indent=4)
+        json.dump(results_meta_data, file, indent=4)
         # Add the terminating new line
         file.write("\n")
