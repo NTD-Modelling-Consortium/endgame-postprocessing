@@ -3,12 +3,7 @@
         {
             "message": "Unexpected file: PopulationMetadatafile.csv",
             "file": "post_processing/file_util.py",
-            "line": 98
-        },
-        {
-            "message": "IU BBB00001 found in scenario_1_5 but not found in histories.",
-            "file": "post_processing/file_util.py",
-            "line": 118
+            "line": 99
         }
     ]
 }

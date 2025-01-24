@@ -31,14 +31,13 @@
 
 #### Disease Definitions
 
-Currently Trachoma is not implemented.
-
-| Disease | Priority population | Processed prevalence  | Protocol Threshold       | IU Inclusion Criteria |
-|---------|---------------------|-----------------------|--------------------------|-----------------------|
-| LF      | $\geq 5$ Years Old  | Sampled mf prevalence | $\leq 1$%                | All IUs               |
-| Oncho   | $\geq 5$ Years Old  | True mf prevalence    | $\leq 1$%                | All IUs               |
-| STH     | 5-15 Years Old      | Prevalence SAC        | $\leq 1$% or $\leq 10 $% | All IUs               |
-| Schisto | 5-15 Years Old      | Prevalence SAC        | $\leq 1$% or $\leq 10 $% | All IUs               |
+| Disease  | Priority population | Processed prevalence  | Protocol Threshold       | IU Inclusion Criteria |
+|----------|---------------------|-----------------------|--------------------------|-----------------------|
+| LF       | $\geq 5$ Years Old  | Sampled mf prevalence | $\leq 1$%                | All IUs               |
+| Oncho    | $\geq 5$ Years Old  | True mf prevalence    | $\leq 1$%                | All IUs               |
+| STH      | 5-15 Years Old      | Prevalence SAC        | $\leq 1$% or $\leq 10 $% | All IUs               |
+| Schisto  | 5-15 Years Old      | Prevalence SAC        | $\leq 1$% or $\leq 10 $% | All IUs               |
+| Trachoma | 1-9 Years Old       | True mf prevalence    | $\leq 5$%                | All IUs               |
 
 ```mermaid
 flowchart TD
