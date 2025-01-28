@@ -99,12 +99,13 @@ def get_flat_regex(file_name_regex, input_dir, glob_expression="**/*.csv"):
             warnings.warn(f"Unexpected file: {file}")
             continue
 
+        groups = file_match.groupdict()
         yield CustomFileInfo(
             scenario_index=1,  # TODO - note scenarios are not ints, eg 2a
             total_scenarios=3,  # TODO
-            scenario=file_match.group("scenario"),
-            country=file_match.group("country"),
-            iu=file_match.group("iu_id"),
+            scenario=groups.get("scenario", ""),
+            country=groups.get("country", ""),
+            iu=groups.get("iu_id", ""),
             file_path=f"{input_dir}/{file}",
         )
 

@@ -6,19 +6,9 @@
             "line": 99
         },
         {
-            "message": "No historic IUs found for  in None",
+            "message": "No historic IUs found for prefix='' in directory='None'",
             "file": "model_wrappers/trachoma/run_trach.py",
-            "line": 105
-        },
-        {
-            "message": "IU AAA00001 found in forward projections but not found in history.",
-            "file": "model_wrappers/trachoma/run_trach.py",
-            "line": 115
-        },
-        {
-            "message": "IU BBB00001 found in forward projections but not found in history.",
-            "file": "model_wrappers/trachoma/run_trach.py",
-            "line": 115
+            "line": 112
         }
     ]
 }

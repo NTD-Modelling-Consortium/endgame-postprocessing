@@ -234,6 +234,16 @@ the warnings raised whilst running this pipeline.
 
 This is currently only generated for LF at the moment.
 
+## Setup
+
+Setting up the project requires Python (3.10+) and [Poetry](https://python-poetry.org) to be installed.
+
+Once Poetry is installed, the following command can be run at the root of the project directory to install dependencies and finish setup.
+
+```text
+poetry install
+```
+
 ## Tests
 
 To run the tests for this repo run:

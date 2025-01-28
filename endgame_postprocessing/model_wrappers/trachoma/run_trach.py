@@ -14,6 +14,7 @@ from endgame_postprocessing.post_processing import (
     file_util,
     canoncical_columns,
 )
+from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.generation_metadata import (
     produce_generation_metadata,
@@ -53,24 +54,30 @@ def _discover_ius(
         )
     }
 
-    # TODO: This can also be a iterator over CustomFileInfo with only a subset of the fields filled out
-    all_historic_ius = file_util.list_all_historic_ius(historic_dir, historic_prefix)
+    all_historic_ius = {
+        fp.iu: fp
+        for fp in file_util.get_flat_regex(
+            file_name_regex=r"(?P<prefix>\w+)(?P<iu_id>(?P<country>[A-Z]{3}).{0,5}\d{5})(.*)\.csv",
+            input_dir=historic_dir,
+            glob_expression=f"{historic_prefix}_*.csv",
+        )
+    }
 
-    set_all_forward = set(all_forward_ius.keys())
-    set_all_historic = set(all_historic_ius.keys())
+    all_forward_set = set(all_forward_ius.keys())
+    all_historic_set = set(all_historic_ius.keys())
 
     return DiscoveredIUs(
         all_forward=all_forward_ius,
         all_historic=all_historic_ius,
         forward_only={
-            iu: all_forward_ius[iu] for iu in set_all_forward - set_all_historic
+            iu: all_forward_ius[iu] for iu in all_forward_set - all_historic_set
         },
         history_only={
-            iu: all_historic_ius[iu] for iu in set_all_historic - set_all_forward
+            iu: all_historic_ius[iu] for iu in all_historic_set - all_forward_set
         },
         with_history={
             iu: (all_forward_ius[iu], all_historic_ius[iu])
-            for iu in set_all_forward & set_all_historic
+            for iu in all_forward_set & all_historic_set
         },
     )
 
@@ -102,48 +109,45 @@ def canonicalise_raw_trachoma_results(
         So we should say that we skip the concatenation altogether, but raise a warning.
         """
         # TODO: Define and use exception type. For eg. HistoricDataMissingException
-        warnings.warn(f"No historic IUs found for {historic_prefix} in {historic_dir}")
+        warnings.warn(f"No historic IUs found for prefix='{historic_prefix}' in directory='{historic_dir}'")
+    else:
+        """TODO
+        Define and use standardized warning messages.
+        For the IUs that only exist in either forward only or historic only data, we'll raise a warning
+        saying that they'll be excluded from processing
+        """
+        # Log warnings for IUs found in forward projections but not in histories
+        for iu in discovered_ius.forward_only:
+            warnings.warn(f"IU '{iu}' found in forward projections but not found in history.")
 
-    """TODO
-    Define and use standardized warning messages.
-    For the IUs that only exist in either forward only or historic only data, we'll raise a warning
-    saying that they'll be excluded from processing
-    """
+        # Log warnings for IUs found in histories but not in forward projections
+        for iu in discovered_ius.history_only:
+            warnings.warn(f"IU '{iu}' found in history but not in forward projections.")
 
-    # Log warnings for IUs found in forward projections but not in histories
-    for iu in discovered_ius.forward_only:
-        warnings.warn(f"IU {iu} found in forward projections but not found in history.")
+    def prepend_historic_if_available(fp: CustomFileInfo, hs: Optional[CustomFileInfo]) -> pd.DataFrame:
+        return pd.concat([pd.read_csv(hs.file_path) if hs else pd.DataFrame(),
+                          pd.read_csv(fp.file_path)])
 
-    # Log warnings for IUs found in histories but not in forward projections
-    for iu in discovered_ius.history_only:
-        warnings.warn(f"IU {iu} found in history but not in forward projections.")
+    if not discovered_ius.all_historic:
+        ius_to_process = [(fp, None) for fp in discovered_ius.all_forward.values()]
+    else:
+        ius_to_process = list(discovered_ius.with_history.values())
 
-    for fp_file_info in tqdm(
-            discovered_ius.all_forward.values(), desc="Canonicalise Trachoma results"
+    for fp_fileinfo, hs_fileinfo in tqdm(
+            ius_to_process, desc="Canonicalise Trachoma results"
     ):
-        raw_iu_fp = pd.read_csv(fp_file_info.file_path)
-
-        # Find the matching historic iu file, if it exists, and concatenate it to the forward projection
-        if fp_file_info.iu in discovered_ius.all_historic:
-            raw_iu_historic = pd.read_csv(discovered_ius.all_historic[fp_file_info.iu])
-            raw_iu_fp = pd.concat([raw_iu_historic, raw_iu_fp])
-
-        raw_iu_fp = raw_iu_fp.rename(columns={"Time": canoncical_columns.YEAR_ID})
-
-        raw_iu_filtered = raw_iu_fp[
-            (raw_iu_fp[canoncical_columns.YEAR_ID] >= start_year)
-            & (raw_iu_fp[canoncical_columns.YEAR_ID] <= stop_year)
-            ].copy()
-
-        # TODO: canonical shouldn't need the age_start / age_end but these are assumed present later
-        canonical_result = canonicalise.canonicalise_raw(
-            raw=raw_iu_filtered,
-            file_info=fp_file_info,
-            processed_prevalence_name="prevalence",
-        )
-
         output_directory_structure.write_canonical(
-            output_dir, fp_file_info, canonical_result
+            output_dir,
+            fp_fileinfo,
+            (prepend_historic_if_available(fp=fp_fileinfo, hs=hs_fileinfo)
+             .rename(columns={"Time": canoncical_columns.YEAR_ID})
+             .query(
+                f"{canoncical_columns.YEAR_ID} >= {start_year} and {canoncical_columns.YEAR_ID} <= {stop_year}")
+             .copy()
+             .pipe(canonicalise.canonicalise_raw,
+                   file_info=fp_fileinfo,
+                   processed_prevalence_name="prevalence")
+             )
         )
 
 

@@ -24,6 +24,9 @@ def test_trachoma_empty_input_directory(mocker):
 
 
 def test_trachoma_end_to_end(snapshot):
+    """
+    Check canonicalization when only forward projections are available.
+    """
     test_root = Path(__file__).parent
     input_data = test_root / "example_input_data" / "trachoma"
     output_path = test_root / "generated_data"
@@ -42,6 +45,9 @@ def test_trachoma_end_to_end(snapshot):
 
 
 def test_trachoma_end_to_end_historic(snapshot):
+    """
+    Check canonicalization when both historic and forward projections are available.
+    """
     test_root = Path(__file__).parent
     input_data = test_root / "example_input_data" / "trachoma"
     output_path = test_root / "generated_data"
@@ -55,7 +61,7 @@ def test_trachoma_end_to_end_historic(snapshot):
         input_dir=input_data,
         output_dir=output_path,
         historic_dir=historic_data,
-        historic_prefix="PrevDataset_Trachoma_",
+        historic_prefix="PrevDataset_Trachoma",
         start_year=2000,
     )
 
@@ -63,6 +69,9 @@ def test_trachoma_end_to_end_historic(snapshot):
 
 
 def test_trachoma_end_to_end_historic_missing_iu(snapshot):
+    """
+    Check canonicalization when some IUs are missing from historic data but available in forward projections.
+    """
     test_root = Path(__file__).parent
     input_data = test_root / "example_input_data" / "trachoma"
     output_path = test_root / "generated_data"
@@ -76,7 +85,7 @@ def test_trachoma_end_to_end_historic_missing_iu(snapshot):
         input_dir=input_data,
         output_dir=output_path,
         historic_dir=historic_data,
-        historic_prefix="PrevDataset_Trachoma_",
+        historic_prefix="PrevDataset_Trachoma",
         start_year=2000,
     )
 
@@ -100,7 +109,7 @@ def test_trachoma_end_to_end_historic_only(snapshot):
         input_dir=input_data,
         output_dir=output_path,
         historic_dir=historic_data,
-        historic_prefix="PrevDataset_Trachoma_",
+        historic_prefix="PrevDataset_Trachoma",
         start_year=2000,
     )
 
