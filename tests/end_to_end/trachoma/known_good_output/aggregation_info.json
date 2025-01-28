@@ -1,0 +1,14 @@
+{
+    "warnings": [
+        {
+            "message": "Unexpected file: PopulationMetadatafile.csv",
+            "file": "post_processing/file_util.py",
+            "line": 99
+        },
+        {
+            "message": "No historic IUs found for prefix='' in directory='None'",
+            "file": "model_wrappers/trachoma/run_trach.py",
+            "line": 112
+        }
+    ]
+}

@@ -1,5 +1,8 @@
 import warnings
+
+import pandas as pd
 from tqdm import tqdm
+
 from endgame_postprocessing.post_processing import (
     canonicalise,
     output_directory_structure,
@@ -11,15 +14,16 @@ from endgame_postprocessing.post_processing.file_util import (
     get_matching_csv,
     list_all_historic_ius,
 )
-import pandas as pd
-
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 
 
 def canonicalise_raw_oncho_results(
-        input_dir, output_dir,
-        start_year=1970, stop_year=2041,
-        historic_dir=None, historic_prefix = ""
+        input_dir,
+        output_dir,
+        start_year=1970,
+        stop_year=2041,
+        historic_dir=None,
+        historic_prefix="",
 ):
     file_iter = post_process_file_generator(
         file_directory=input_dir, end_of_file=".csv"
@@ -32,9 +36,8 @@ def canonicalise_raw_oncho_results(
             "No data for IUs found - see above warnings and check input directory"
         )
 
-    historic_ius_not_yet_found = list_all_historic_ius(
-        historic_dir,
-        historic_prefix
+    historic_ius_not_yet_found = set(
+        list_all_historic_ius(historic_dir, historic_prefix).keys()
     )
     excluded_ius_not_in_historic = set()
     excluded_ius_not_in_forward_projections = set()
@@ -51,21 +54,21 @@ def canonicalise_raw_oncho_results(
                 historic_prefix,
                 file_info.country,
                 file_info.iu.replace(file_info.country, ""),
-                file_info.scenario
+                file_info.scenario,
             )
-            if (historic_iu_file_path is None):
+            if historic_iu_file_path is None:
                 excluded_ius_not_in_historic.add(file_info.iu)
                 continue
             else:
                 # We assume that an IU will be present for all forward projection scenarios if it is
                 # present for one and/or if a scenario is missing, that is expected.
-                if (file_info.iu in historic_ius_not_yet_found):
+                if file_info.iu in historic_ius_not_yet_found:
                     historic_ius_not_yet_found.remove(file_info.iu)
             raw_iu_historic = pd.read_csv(historic_iu_file_path)
             raw_iu = pd.concat([raw_iu_historic, raw_iu])
         raw_iu_filtered = raw_iu[
-            (raw_iu['year_id'] >= start_year) & (raw_iu['year_id'] <= stop_year)
-        ].copy()
+            (raw_iu["year_id"] >= start_year) & (raw_iu["year_id"] <= stop_year)
+            ].copy()
         # TODO: canonical shouldn't need the age_start / age_end but these are assumed present later
         canonical_result = canonicalise.canonicalise_raw(
             raw_iu_filtered, file_info, "prevalence"
@@ -76,16 +79,19 @@ def canonicalise_raw_oncho_results(
     for iu in historic_ius_not_yet_found:
         excluded_ius_not_in_forward_projections.add(iu)
         warnings.warn(
-            f"IU {iu} was not found in forward_projections " +
-            "and as such will not have the historic data"
+            f"IU {iu} was not found in forward_projections "
+            + "and as such will not have the historic data"
         )
 
 
 def run_postprocessing_pipeline(
-        input_dir: str, output_dir: str,
-        historic_dir: str = None, historic_prefix: str ="*",
-        start_year=1970, stop_year=2041,
-    ):
+        input_dir: str,
+        output_dir: str,
+        historic_dir: str = None,
+        historic_prefix: str = "*",
+        start_year=1970,
+        stop_year=2041,
+):
     """
     Aggregates into standard format the input files found in input_dir.
     input_dir must have the following substructure:
@@ -122,15 +128,20 @@ def run_postprocessing_pipeline(
 
     """
     canonicalise_raw_oncho_results(
-        input_dir, output_dir,
-        historic_dir=historic_dir, historic_prefix=historic_prefix,
-        start_year=start_year, stop_year=stop_year
+        input_dir,
+        output_dir,
+        historic_dir=historic_dir,
+        historic_prefix=historic_prefix,
+        start_year=start_year,
+        stop_year=stop_year,
     )
     pipeline.pipeline(input_dir, output_dir, PipelineConfig(disease=Disease.ONCHO))
 
+
 if __name__ == "__main__":
-    run_postprocessing_pipeline("local_data/oncho",
-                                "local_data/oncho-output",
-                                historic_dir="local_data/historic-oncho",
-                                historic_prefix="raw_outputs_"
+    run_postprocessing_pipeline(
+        "local_data/oncho",
+        "local_data/oncho-output",
+        historic_dir="local_data/historic-oncho",
+        historic_prefix="raw_outputs_",
     )

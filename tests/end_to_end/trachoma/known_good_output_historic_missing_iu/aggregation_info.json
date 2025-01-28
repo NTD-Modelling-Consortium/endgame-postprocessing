@@ -1,0 +1,14 @@
+{
+    "warnings": [
+        {
+            "message": "Unexpected file: PopulationMetadatafile.csv",
+            "file": "post_processing/file_util.py",
+            "line": 99
+        },
+        {
+            "message": "IU 'AAA00001' found in forward projections but not found in history.",
+            "file": "model_wrappers/trachoma/run_trach.py",
+            "line": 122
+        }
+    ]
+}

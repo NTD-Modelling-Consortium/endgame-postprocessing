@@ -1,0 +1,14 @@
+{
+    "warnings": [
+        {
+            "message": "Unexpected file: PopulationMetadatafile.csv",
+            "file": "post_processing/file_util.py",
+            "line": 99
+        },
+        {
+            "message": "IU 'BBB00002' found in history but not in forward projections.",
+            "file": "model_wrappers/trachoma/run_trach.py",
+            "line": 126
+        }
+    ]
+}

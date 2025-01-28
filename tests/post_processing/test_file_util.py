@@ -1,7 +1,9 @@
 import warnings
+
 import pytest
-from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
+
 import endgame_postprocessing.post_processing.file_util as file_util
+from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 
 
 def test_post_process_file_generator_with_correct_structure(fs):
@@ -110,6 +112,7 @@ def test_no_csvs_in_iu_dir_raises_warning(fs):
             "No IU data files found for IU input-data/scenario1/country/iu1"
         ]
 
+
 def test_write_to_csv_success(fs):
     fs.create_dir("input-data/historic_disease/")
     test_file = "input-data/historic_disease/random_test_AAA0000012345.csv"
@@ -117,11 +120,12 @@ def test_write_to_csv_success(fs):
     match = file_util.get_matching_csv(
         "input-data/historic_disease/",
         "random_test_",
-        country_code = "AAA",
-        iu_number = "12345",
-        scenario = "test_scenario"
+        country_code="AAA",
+        iu_number="12345",
+        scenario="test_scenario",
     )
     assert match == test_file
+
 
 def test_write_to_csv_warning_no_file_match(fs):
     fs.create_dir("input-data/historic_disease/")
@@ -131,14 +135,15 @@ def test_write_to_csv_warning_no_file_match(fs):
         match = file_util.get_matching_csv(
             "input-data/historic_disease/",
             "random_test_",
-            country_code = "AAA",
-            iu_number = "12346",
-            scenario = "test_scenario"
+            country_code="AAA",
+            iu_number="12346",
+            scenario="test_scenario",
         )
         assert [str(warning.message) for warning in w] == [
             "IU AAA12346 found in test_scenario but not found in histories."
         ]
         assert match is None
+
 
 def test_write_to_csv_exception_multiple_matches(fs):
     fs.create_dir("input-data/historic_disease/")
@@ -149,28 +154,28 @@ def test_write_to_csv_exception_multiple_matches(fs):
         file_util.get_matching_csv(
             "input-data/historic_disease/",
             "random_test_",
-            country_code = "AAA",
-            iu_number = "12346",
-            scenario = "test_scenario"
+            country_code="AAA",
+            iu_number="12346",
+            scenario="test_scenario",
         )
         str(e.value) == "Expected exactly one file for random_test_AAA12345, found 2"
+
 
 def test_list_all_historic_ius_long_iu_numbers(fs):
     fs.create_dir("historic_disease/")
     fs.create_file("historic_disease/random_prefix_AAA0000012345.csv")
     fs.create_file("historic_disease/random_prefix_AAA0000012346.csv")
-    matches = file_util.list_all_historic_ius("historic_disease/", "random_prefix_")
-    assert matches == set([
-        "AAA12345",
-        "AAA12346"
-    ])
+    matches = set(
+        file_util.list_all_historic_ius("historic_disease/", "random_prefix_").keys()
+    )
+    assert matches == set(["AAA12345", "AAA12346"])
+
 
 def test_list_all_historic_ius_short_iu_numbers(fs):
     fs.create_dir("historic_disease/")
     fs.create_file("historic_disease/random_prefix_AAA12345.csv")
     fs.create_file("historic_disease/random_prefix_AAA12346.csv")
-    matches = file_util.list_all_historic_ius("historic_disease/", "random_prefix_")
-    assert matches == set([
-        "AAA12345",
-        "AAA12346"
-    ])
+    matches = set(
+        file_util.list_all_historic_ius("historic_disease/", "random_prefix_").keys()
+    )
+    assert matches == set(["AAA12345", "AAA12346"])

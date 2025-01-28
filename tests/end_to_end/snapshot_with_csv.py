@@ -1,14 +1,18 @@
-from pathlib import Path
 import shutil
 import sys
+from pathlib import Path
 
 import pandas as pd
 import pandas.testing as pdt
-from tests.end_to_end.generate_snapshot_dictionary import generate_flat_snapshot_set, generate_snapshot_dictionary # noqa: E501
+
+from tests.end_to_end.generate_snapshot_dictionary import (
+    generate_flat_snapshot_set,
+    generate_snapshot_dictionary,
+)  # noqa: E501
 
 
 def validate_expected_dir(snapshot, test_root, output_path, known_good_subpath):
-        # # Composite data is not part of the interface so don't check
+    # # Composite data is not part of the interface so don't check
     composite_path = output_path / "composite"
     shutil.rmtree(composite_path)
 
@@ -55,5 +59,5 @@ def validate_expected_dir(snapshot, test_root, output_path, known_good_subpath):
                 print(f"Mismatch in file {actual_file_path}:", file=sys.stderr)
                 print(mismatch_error, file=sys.stderr)
                 snapshot.assert_match_dir(
-                    generate_snapshot_dictionary(output_path), "known_good_output"
+                    generate_snapshot_dictionary(output_path), known_good_subpath
                 )
