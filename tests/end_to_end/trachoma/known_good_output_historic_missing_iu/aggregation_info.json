@@ -8,7 +8,7 @@
         {
             "message": "IU 'AAA00001' found in forward projections but not found in history.",
             "file": "model_wrappers/trachoma/run_trach.py",
-            "line": 121
+            "line": 122
         }
     ]
 }

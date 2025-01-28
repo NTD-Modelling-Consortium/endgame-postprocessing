@@ -109,12 +109,13 @@ def canonicalise_raw_trachoma_results(
         So we should say that we skip the concatenation altogether, but raise a warning.
         """
         # TODO: Define and use exception type. For eg. HistoricDataMissingException
-        warnings.warn(f"No historic IUs found for prefix='{historic_prefix}' in directory='{historic_dir}'")
+        warnings.warn(f"No historic IUs found for "
+                      f"prefix='{historic_prefix}' in directory='{historic_dir}'")
     else:
         """TODO
         Define and use standardized warning messages.
-        For the IUs that only exist in either forward only or historic only data, we'll raise a warning
-        saying that they'll be excluded from processing
+        For the IUs that only exist in either forward only or historic only data,
+        we'll raise a warning saying that they'll be excluded from processing
         """
         # Log warnings for IUs found in forward projections but not in histories
         for iu in discovered_ius.forward_only:
@@ -124,7 +125,8 @@ def canonicalise_raw_trachoma_results(
         for iu in discovered_ius.history_only:
             warnings.warn(f"IU '{iu}' found in history but not in forward projections.")
 
-    def prepend_historic_if_available(fp: CustomFileInfo, hs: Optional[CustomFileInfo]) -> pd.DataFrame:
+    def prepend_historic_if_available(fp: CustomFileInfo,
+                                      hs: Optional[CustomFileInfo]) -> pd.DataFrame:
         return pd.concat([pd.read_csv(hs.file_path) if hs else pd.DataFrame(),
                           pd.read_csv(fp.file_path)])
 
@@ -142,7 +144,8 @@ def canonicalise_raw_trachoma_results(
             (prepend_historic_if_available(fp=fp_fileinfo, hs=hs_fileinfo)
              .rename(columns={"Time": canoncical_columns.YEAR_ID})
              .query(
-                f"{canoncical_columns.YEAR_ID} >= {start_year} and {canoncical_columns.YEAR_ID} <= {stop_year}")
+                f"{canoncical_columns.YEAR_ID} >= {start_year}"
+                f" and {canoncical_columns.YEAR_ID} <= {stop_year}")
              .copy()
              .pipe(canonicalise.canonicalise_raw,
                    file_info=fp_fileinfo,

@@ -8,7 +8,7 @@
         {
             "message": "IU 'BBB00002' found in history but not in forward projections.",
             "file": "model_wrappers/trachoma/run_trach.py",
-            "line": 125
+            "line": 126
         }
     ]
 }

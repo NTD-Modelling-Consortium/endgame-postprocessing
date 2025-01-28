@@ -70,7 +70,8 @@ def test_trachoma_end_to_end_historic(snapshot):
 
 def test_trachoma_end_to_end_historic_missing_iu(snapshot):
     """
-    Check canonicalization when some IUs are missing from historic data but available in forward projections.
+    Check canonicalization when some IUs are missing from historic data but available
+     in forward projections.
     """
     test_root = Path(__file__).parent
     input_data = test_root / "example_input_data" / "trachoma"
@@ -94,7 +95,8 @@ def test_trachoma_end_to_end_historic_missing_iu(snapshot):
 
 def test_trachoma_end_to_end_historic_only(snapshot):
     """
-    Tests the path of the code where there are IUs only found in history but absent from forward projections.
+    Tests the path of the code where there are IUs only found in history
+     but absent from forward projections.
     """
     test_root = Path(__file__).parent
     input_data = test_root / "example_input_data" / "trachoma"
