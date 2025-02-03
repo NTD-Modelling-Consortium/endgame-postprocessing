@@ -4,6 +4,7 @@ import pandas as pd
 import pandas.testing as pdt
 import pytest
 
+from endgame_postprocessing.post_processing import canonical_columns
 from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 from endgame_postprocessing.post_processing.replicate_historic_data_from_scenario import \
     replicate_historic_data_in_all_scenarios  # noqa E501

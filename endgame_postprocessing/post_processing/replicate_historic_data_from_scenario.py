@@ -3,6 +3,7 @@ from collections import defaultdict
 
 import pandas as pd
 
+from endgame_postprocessing.post_processing import canonical_columns
 from endgame_postprocessing.post_processing.canonical_results import CanonicalResults
 
 

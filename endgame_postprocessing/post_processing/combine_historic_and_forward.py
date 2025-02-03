@@ -5,7 +5,7 @@ import pandas as pd
 from endgame_postprocessing.post_processing import (
     canonical_file_name,
     file_util,
-    output_directory_structure,
+    output_directory_structure, canonical_columns,
 )
 
 

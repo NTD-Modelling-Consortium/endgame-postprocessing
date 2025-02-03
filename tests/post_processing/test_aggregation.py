@@ -246,6 +246,33 @@ def test_country_lvl_aggregate_aggregate_when_measure_has_year_picks_max():
 
 
 def test_africa_lvl_aggregate_success():
+    canonical_ius = [
+        pd.DataFrame(
+            {
+                "scenario": ["scenario_1"],
+                "iu_name": "AAA00001",
+                "year_id": [2010],
+                "measure": ["processed_prevalence"],
+                "draw_0": [0.02],
+                "draw_1": [0.3],
+                "draw_2": [0.4],
+                "draw_3": [0.5],
+            }
+        ),
+        pd.DataFrame(
+            {
+                "scenario": ["scenario_1"],
+                "iu_name": "AAA00002",
+                "year_id": [2010],
+                "measure": ["processed_prevalence"],
+                "draw_0": [0.02],
+                "draw_1": [0.3],
+                "draw_2": [0.4],
+                "draw_3": [0.5],
+            }
+        )
+    ]
+
     composite_africa_data = pd.DataFrame(
         {
             "year_id": [2010],
@@ -259,27 +286,29 @@ def test_africa_lvl_aggregate_success():
     )
 
     africa_data = aggregation.africa_lvl_aggregate(
+        canonical_ius,
         composite_africa_data,
+        prevalence_threshold=0.05
     )
     pdt.assert_frame_equal(
         africa_data,
         pd.DataFrame(
             {
-                "scenario": ["scenario_1"],
-                "measure": ["M1"],
-                "year_id": [2010],
-                "mean": [0.5],
-                "2.5_percentile": [0.215],
-                "5_percentile": [0.23],
-                "10_percentile": [0.26],
-                "25_percentile": [0.35],
-                "50_percentile": [0.5],
-                "75_percentile": [0.65],
-                "90_percentile": [0.74],
-                "95_percentile": [0.77],
-                "97.5_percentile": [0.785],
-                "standard_deviation": [np.std([0.2, 0.4, 0.6, 0.8])],
-                "median": [0.5],
+                "scenario": ["scenario_1", "scenario_1"],
+                "measure": ["M1", "prob_all_ius_under_threshold"],
+                "year_id": [2010, 2010],
+                "mean": [0.5, 0.25],
+                "2.5_percentile": [0.215, np.NAN],
+                "5_percentile": [0.23, np.NAN],
+                "10_percentile": [0.26, np.NAN],
+                "25_percentile": [0.35, np.NAN],
+                "50_percentile": [0.5, np.NAN],
+                "75_percentile": [0.65, np.NAN],
+                "90_percentile": [0.74, np.NAN],
+                "95_percentile": [0.77, np.NAN],
+                "97.5_percentile": [0.785, np.NAN],
+                "standard_deviation": [np.std([0.2, 0.4, 0.6, 0.8]), np.NAN],
+                "median": [0.5, np.NAN],
             }
         ),
         check_dtype=False,
@@ -287,6 +316,33 @@ def test_africa_lvl_aggregate_success():
 
 
 def test_africa_lvl_aggregate_multiple_measures_success():
+    canonical_ius = [
+        pd.DataFrame(
+            {
+                "scenario": ["scenario_1"],
+                "iu_name": "AAA00001",
+                "year_id": [2010],
+                "measure": ["processed_prevalence"],
+                "draw_0": [0.02],
+                "draw_1": [0.3],
+                "draw_2": [0.4],
+                "draw_3": [0.5],
+            }
+        ),
+        pd.DataFrame(
+            {
+                "scenario": ["scenario_1"],
+                "iu_name": "AAA00002",
+                "year_id": [2010],
+                "measure": ["processed_prevalence"],
+                "draw_0": [0.02],
+                "draw_1": [0.3],
+                "draw_2": [0.4],
+                "draw_3": [0.5],
+            }
+        )
+    ]
+
     composite_africa_data = pd.DataFrame(
         {
             "year_id": [2010, 2010],
@@ -300,28 +356,30 @@ def test_africa_lvl_aggregate_multiple_measures_success():
     )
 
     africa_data = aggregation.africa_lvl_aggregate(
+        canonical_ius,
         composite_africa_data,
+        prevalence_threshold=0.05
     )
     pdt.assert_frame_equal(
         africa_data,
         pd.DataFrame(
             {
 
-                "scenario": ["scenario_1", "scenario_1"],
-                "measure": ["M1", "M2"],
-                "year_id": [2010, 2010],
-                "mean": [0.5, 0.5],
-                "2.5_percentile": [0.215, 0.215],
-                "5_percentile": [0.23, 0.23],
-                "10_percentile": [0.26, 0.26],
-                "25_percentile": [0.35, 0.35],
-                "50_percentile": [0.5, 0.5],
-                "75_percentile": [0.65, 0.65],
-                "90_percentile": [0.74, 0.74],
-                "95_percentile": [0.77, 0.77],
-                "97.5_percentile": [0.785, 0.785],
-                "standard_deviation": [np.std([0.2, 0.4, 0.6, 0.8]), np.std([0.2, 0.4, 0.6, 0.8])],
-                "median": [0.5, 0.5],
+                "scenario": ["scenario_1", "scenario_1", "scenario_1"],
+                "measure": ["M1", "M2", "prob_all_ius_under_threshold"],
+                "year_id": [2010, 2010, 2010],
+                "mean": [0.5, 0.5, 0.25],
+                "2.5_percentile": [0.215, 0.215, np.NAN],
+                "5_percentile": [0.23, 0.23, np.NAN],
+                "10_percentile": [0.26, 0.26, np.NAN],
+                "25_percentile": [0.35, 0.35, np.NAN],
+                "50_percentile": [0.5, 0.5, np.NAN],
+                "75_percentile": [0.65, 0.65, np.NAN],
+                "90_percentile": [0.74, 0.74, np.NAN],
+                "95_percentile": [0.77, 0.77, np.NAN],
+                "97.5_percentile": [0.785, 0.785, np.NAN],
+                "standard_deviation": [np.std([0.2, 0.4, 0.6, 0.8]), np.std([0.2, 0.4, 0.6, 0.8]), np.NAN],
+                "median": [0.5, 0.5, np.NAN],
             }
         ),
         check_dtype=False,

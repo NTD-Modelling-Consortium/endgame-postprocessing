@@ -13,7 +13,7 @@ from endgame_postprocessing.post_processing import (
 from endgame_postprocessing.post_processing.aggregation import (
     africa_lvl_aggregate,
     aggregate_post_processed_files,
-    single_country_aggregate,
+    single_country_aggregate, africa_composite,
 )
 from endgame_postprocessing.post_processing.aggregation import (
     iu_lvl_aggregate,
@@ -181,8 +181,7 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
 
     africa_aggregates = (
         africa_lvl_aggregate(
-            wd=working_directory,
-            iu_metadata=iu_meta_data,
+            *africa_composite(working_directory, iu_meta_data),
             prevalence_threshold=pipeline_config.threshold
         )
         .sort_values(["scenario", "year_id"])
