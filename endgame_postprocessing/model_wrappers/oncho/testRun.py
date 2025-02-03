@@ -3,6 +3,7 @@ import warnings
 import pandas as pd
 from tqdm import tqdm
 
+from endgame_postprocessing.post_processing.generation_metadata import produce_generation_metadata
 from endgame_postprocessing.post_processing import (
     canonicalise,
     output_directory_structure,
@@ -15,7 +16,7 @@ from endgame_postprocessing.post_processing.file_util import (
     list_all_historic_ius,
 )
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
-
+from endgame_postprocessing.post_processing.warnings_collector import CollectAndPrintWarnings
 
 def canonicalise_raw_oncho_results(
         input_dir,
@@ -127,15 +128,21 @@ def run_postprocessing_pipeline(
         stop_year: The last year to be included in the results
 
     """
-    canonicalise_raw_oncho_results(
-        input_dir,
+    with CollectAndPrintWarnings() as collected_warnings:
+        canonicalise_raw_oncho_results(
+            input_dir,
+            output_dir,
+            historic_dir=historic_dir,
+            historic_prefix=historic_prefix,
+            start_year=start_year,
+            stop_year=stop_year,
+        )
+        pipeline.pipeline(input_dir, output_dir, PipelineConfig(disease=Disease.ONCHO))
+
+    output_directory_structure.write_results_metadata_file(
         output_dir,
-        historic_dir=historic_dir,
-        historic_prefix=historic_prefix,
-        start_year=start_year,
-        stop_year=stop_year,
+        produce_generation_metadata(warnings=collected_warnings)
     )
-    pipeline.pipeline(input_dir, output_dir, PipelineConfig(disease=Disease.ONCHO))
 
 
 if __name__ == "__main__":
