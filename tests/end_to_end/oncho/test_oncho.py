@@ -1,5 +1,4 @@
 import shutil
-import warnings
 import endgame_postprocessing.model_wrappers.oncho.testRun as oncho_runner
 
 from pathlib import Path
