@@ -1,12 +1,15 @@
-import glob
 import csv
+import glob
 import os
-import pandas as pd
-from endgame_postprocessing.post_processing import canoncical_columns
-from endgame_postprocessing.post_processing.measures import measure_summary_float
 from functools import partial
+from pathlib import Path
+
 import numpy as np
+import pandas as pd
 from tqdm import tqdm
+
+from endgame_postprocessing.post_processing import output_directory_structure, composite_run, canonical_columns
+from endgame_postprocessing.post_processing.measures import measure_summary_float
 from .constants import (
     DRAW_COLUMNN_NAME_START,
     MEASURE_COLUMN_NAME,
@@ -14,6 +17,8 @@ from .constants import (
     AGGEGATE_DEFAULT_TYPING_MAP,
     PROB_UNDER_THRESHOLD_MEASURE_NAME,
 )
+from .file_util import post_process_file_generator
+from .iu_data import IUData
 
 
 def _percentile(n):
@@ -42,11 +47,12 @@ def add_scenario_and_country_to_raw_data(data, scenario_name, iu_name):
     data["scenario_name"] = scenario_name
     data["country_code"] = iu_name[:3]
     data["iu_name"] = iu_name
-    return(data)
+    return (data)
+
 
 def aggregate_post_processed_files(
-    path_to_files: str,
-    specific_files: str = "*.csv",
+        path_to_files: str,
+        specific_files: str = "*.csv",
 ) -> pd.DataFrame:
     """
     Combines all data outputs in a given folder and filters as necessary. The format of the csv's in
@@ -80,9 +86,9 @@ def aggregate_post_processed_files(
 
 
 def iu_lvl_aggregate(
-    aggregated_data: pd.DataFrame,
-    columns_to_replace_with_nan: list[str] = ["mean"],
-    typing_map: dict = AGGEGATE_DEFAULT_TYPING_MAP,
+        aggregated_data: pd.DataFrame,
+        columns_to_replace_with_nan: list[str] = ["mean"],
+        typing_map: dict = AGGEGATE_DEFAULT_TYPING_MAP,
 ) -> pd.DataFrame:
     """
     A wrapper function for aggregate_post_processed_files that takes stacked data of all
@@ -101,18 +107,19 @@ def iu_lvl_aggregate(
     """
     # replace empty strings with nan/none where required, and properly type the columns
     aggregated_data.loc[:, columns_to_replace_with_nan] = aggregated_data.loc[
-        :, columns_to_replace_with_nan
-    ].replace("", np.nan)
+                                                          :, columns_to_replace_with_nan
+                                                          ].replace("", np.nan)
     aggregated_data.loc[
-        :, ~aggregated_data.columns.isin(columns_to_replace_with_nan)
+    :, ~aggregated_data.columns.isin(columns_to_replace_with_nan)
     ] = aggregated_data.loc[
         :, ~aggregated_data.columns.isin(columns_to_replace_with_nan)
-    ].replace(
+        ].replace(
         "", None
     )
     aggregated_data = aggregated_data.astype(typing_map)
 
     return aggregated_data
+
 
 def _group_country_pop(data, column_to_group_by):
     grouped_data = data.groupby(["country_code", column_to_group_by]).agg(
@@ -121,6 +128,7 @@ def _group_country_pop(data, column_to_group_by):
 
     return grouped_data[grouped_data[column_to_group_by] is True].copy()
 
+
 def _threshold_summary_helper(
         data,
         summary_measure_names,
@@ -128,7 +136,7 @@ def _threshold_summary_helper(
         aggregate_function,
         aggregate_prefix,
         measure_rename_map
-    ):
+):
     summarize_threshold = (
         data[data[MEASURE_COLUMN_NAME].isin(summary_measure_names)]
         .groupby(group_by_columns)
@@ -143,12 +151,13 @@ def _threshold_summary_helper(
     ]
     return summarize_threshold
 
+
 def _yearly_pct_of_runs_threshold_summary_helper(
         processed_iu_lvl_data,
         group_by_cols,
         denominator_to_use,
         pct_of_runs
-    ):
+):
     summarize_threshold = _threshold_summary_helper(
         processed_iu_lvl_data,
         [PROB_UNDER_THRESHOLD_MEASURE_NAME],
@@ -161,7 +170,7 @@ def _yearly_pct_of_runs_threshold_summary_helper(
         "pct_of_",
         {
             PROB_UNDER_THRESHOLD_MEASURE_NAME:
-            f"ius_with_{int(pct_of_runs*100)}pct_runs_under_threshold"
+                f"ius_with_{int(pct_of_runs * 100)}pct_runs_under_threshold"
         },
     )
 
@@ -173,24 +182,18 @@ def _yearly_pct_of_runs_threshold_summary_helper(
         "count_of_",
         {
             PROB_UNDER_THRESHOLD_MEASURE_NAME:
-            f"ius_with_{int(pct_of_runs*100)}pct_runs_under_threshold"
+                f"ius_with_{int(pct_of_runs * 100)}pct_runs_under_threshold"
         },
     )
     return pd.concat([summarize_threshold, summarize_threshold_counts], axis=0, ignore_index=True)
 
 
 def aggregate_draws(composite_data: pd.DataFrame) -> pd.DataFrame:
-    draw_names = list(
-        [
-            draw_column
-            for draw_column in composite_data.columns
-            if draw_column.startswith(DRAW_COLUMNN_NAME_START)
-        ]
-    )
+    draw_names = list(filter(lambda name: name.startswith(DRAW_COLUMNN_NAME_START), composite_data.columns))
     statistical_aggregate = measure_summary_float(
         data_to_summarize=composite_data.to_numpy(),
-        year_id_loc=composite_data.columns.get_loc(canoncical_columns.YEAR_ID),
-        measure_column_loc=composite_data.columns.get_loc(canoncical_columns.MEASURE),
+        year_id_loc=composite_data.columns.get_loc(canonical_columns.YEAR_ID),
+        measure_column_loc=composite_data.columns.get_loc(canonical_columns.MEASURE),
         # I think we should keep this as the prevalence values have different age starts / age ends
         age_start_loc=0,
         age_end_loc=0,
@@ -199,9 +202,10 @@ def aggregate_draws(composite_data: pd.DataFrame) -> pd.DataFrame:
     statistical_aggregate_final = pd.DataFrame(
         statistical_aggregate,
         columns=["year_id", "age_start", "age_end", "measure", "mean"]
-        + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
-        + ["standard_deviation", "median"],
+                + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
+                + ["standard_deviation", "median"],
     )
+    # TODO(CA, 31.1.2025): Compute proportion of draws under threshold using `calc_prob_under_threshold` and append to dataframe
 
     # TODO: these columns would be not even passed into and back out of measure_summary_float which
     # ignores them
@@ -209,11 +213,34 @@ def aggregate_draws(composite_data: pd.DataFrame) -> pd.DataFrame:
 
     return statistical_aggregate_final
 
-def africa_lvl_aggregate(composite_africa_runs: pd.DataFrame) -> pd.DataFrame:
-    africa_statistical_aggregate = aggregate_draws(composite_africa_runs)
-    general_columns = composite_africa_runs[
+
+def africa_lvl_aggregate(wd: str | os.PathLike | Path,
+                         iu_metadata: IUData,
+                         prevalence_threshold: float = 0.01) -> pd.DataFrame:
+    canonical_ius = [pd.read_csv(iu.file_path) for iu in
+                     tqdm(post_process_file_generator(
+                         file_directory=output_directory_structure.get_canonical_dir(wd),
+                         end_of_file="_canonical.csv",
+                     ), desc='Building Africa composite run')]
+
+    africa_composite = composite_run.build_composite_run_multiple_scenarios(canonical_iu_runs=canonical_ius,
+                                                                            iu_data=iu_metadata,
+                                                                            prevalence_threshold=prevalence_threshold,
+                                                                            is_africa=True)
+
+    # TODO(CA): Do we still need to write this composite file? Ask TK.
+    # Currently the composite thing sticks a column for country based on the first IU which
+    # isn't required for Africa, but this isn't a nice place to do this!
+    # africa_composite.drop(columns=[canonical_columns.COUNTRY_CODE], inplace=True)
+    output_directory_structure.write_africa_composite(
+        wd, africa_composite
+    )
+
+    # Collapse the prevalence from all the draws into an average metric
+    africa_statistical_aggregate = aggregate_draws(africa_composite)
+    general_columns = africa_composite[
         [
-            canoncical_columns.SCENARIO,
+            canonical_columns.SCENARIO,
         ]
     ]
 
@@ -222,14 +249,14 @@ def africa_lvl_aggregate(composite_africa_runs: pd.DataFrame) -> pd.DataFrame:
     )
     return africa_aggregates_complete[
         [
-            canoncical_columns.SCENARIO,
-            canoncical_columns.MEASURE,
+            canonical_columns.SCENARIO,
+            canonical_columns.MEASURE,
             "year_id",
             "mean",
         ]
         + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
         + ["standard_deviation", "median"]
-    ]
+        ]
 
 
 def single_country_aggregate(composite_country_run: pd.DataFrame) -> pd.DataFrame:
@@ -237,8 +264,8 @@ def single_country_aggregate(composite_country_run: pd.DataFrame) -> pd.DataFram
 
     general_columns = composite_country_run[
         [
-            canoncical_columns.SCENARIO,
-            canoncical_columns.COUNTRY_CODE,
+            canonical_columns.SCENARIO,
+            canonical_columns.COUNTRY_CODE,
         ]
     ]
 
@@ -247,24 +274,24 @@ def single_country_aggregate(composite_country_run: pd.DataFrame) -> pd.DataFram
     )
     return country_aggregates_complete[
         [
-            canoncical_columns.SCENARIO,
-            canoncical_columns.COUNTRY_CODE,
-            canoncical_columns.MEASURE,
+            canonical_columns.SCENARIO,
+            canonical_columns.COUNTRY_CODE,
+            canonical_columns.MEASURE,
             "year_id",
             "mean",
         ]
         + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
         + ["standard_deviation", "median"]
-    ]
+        ]
 
 
 def country_lvl_aggregate(
-    processed_iu_lvl_data: pd.DataFrame,
-    threshold_summary_measure_names: list[str],
-    threshold_groupby_cols: list[str],
-    threshold_cols_rename: dict,
-    pct_runs_under_threshold: list[float],
-    denominator_to_use: int,
+        processed_iu_lvl_data: pd.DataFrame,
+        threshold_summary_measure_names: list[str],
+        threshold_groupby_cols: list[str],
+        threshold_cols_rename: dict,
+        pct_runs_under_threshold: list[float],
+        denominator_to_use: int,
 ) -> pd.DataFrame:
     """
     Takes in an input dataframe of all the aggregated iu-lvl data and returns a summarized version
@@ -307,7 +334,7 @@ def country_lvl_aggregate(
     for pct in pct_runs_under_threshold:
         yearly_pct_of_runs_dfs.append(_yearly_pct_of_runs_threshold_summary_helper(
             processed_iu_lvl_data,
-            list(set(threshold_groupby_cols) | {canoncical_columns.YEAR_ID}),
+            list(set(threshold_groupby_cols) | {canonical_columns.YEAR_ID}),
             denominator_to_use,
             pct
         ))

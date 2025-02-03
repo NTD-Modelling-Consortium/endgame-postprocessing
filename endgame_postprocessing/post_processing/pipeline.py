@@ -1,10 +1,14 @@
-from collections import defaultdict
 import itertools
+from collections import defaultdict
+
+import pandas as pd
+from tqdm import tqdm
+
+import endgame_postprocessing.model_wrappers.constants as constants
 from endgame_postprocessing.post_processing import (
-    canoncical_columns,
     composite_run,
     iu_data_fixup,
-    output_directory_structure,
+    output_directory_structure, canonical_columns,
 )
 from endgame_postprocessing.post_processing.aggregation import (
     africa_lvl_aggregate,
@@ -15,19 +19,16 @@ from endgame_postprocessing.post_processing.aggregation import (
     iu_lvl_aggregate,
     country_lvl_aggregate,
 )
+from endgame_postprocessing.post_processing.file_util import (
+    post_process_file_generator,
+    custom_progress_bar_update,
+)
 from endgame_postprocessing.post_processing.iu_data import IUData, IUSelectionCriteria
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 from endgame_postprocessing.post_processing.single_file_post_processing import (
     process_single_file,
     measure_summary_float,
 )
-from endgame_postprocessing.post_processing.file_util import (
-    post_process_file_generator,
-    custom_progress_bar_update,
-)
-import endgame_postprocessing.model_wrappers.constants as constants
-from tqdm import tqdm
-import pandas as pd
 
 
 def iu_statistical_aggregates(working_directory, threshold):
@@ -41,12 +42,12 @@ def iu_statistical_aggregates(working_directory, threshold):
                 raw_model_outputs=pd.read_csv(file_info.file_path),
                 scenario=file_info.scenario,
                 iuName=file_info.iu,
-                prevalence_marker_name=canoncical_columns.PROCESSED_PREVALENCE,
+                prevalence_marker_name=canonical_columns.PROCESSED_PREVALENCE,
                 post_processing_start_time=1970,
                 post_processing_end_time=2041,
                 threshold=threshold,
                 measure_summary_map={
-                    canoncical_columns.PROCESSED_PREVALENCE: measure_summary_float
+                    canonical_columns.PROCESSED_PREVALENCE: measure_summary_float
                 },
                 pct_runs_under_threshold=constants.PCT_RUNS_UNDER_THRESHOLD,
             )
@@ -78,53 +79,25 @@ def country_composite(working_directory, iu_meta_data):
         canonical_ius_by_country[country] += file_info_for_canonical_iu
 
     for country, ius_for_country in tqdm(
-        canonical_ius_by_country.items(), desc="Building country composites"
+            canonical_ius_by_country.items(), desc="Building country composites"
     ):
-        country_composite = composite_run.build_composite_run_multiple_scenarios(
-            list(
-                [
-                    pd.read_csv(iu_for_country.file_path)
-                    for iu_for_country in ius_for_country
-                ]
-            ),
-            iu_meta_data,
-        )
+        country_composite = composite_run.build_composite_run_multiple_scenarios(list(
+            [
+                pd.read_csv(iu_for_country.file_path)
+                for iu_for_country in ius_for_country
+            ]
+        ), iu_meta_data)
         output_directory_structure.write_country_composite(
             working_directory, country, country_composite
         )
         yield country_composite
 
 
-def africa_composite(working_directory, iu_meta_data):
-    canonical_file_iter = post_process_file_generator(
-        file_directory=output_directory_structure.get_canonical_dir(working_directory),
-        end_of_file="_canonical.csv",
-    )
-
-    canonical_ius = list(canonical_file_iter)
-    africa_composite = composite_run.build_composite_run_multiple_scenarios(
-        list(
-            tqdm(
-                [pd.read_csv(iu_in_africa.file_path) for iu_in_africa in canonical_ius],
-                desc="Building Africa composite run",
-            )
-        ),
-        iu_data=iu_meta_data,
-        is_africa=True,
-    )
-    # # Currently the composite thing sticks a column for country based on the first IU which
-    # # isn't required for Africa, but this isn't a nice place to do this!
-    # africa_composite.drop(columns=[canoncical_columns.COUNTRY_CODE], inplace=True)
-    output_directory_structure.write_africa_composite(
-        working_directory, africa_composite
-    )
-
-
 def country_aggregate(
-    country_composite: pd.DataFrame,
-    iu_lvl_data: pd.DataFrame,
-    country_code: str,
-    iu_meta_data: IUData,
+        country_composite: pd.DataFrame,
+        iu_lvl_data: pd.DataFrame,
+        country_code: str,
+        iu_meta_data: IUData,
 ):
     country_statistical_aggregates = single_country_aggregate(country_composite)
     country_iu_summary_aggregates = country_lvl_aggregate(
@@ -145,11 +118,11 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
         [
             file_info.iu
             for file_info in post_process_file_generator(
-                file_directory=output_directory_structure.get_canonical_dir(
-                    working_directory
-                ),
-                end_of_file="_canonical.csv",
-            )
+            file_directory=output_directory_structure.get_canonical_dir(
+                working_directory
+            ),
+            end_of_file="_canonical.csv",
+        )
         ]
     )
 
@@ -189,7 +162,7 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
             all_iu_data[
                 all_iu_data["country_code"]
                 == country_composite["country_code"].values[0]
-            ],
+                ],
             country_composite["country_code"].values[0],
             iu_meta_data,
         )
@@ -206,10 +179,11 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
         working_directory, all_country_aggregates, pipeline_config.disease
     )
 
-    africa_composite(working_directory, iu_meta_data)
     africa_aggregates = (
         africa_lvl_aggregate(
-            pd.read_csv(f"{working_directory}/composite/africa_composite.csv")
+            wd=working_directory,
+            iu_metadata=iu_meta_data,
+            prevalence_threshold=pipeline_config.threshold
         )
         .sort_values(["scenario", "year_id"])
         .reset_index(drop=True)
