@@ -30,7 +30,7 @@ def canonicalise_raw_oncho_results(
         file_directory=input_dir, end_of_file=".csv"
     )
 
-    all_files = list(file_iter)
+    all_files = sorted(list(file_iter))
 
     if len(all_files) == 0:
         raise Exception(
