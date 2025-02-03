@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import re
 
 
 @dataclass
@@ -12,9 +13,17 @@ class CustomFileInfo:
     iu: str
     file_path: str
 
+    # TODO: Custom comparison logic is clunky. Needs to be better flushed out to include
+    # numbers and letters (i.e 1a, 1b, etc.). Should ideally use scenario_index
     def __lt__(self, other):
-        # Compare by age
-        return self.scenario_index < other.scenario_index
+        numbered_scenario_self = re.search(r'\d+', self.scenario)
+        numbered_scenario_other = re.search(r'\d+', other.scenario)
+        if numbered_scenario_self and numbered_scenario_other:
+            if int(numbered_scenario_self.group()) == int(numbered_scenario_other.group()):
+                return self.scenario < other.scenario
+            return int(numbered_scenario_self.group()) < int(numbered_scenario_other.group())
+        else:
+            return self.scenario < other.scenario
 
     def __eq__(self, other):
-        return self.scenario_index == other.scenario_index
+        return self.scenario == other.scenario
