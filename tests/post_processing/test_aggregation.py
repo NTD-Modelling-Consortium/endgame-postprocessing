@@ -378,7 +378,9 @@ def test_africa_lvl_aggregate_multiple_measures_success():
                 "90_percentile": [0.74, 0.74, np.NAN],
                 "95_percentile": [0.77, 0.77, np.NAN],
                 "97.5_percentile": [0.785, 0.785, np.NAN],
-                "standard_deviation": [np.std([0.2, 0.4, 0.6, 0.8]), np.std([0.2, 0.4, 0.6, 0.8]), np.NAN],
+                "standard_deviation": [np.std([0.2, 0.4, 0.6, 0.8]),
+                                       np.std([0.2, 0.4, 0.6, 0.8]),
+                                       np.NAN],
                 "median": [0.5, 0.5, np.NAN],
             }
         ),

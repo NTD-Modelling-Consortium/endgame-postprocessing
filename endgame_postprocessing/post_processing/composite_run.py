@@ -23,16 +23,18 @@ def _get_priority_populations(ius, iu_metadata: IUData):
 
 
 def build_composite_run(
-    canonical_iu_runs: List[pd.DataFrame],
-    iu_data: IUData,
-    is_africa=False,
+        canonical_iu_runs: List[pd.DataFrame],
+        iu_data: IUData,
+        is_africa=False,
 ):
     # Assumptions: same number of draws in each IU run
     # Same year IDs in each one
     draw_columns, all_ius_draws = canonical_columns.extract_draws(canonical_iu_runs)
 
-    # Compute the mean number of disease cases as a proportion of the population in each draw, for every IU
-    # List[DataFrame] - Each row, of every IU dataframe, corresponds to the number of cases, in that year, across all the draws (columns)
+    # Compute the mean number of disease cases as a proportion of the population
+    # in each draw, for every IU
+    # List[DataFrame] - Each row, of every IU dataframe, corresponds to the number
+    # of cases, in that year, across all the draws (columns)
     iu_case_numbers = all_ius_draws * _get_priority_populations(
         canonical_iu_runs, iu_data
     )
@@ -72,9 +74,9 @@ def build_composite_run(
 
 
 def build_composite_run_multiple_scenarios(
-    canonical_iu_runs: list[pd.DataFrame],
-    iu_data: IUData,
-    is_africa=False
+        canonical_iu_runs: list[pd.DataFrame],
+        iu_data: IUData,
+        is_africa=False
 ):
     ius_by_scenario = itertools.groupby(
         canonical_iu_runs, lambda run: run["scenario"].iloc[0]

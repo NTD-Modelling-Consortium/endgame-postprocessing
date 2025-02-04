@@ -1,9 +1,10 @@
 import csv
 import glob
+import itertools
 import os
 from functools import partial
 from pathlib import Path
-from typing import List, Tuple, Generator
+from typing import List, Tuple, Generator, Dict
 
 import numpy as np
 import pandas as pd
@@ -66,8 +67,8 @@ def add_scenario_and_country_to_raw_data(data, scenario_name, iu_name):
 
 
 def aggregate_post_processed_files(
-        path_to_files: str,
-        specific_files: str = "*.csv",
+    path_to_files: str,
+    specific_files: str = "*.csv",
 ) -> pd.DataFrame:
     """
     Combines all data outputs in a given folder and filters as necessary. The format of the csv's in
@@ -101,9 +102,9 @@ def aggregate_post_processed_files(
 
 
 def iu_lvl_aggregate(
-        aggregated_data: pd.DataFrame,
-        columns_to_replace_with_nan: list[str] = ["mean"],
-        typing_map: dict = AGGEGATE_DEFAULT_TYPING_MAP,
+    aggregated_data: pd.DataFrame,
+    columns_to_replace_with_nan: list[str] = ["mean"],
+    typing_map: dict = AGGEGATE_DEFAULT_TYPING_MAP,
 ) -> pd.DataFrame:
     """
     A wrapper function for aggregate_post_processed_files that takes stacked data of all
@@ -122,13 +123,13 @@ def iu_lvl_aggregate(
     """
     # replace empty strings with nan/none where required, and properly type the columns
     aggregated_data.loc[:, columns_to_replace_with_nan] = aggregated_data.loc[
-                                                          :, columns_to_replace_with_nan
-                                                          ].replace("", np.nan)
+        :, columns_to_replace_with_nan
+    ].replace("", np.nan)
     aggregated_data.loc[
-    :, ~aggregated_data.columns.isin(columns_to_replace_with_nan)
+        :, ~aggregated_data.columns.isin(columns_to_replace_with_nan)
     ] = aggregated_data.loc[
         :, ~aggregated_data.columns.isin(columns_to_replace_with_nan)
-        ].replace(
+    ].replace(
         "", None
     )
     aggregated_data = aggregated_data.astype(typing_map)
@@ -145,12 +146,12 @@ def _group_country_pop(data, column_to_group_by):
 
 
 def _threshold_summary_helper(
-        data,
-        summary_measure_names,
-        group_by_columns,
-        aggregate_function,
-        aggregate_prefix,
-        measure_rename_map,
+    data,
+    summary_measure_names,
+    group_by_columns,
+    aggregate_function,
+    aggregate_prefix,
+    measure_rename_map,
 ):
     summarize_threshold = (
         data[data[MEASURE_COLUMN_NAME].isin(summary_measure_names)]
@@ -168,7 +169,7 @@ def _threshold_summary_helper(
 
 
 def _yearly_pct_of_runs_threshold_summary_helper(
-        processed_iu_lvl_data, group_by_cols, denominator_to_use, pct_of_runs
+    processed_iu_lvl_data, group_by_cols, denominator_to_use, pct_of_runs
 ):
     summarize_threshold = _threshold_summary_helper(
         processed_iu_lvl_data,
@@ -181,7 +182,8 @@ def _yearly_pct_of_runs_threshold_summary_helper(
         ),
         "pct_of_",
         {
-            PROB_UNDER_THRESHOLD_MEASURE_NAME: f"ius_with_{int(pct_of_runs * 100)}pct_runs_under_threshold"
+            PROB_UNDER_THRESHOLD_MEASURE_NAME: f"ius_with_{int(pct_of_runs * 100)}"
+            f"pct_runs_under_threshold"
         },
     )
 
@@ -192,7 +194,8 @@ def _yearly_pct_of_runs_threshold_summary_helper(
         partial(_calc_count_of_pct_runs, pct_of_runs=pct_of_runs, denominator_val=1),
         "count_of_",
         {
-            PROB_UNDER_THRESHOLD_MEASURE_NAME: f"ius_with_{int(pct_of_runs * 100)}pct_runs_under_threshold"
+            PROB_UNDER_THRESHOLD_MEASURE_NAME: f"ius_with_{int(pct_of_runs * 100)}"
+            f"pct_runs_under_threshold"
         },
     )
     return pd.concat(
@@ -200,41 +203,57 @@ def _yearly_pct_of_runs_threshold_summary_helper(
     )
 
 
-def _calc_prob_all_ius_under_threshold(canonical_iu_dataframes: List[pd.DataFrame],
-                                       prevalence_threshold: float):
+def _calc_prob_all_ius_under_threshold(
+    canonical_iu_dataframes: List[pd.DataFrame], prevalence_threshold: float
+) -> Dict[str, pd.DataFrame]:
     """
     We want to compute two new metrics
         1. Probability that all IUs are below threshold - `prob_all_ius_under_threshold`
-        2. Proportion of IUs in 100% of runs that are below threshold - `pct_of_ius_with_100pct_runs_under_threshold`
+        2. Proportion of IUs in 100% of runs that are below threshold
+         - `pct_of_ius_with_100pct_runs_under_threshold`
 
     Computing `prob_all_ius_under_threshold` requires -
         1. for every IU, we associate a boolean array indicating whether the prevalence in a draw
             in a given year is under threshold.
-        2. for every year and draw, whether all IUs are under threshold. This will create the second boolean array.
-        3. for every year, compute the proportion of `true` values. (calc_prob_under_threshold) can be used
-         for this purpose.
+        2. for every year and draw, whether all IUs are under threshold.
+            This will create the second boolean array.
+        3. for every year, compute the proportion of `true` values.
     """
-    draw_columns, all_ius_draws = canonical_columns.extract_draws(canonical_iu_dataframes)
-    # 1. Compute the boolean mask indicating the draws under threshold across all IUs => PxMxN shaped boolean array
-    all_ius_under_threshold = np.all(all_ius_draws <= prevalence_threshold, axis=0)
-
-    # 2. Check if all IUs are under threshold by collapsing along the first dimension using the AND operation => MxN shaped boolean array
-    prob_all_ius_under_threshold = np.mean(all_ius_under_threshold, axis=1)
-
-    columns_to_use = [canonical_columns.YEAR_ID,
-                      canonical_columns.SCENARIO,
-                      canonical_columns.MEASURE]
-    prob_all_ius_under_threshold_df = pd.DataFrame(prob_all_ius_under_threshold,
-                                                   columns=["mean"])
-    prob_all_ius_under_threshold_df = pd.concat(
-        [
-            canonical_iu_dataframes[0][columns_to_use],
-            prob_all_ius_under_threshold_df,
-        ],
-        axis=1,
+    canonical_ius_by_scenario = itertools.groupby(
+        canonical_iu_dataframes, lambda run: run["scenario"].iloc[0]
     )
-    prob_all_ius_under_threshold_df[canonical_columns.MEASURE] = "prob_all_ius_under_threshold"
-    return prob_all_ius_under_threshold_df
+
+    draw_columns = canonical_iu_dataframes[0].loc[:, "draw_0":].columns
+    columns_to_use = [
+        canonical_columns.YEAR_ID,
+        canonical_columns.SCENARIO,
+        canonical_columns.MEASURE,
+    ]
+
+    dfs = {}
+    for scenario, ius in canonical_ius_by_scenario:
+        scenario_ius = list(ius)
+
+        all_ius_draws = np.array(
+            [iu[draw_columns].to_numpy() for iu in scenario_ius], dtype=float
+        )
+        # 1. Compute the boolean mask indicating the draws under threshold across
+        # all IUs => PxMxN shaped boolean array
+        all_ius_under_threshold = np.all(all_ius_draws <= prevalence_threshold, axis=0)
+        # 2. Check if all IUs are under threshold by collapsing along the first
+        # dimension using the AND operation => MxN shaped boolean array
+        prob_all_ius_under_threshold = np.mean(all_ius_under_threshold, axis=1)
+        dfs[scenario] = pd.DataFrame(prob_all_ius_under_threshold, columns=["mean"])
+        dfs[scenario] = pd.concat(
+            [
+                scenario_ius[0][columns_to_use],
+                dfs[scenario],
+            ],
+            axis=1,
+        )
+        dfs[scenario][canonical_columns.MEASURE] = "prob_all_ius_under_threshold"
+
+    return dfs
 
 
 def aggregate_draws(composite_data: pd.DataFrame) -> pd.DataFrame:
@@ -256,8 +275,8 @@ def aggregate_draws(composite_data: pd.DataFrame) -> pd.DataFrame:
     statistical_aggregate_final = pd.DataFrame(
         statistical_aggregate,
         columns=["year_id", "age_start", "age_end", "measure", "mean"]
-                + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
-                + ["standard_deviation", "median"],
+        + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
+        + ["standard_deviation", "median"],
     )
     # TODO: these columns would be not even passed into and back out of measure_summary_float which
     # ignores them
@@ -267,8 +286,8 @@ def aggregate_draws(composite_data: pd.DataFrame) -> pd.DataFrame:
 
 
 def africa_composite(
-        wd: str | os.PathLike | Path,
-        iu_metadata: IUData,
+    wd: str | os.PathLike | Path,
+    iu_metadata: IUData,
 ) -> Tuple[List[pd.DataFrame], pd.DataFrame]:
     canonical_ius = [
         pd.read_csv(iu.file_path)
@@ -297,23 +316,26 @@ def africa_composite(
 
 
 def africa_lvl_aggregate(
-        canonical_ius: List[pd.DataFrame],
-        composite_africa: pd.DataFrame,
-        prevalence_threshold: float = 0.01,
+    canonical_ius: List[pd.DataFrame],
+    composite_africa: pd.DataFrame,
+    prevalence_threshold: float = 0.01,
 ) -> pd.DataFrame:
     """
     Aggregates continent level prevalence and probability of extinction data.
 
     Args:
         canonical_ius (List[pd.DataFrame]): A list of dataframes containing canonical IU-level data.
-        composite_africa (pd.DataFrame): A dataframe representing the composite prevalence data for Africa.
-        prevalence_threshold (float): The prevalence threshold used to compute the probability of extinction. Defaults to 0.01.
+        composite_africa (pd.DataFrame): A dataframe representing the composite prevalence data.
+        prevalence_threshold (float): The prevalence threshold used to compute the probability
+         of extinction. Defaults to 0.01.
 
     Returns:
-        pd.DataFrame: A dataframe with aggregated prevalence metrics and threshold-based probabilities
-                      for the Africa region.
+        pd.DataFrame: A dataframe with aggregated prevalence metrics and threshold-based
+         probabilities for the Africa region.
     """
-    prob_all_ius_under_threshold_df = _calc_prob_all_ius_under_threshold(canonical_ius, prevalence_threshold)
+    prob_all_ius_under_threshold_dfs = _calc_prob_all_ius_under_threshold(
+        canonical_ius, prevalence_threshold
+    )
 
     # Collapse the prevalence from all the draws into an average metric
     africa_statistical_aggregate = aggregate_draws(composite_africa)
@@ -335,14 +357,22 @@ def africa_lvl_aggregate(
     ]
 
     africa_prevalence_df = africa_aggregates_complete[
-        columns_to_use + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
+        columns_to_use
+        + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
         + ["standard_deviation", "median"]
-        ]
+    ]
 
-    return pd.concat([
-        africa_prevalence_df,
-        prob_all_ius_under_threshold_df[columns_to_use],
-    ], axis=0, ignore_index=True)
+    for scenario in prob_all_ius_under_threshold_dfs:
+        africa_prevalence_df = pd.concat(
+            [
+                africa_prevalence_df,
+                prob_all_ius_under_threshold_dfs[scenario][columns_to_use],
+            ],
+            axis=0,
+            ignore_index=True,
+        )
+
+    return africa_prevalence_df
 
 
 def single_country_aggregate(composite_country_run: pd.DataFrame) -> pd.DataFrame:
@@ -368,16 +398,16 @@ def single_country_aggregate(composite_country_run: pd.DataFrame) -> pd.DataFram
         ]
         + [f"{p}_percentile" for p in PERCENTILES_TO_CALC]
         + ["standard_deviation", "median"]
-        ]
+    ]
 
 
 def country_lvl_aggregate(
-        processed_iu_lvl_data: pd.DataFrame,
-        threshold_summary_measure_names: list[str],
-        threshold_groupby_cols: list[str],
-        threshold_cols_rename: dict,
-        pct_runs_under_threshold: list[float],
-        denominator_to_use: int,
+    processed_iu_lvl_data: pd.DataFrame,
+    threshold_summary_measure_names: list[str],
+    threshold_groupby_cols: list[str],
+    threshold_cols_rename: dict,
+    pct_runs_under_threshold: list[float],
+    denominator_to_use: int,
 ) -> pd.DataFrame:
     """
     Takes in an input dataframe of all the aggregated iu-lvl data and returns a summarized version
