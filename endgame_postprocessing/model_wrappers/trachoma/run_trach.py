@@ -12,7 +12,7 @@ from endgame_postprocessing.post_processing import (
     output_directory_structure,
     pipeline,
     file_util,
-    canoncical_columns,
+    canonical_columns,
 )
 from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
@@ -150,20 +150,16 @@ def canonicalise_raw_trachoma_results(
         output_directory_structure.write_canonical(
             output_dir,
             fp_fileinfo,
-            (
-                prepend_historic_if_available(fp=fp_fileinfo, hs=hs_fileinfo)
-                .rename(columns={"Time": canoncical_columns.YEAR_ID})
-                .query(
-                    f"{canoncical_columns.YEAR_ID} >= {start_year}"
-                    f" and {canoncical_columns.YEAR_ID} <= {stop_year}"
-                )
-                .copy()
-                .pipe(
-                    canonicalise.canonicalise_raw,
-                    file_info=fp_fileinfo,
-                    processed_prevalence_name="prevalence",
-                )
-            ),
+            (prepend_historic_if_available(fp=fp_fileinfo, hs=hs_fileinfo)
+             .rename(columns={"Time": canonical_columns.YEAR_ID})
+             .query(
+                f"{canonical_columns.YEAR_ID} >= {start_year}"
+                f" and {canonical_columns.YEAR_ID} <= {stop_year}")
+             .copy()
+             .pipe(canonicalise.canonicalise_raw,
+                   file_info=fp_fileinfo,
+                   processed_prevalence_name="prevalence")
+             )
         )
 
 

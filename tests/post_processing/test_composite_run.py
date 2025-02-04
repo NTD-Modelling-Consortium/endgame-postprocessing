@@ -1,5 +1,6 @@
 import pandas as pd
 import pandas.testing as pdt
+
 from endgame_postprocessing.post_processing import composite_run
 from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.iu_data import IUData, IUSelectionCriteria
@@ -243,8 +244,8 @@ def test_build_composite_multiple_scenarios():
         iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
     )
     result = composite_run.build_composite_run_multiple_scenarios(
-        [canoncial_iu_scenario_1, canoncial_iu_scenario_2], population_data
-    )
+        [canoncial_iu_scenario_1, canoncial_iu_scenario_2],
+        population_data)
     pdt.assert_frame_equal(
         result,
         pd.DataFrame(
