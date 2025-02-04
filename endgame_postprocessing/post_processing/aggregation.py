@@ -4,7 +4,7 @@ import itertools
 import os
 from functools import partial
 from pathlib import Path
-from typing import List, Tuple, Generator, Dict
+from typing import List, Tuple, Generator
 
 import numpy as np
 import pandas as pd
@@ -203,26 +203,30 @@ def _yearly_pct_of_runs_threshold_summary_helper(
     )
 
 
-def _calc_prob_all_ius_under_threshold(
-    canonical_iu_dataframes: List[pd.DataFrame], prevalence_threshold: float
-) -> Dict[str, pd.DataFrame]:
+def _calc_extinction_metrics(
+    canonical_iu_dataframes: List[pd.DataFrame],
+    prevalence_threshold: float = 0.01,
+    pct_runs_threshold: float = 0.9,
+):
     """
-    We want to compute two new metrics
-        1. Probability that all IUs are below threshold - `prob_all_ius_under_threshold`
-        2. Proportion of IUs in 100% of runs that are below threshold
-         - `pct_of_ius_with_100pct_runs_under_threshold`
+    Computes two metrics for each scenario:
+    1. The probability that all IUs are below the prevalence threshold.
+    2. The proportion of IUs where a specified fraction of simulation draws fall below the prevalence threshold.
 
-    Computing `prob_all_ius_under_threshold` requires -
-        1. for every IU, we associate a boolean array indicating whether the prevalence in a draw
-            in a given year is under threshold.
-        2. for every year and draw, whether all IUs are under threshold.
-            This will create the second boolean array.
-        3. for every year, compute the proportion of `true` values.
+    Args:
+        canonical_iu_dataframes: List of DataFrames, each containing IU-level data.
+        prevalence_threshold: Prevalence threshold to check against.
+        pct_runs_threshold: Fraction of runs required to be under the threshold for the second metric.
+
+    Returns:
+        Dictionary mapping each scenario to a DataFrame containing both metrics for each year.
     """
+    # Group DataFrames by scenario
     canonical_ius_by_scenario = itertools.groupby(
         canonical_iu_dataframes, lambda run: run["scenario"].iloc[0]
     )
 
+    # Extract draw columns and other necessary columns
     draw_columns = canonical_iu_dataframes[0].loc[:, "draw_0":].columns
     columns_to_use = [
         canonical_columns.YEAR_ID,
@@ -234,25 +238,44 @@ def _calc_prob_all_ius_under_threshold(
     for scenario, ius in canonical_ius_by_scenario:
         scenario_ius = list(ius)
 
-        all_ius_draws = np.array(
-            [iu[draw_columns].to_numpy() for iu in scenario_ius], dtype=float
+        # Stack all IUs' draws into a 3D array => [P,M,N]
+        all_ius_draws = np.stack(
+            [iu[draw_columns].to_numpy() for iu in scenario_ius], axis=0
         )
-        # 1. Compute the boolean mask indicating the draws under threshold across
-        # all IUs => PxMxN shaped boolean array
-        all_ius_under_threshold = np.all(all_ius_draws <= prevalence_threshold, axis=0)
-        # 2. Check if all IUs are under threshold by collapsing along the first
-        # dimension using the AND operation => MxN shaped boolean array
-        prob_all_ius_under_threshold = np.mean(all_ius_under_threshold, axis=1)
-        dfs[scenario] = pd.DataFrame(prob_all_ius_under_threshold, columns=["mean"])
-        dfs[scenario] = pd.concat(
+
+        # Compute boolean mask for draws under the threshold
+        mask_below_threshold = all_ius_draws <= prevalence_threshold
+
+        # 1. Probability that all IUs are below the threshold
+        all_ius_under_threshold = mask_below_threshold.all(axis=0)  # [M,N]
+        prob_all_ius_under_threshold = all_ius_under_threshold.mean(axis=1)  # [M]
+
+        # 2. Proportion of IUs with >= `pct_runs_threshold`% draws under threshold
+        fraction_below_per_iu = mask_below_threshold.mean(axis=2)  # [P,M,1]
+        prop_ius_with_pct_runs_under_threshold = np.mean(
+            fraction_below_per_iu >= pct_runs_threshold, axis=0
+        )  # [M]
+
+        # Combine results into a DataFrame
+        result_df = pd.DataFrame(
+            {
+                "prob_all_ius_under_threshold": prob_all_ius_under_threshold,
+                "prop_ius_with_pct_of_runs_under_threshold": prop_ius_with_pct_runs_under_threshold,
+            }
+        )
+
+        # Add scenario, year, and measure information
+        result_df = pd.concat(
             [
                 scenario_ius[0][columns_to_use],
-                dfs[scenario],
+                result_df,
             ],
             axis=1,
         )
-        dfs[scenario][canonical_columns.MEASURE] = "prob_all_ius_under_threshold"
 
+        result_df[canonical_columns.MEASURE] = "extinction_metrics"
+
+        dfs[scenario] = result_df
     return dfs
 
 
@@ -333,8 +356,8 @@ def africa_lvl_aggregate(
         pd.DataFrame: A dataframe with aggregated prevalence metrics and threshold-based
          probabilities for the Africa region.
     """
-    prob_all_ius_under_threshold_dfs = _calc_prob_all_ius_under_threshold(
-        canonical_ius, prevalence_threshold
+    extinction_dfs = _calc_extinction_metrics(
+        canonical_ius, prevalence_threshold, pct_runs_threshold=0.9
     )
 
     # Collapse the prevalence from all the draws into an average metric
@@ -362,11 +385,11 @@ def africa_lvl_aggregate(
         + ["standard_deviation", "median"]
     ]
 
-    for scenario in prob_all_ius_under_threshold_dfs:
+    for scenario in extinction_dfs:
         africa_prevalence_df = pd.concat(
             [
                 africa_prevalence_df,
-                prob_all_ius_under_threshold_dfs[scenario][columns_to_use],
+                extinction_dfs[scenario][columns_to_use],
             ],
             axis=0,
             ignore_index=True,
