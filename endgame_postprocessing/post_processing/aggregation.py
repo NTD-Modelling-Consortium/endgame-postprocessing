@@ -3,7 +3,7 @@ import glob
 import os
 from functools import partial
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Generator
 
 import numpy as np
 import pandas as pd
@@ -46,6 +46,16 @@ def year_all_ius_reach_threshold(years_iu_reach_threshold):
 
 def _calc_count_of_pct_runs(x, pct_of_runs=0, denominator_val=1):
     return len(x[x >= pct_of_runs]) / denominator_val
+
+
+def _tqdm_unknown_length(generator: Generator, desc: str = "") -> Generator:
+    """
+    Wraps a generator with tqdm for progress tracking when total length is unknown.
+    """
+    with tqdm(desc=desc) as progress_bar:
+        for item in generator:
+            yield item
+            progress_bar.update(1)
 
 
 def add_scenario_and_country_to_raw_data(data, scenario_name, iu_name):
@@ -262,7 +272,7 @@ def africa_composite(
 ) -> Tuple[List[pd.DataFrame], pd.DataFrame]:
     canonical_ius = [
         pd.read_csv(iu.file_path)
-        for iu in tqdm(
+        for iu in _tqdm_unknown_length(
             post_process_file_generator(
                 file_directory=output_directory_structure.get_canonical_dir(wd),
                 end_of_file="_canonical.csv",
