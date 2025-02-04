@@ -11,7 +11,8 @@ from endgame_postprocessing.post_processing import (
     canonicalise,
     output_directory_structure,
     pipeline,
-    file_util, canonical_columns,
+    file_util,
+    canonical_columns,
 )
 from endgame_postprocessing.post_processing.custom_file_info import CustomFileInfo
 from endgame_postprocessing.post_processing.disease import Disease
@@ -31,10 +32,10 @@ DiscoveredIUs = namedtuple(
 
 
 def _discover_ius(
-        forward_projections_dir: str | PathLike | Path,
-        forward_projections_file_name_regex: str,
-        historic_dir: Optional[str | PathLike | Path] = None,
-        historic_prefix: str = "",
+    forward_projections_dir: str | PathLike | Path,
+    forward_projections_file_name_regex: str,
+    historic_dir: Optional[str | PathLike | Path] = None,
+    historic_prefix: str = "",
 ) -> DiscoveredIUs:
     """
     Finds five sets of IUs -
@@ -58,7 +59,7 @@ def _discover_ius(
         for fp in file_util.get_flat_regex(
             file_name_regex=r"(?P<prefix>\w+)(?P<iu_id>(?P<country>[A-Z]{3}).{0,5}\d{5})(.*)\.csv",
             input_dir=historic_dir,
-            glob_expression=f"{historic_prefix}_*.csv",
+            glob_expression=f"{historic_prefix}*.csv",
         )
     }
 
@@ -82,12 +83,12 @@ def _discover_ius(
 
 
 def canonicalise_raw_trachoma_results(
-        input_dir: str | PathLike | Path,
-        output_dir: str | PathLike | Path,
-        historic_dir: Optional[str | PathLike | Path] = None,
-        historic_prefix: str = "",
-        start_year: int = 1970,
-        stop_year: int = 2041,
+    input_dir: str | PathLike | Path,
+    output_dir: str | PathLike | Path,
+    historic_dir: Optional[str | PathLike | Path] = None,
+    historic_prefix: str = "",
+    start_year: int = 1970,
+    stop_year: int = 2041,
 ):
     discovered_ius = _discover_ius(
         forward_projections_dir=input_dir,
@@ -108,8 +109,10 @@ def canonicalise_raw_trachoma_results(
         So we should say that we skip the concatenation altogether, but raise a warning.
         """
         # TODO: Define and use exception type. For eg. HistoricDataMissingException
-        warnings.warn(f"No historic IUs found for "
-                      f"prefix='{historic_prefix}' in directory='{historic_dir}'")
+        warnings.warn(
+            f"No historic IUs found for "
+            f"prefix='{historic_prefix}' in directory='{historic_dir}'"
+        )
     else:
         """TODO
         Define and use standardized warning messages.
@@ -118,16 +121,23 @@ def canonicalise_raw_trachoma_results(
         """
         # Log warnings for IUs found in forward projections but not in histories
         for iu in discovered_ius.forward_only:
-            warnings.warn(f"IU '{iu}' found in forward projections but not found in history.")
+            warnings.warn(
+                f"IU '{iu}' found in forward projections but not found in history."
+            )
 
         # Log warnings for IUs found in histories but not in forward projections
         for iu in discovered_ius.history_only:
             warnings.warn(f"IU '{iu}' found in history but not in forward projections.")
 
-    def prepend_historic_if_available(fp: CustomFileInfo,
-                                      hs: Optional[CustomFileInfo]) -> pd.DataFrame:
-        return pd.concat([pd.read_csv(hs.file_path) if hs else pd.DataFrame(),
-                          pd.read_csv(fp.file_path)])
+    def prepend_historic_if_available(
+        fp: CustomFileInfo, hs: Optional[CustomFileInfo]
+    ) -> pd.DataFrame:
+        return pd.concat(
+            [
+                pd.read_csv(hs.file_path) if hs else pd.DataFrame(),
+                pd.read_csv(fp.file_path),
+            ]
+        )
 
     if not discovered_ius.all_historic:
         ius_to_process = [(fp, None) for fp in discovered_ius.all_forward.values()]
@@ -135,7 +145,7 @@ def canonicalise_raw_trachoma_results(
         ius_to_process = list(discovered_ius.with_history.values())
 
     for fp_fileinfo, hs_fileinfo in tqdm(
-            ius_to_process, desc="Canonicalise Trachoma results"
+        ius_to_process, desc="Canonicalise Trachoma results"
     ):
         output_directory_structure.write_canonical(
             output_dir,
@@ -154,12 +164,12 @@ def canonicalise_raw_trachoma_results(
 
 
 def run_postprocessing_pipeline(
-        input_dir: str | PathLike | Path,
-        output_dir: str | PathLike | Path,
-        historic_dir: Optional[str | PathLike | Path] = None,
-        historic_prefix: str = "",
-        start_year: int = 1970,
-        stop_year: int = 2041,
+    input_dir: str | PathLike | Path,
+    output_dir: str | PathLike | Path,
+    historic_dir: Optional[str | PathLike | Path] = None,
+    historic_prefix: str = "",
+    start_year: int = 1970,
+    stop_year: int = 2041,
 ):
     with CollectAndPrintWarnings() as collected_warnings:
         canonicalise_raw_trachoma_results(
