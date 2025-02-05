@@ -116,3 +116,24 @@ def test_trachoma_end_to_end_historic_only(snapshot):
     )
 
     validate_expected_dir(snapshot, test_root, output_path, known_good_subpath)
+
+
+def test_trachoma_end_to_end_multiple_scenarios_with_history(snapshot):
+    test_root = Path(__file__).parent
+    input_data = test_root / "example_input_data/trachoma"
+    output_path = test_root / "generated_data"
+    historic_data = test_root / "example_input_data/historic-trachoma"
+    known_good_subpath = test_root / "known_good_output_multiple_scenarios_with_history"
+
+    if output_path.exists():
+        shutil.rmtree(output_path)
+
+    run_trach.run_postprocessing_pipeline(
+        input_dir=input_data,
+        output_dir=output_path,
+        historic_dir=historic_data,
+        historic_prefix="PrevDataset_Trachoma_",
+        start_year=2000,
+    )
+
+    validate_expected_dir(snapshot, test_root, output_path, known_good_subpath)
