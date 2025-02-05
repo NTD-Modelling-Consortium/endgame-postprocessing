@@ -1,8 +1,9 @@
+import itertools
 import warnings
 from collections import namedtuple
 from os import PathLike
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 import pandas as pd
 from tqdm import tqdm
@@ -27,18 +28,18 @@ from endgame_postprocessing.post_processing.warnings_collector import (
 DiscoveredIUs = namedtuple(
     "DiscoveredIUs",
     ["all_forward", "all_historic", "forward_only", "history_only", "with_history"],
-    defaults=(set() for _ in range(5)),
+    defaults=(List[CustomFileInfo] for _ in range(5)),
 )
 
 
 def _discover_ius(
-    forward_projections_dir: str | PathLike | Path,
-    forward_projections_file_name_regex: str,
-    historic_dir: Optional[str | PathLike | Path] = None,
-    historic_prefix: str = "",
+        forward_projections_dir: str | PathLike | Path,
+        forward_projections_file_name_regex: str,
+        historic_dir: Optional[str | PathLike | Path] = None,
+        historic_prefix: str = "",
 ) -> DiscoveredIUs:
     """
-    Finds five sets of IUs -
+    Finds five lists of IUs -
         1. All forward projection IUs.
         2. All historic IUs.
         3. IUs that exist only in forward projection data but no history.
@@ -46,49 +47,37 @@ def _discover_ius(
         5. IUs that exist in both forward projection and historic data.
     """
 
-    all_forward_ius = {
-        fp.iu: fp
-        for fp in file_util.get_flat_regex(
-            file_name_regex=forward_projections_file_name_regex,
-            input_dir=forward_projections_dir,
-        )
-    }
+    all_forward_ius = list(file_util.get_flat_regex(
+        file_name_regex=forward_projections_file_name_regex,
+        input_dir=forward_projections_dir,
+    ))
 
-    all_historic_ius = {
-        fp.iu: fp
-        for fp in file_util.get_flat_regex(
-            file_name_regex=r"(?P<prefix>\w+)(?P<iu_id>(?P<country>[A-Z]{3}).{0,5}\d{5})(.*)\.csv",
-            input_dir=historic_dir,
-            glob_expression=f"{historic_prefix}*.csv",
-        )
-    }
+    all_historic_ius = list(file_util.get_flat_regex(
+        file_name_regex=r"(?P<prefix>\w+)(?P<iu_id>(?P<country>[A-Z]{3}).{0,5}\d{5})(.*)\.csv",
+        input_dir=historic_dir,
+        glob_expression=f"{historic_prefix}*.csv",
+    ))
 
-    all_forward_set = set(all_forward_ius.keys())
-    all_historic_set = set(all_historic_ius.keys())
+    all_forward_set = {fp.iu for fp in all_forward_ius}
+    all_historic_set = {fp.iu for fp in all_historic_ius}
 
     return DiscoveredIUs(
         all_forward=all_forward_ius,
         all_historic=all_historic_ius,
-        forward_only={
-            iu: all_forward_ius[iu] for iu in all_forward_set - all_historic_set
-        },
-        history_only={
-            iu: all_historic_ius[iu] for iu in all_historic_set - all_forward_set
-        },
-        with_history={
-            iu: (all_forward_ius[iu], all_historic_ius[iu])
-            for iu in all_forward_set & all_historic_set
-        },
+        forward_only=list(filter(lambda fp: fp.iu not in all_historic_set, all_forward_ius)),
+        history_only=list(filter(lambda hs: hs.iu not in all_forward_set, all_historic_ius)),
+        with_history=list(filter(lambda pair: pair[0].iu == pair[1].iu,
+                                 itertools.product(all_forward_ius, all_historic_ius)))
     )
 
 
 def canonicalise_raw_trachoma_results(
-    input_dir: str | PathLike | Path,
-    output_dir: str | PathLike | Path,
-    historic_dir: Optional[str | PathLike | Path] = None,
-    historic_prefix: str = "",
-    start_year: int = 1970,
-    stop_year: int = 2041,
+        input_dir: str | PathLike | Path,
+        output_dir: str | PathLike | Path,
+        historic_dir: Optional[str | PathLike | Path] = None,
+        historic_prefix: str = "",
+        start_year: int = 1970,
+        stop_year: int = 2041,
 ):
     discovered_ius = _discover_ius(
         forward_projections_dir=input_dir,
@@ -122,15 +111,15 @@ def canonicalise_raw_trachoma_results(
         # Log warnings for IUs found in forward projections but not in histories
         for iu in discovered_ius.forward_only:
             warnings.warn(
-                f"IU '{iu}' found in forward projections but not found in history."
+                f"IU '{iu.iu}' found in forward projections but not found in history."
             )
 
         # Log warnings for IUs found in histories but not in forward projections
         for iu in discovered_ius.history_only:
-            warnings.warn(f"IU '{iu}' found in history but not in forward projections.")
+            warnings.warn(f"IU '{iu.iu}' found in history but not in forward projections.")
 
     def prepend_historic_if_available(
-        fp: CustomFileInfo, hs: Optional[CustomFileInfo]
+            fp: CustomFileInfo, hs: Optional[CustomFileInfo]
     ) -> pd.DataFrame:
         return pd.concat(
             [
@@ -140,12 +129,12 @@ def canonicalise_raw_trachoma_results(
         )
 
     if not discovered_ius.all_historic:
-        ius_to_process = [(fp, None) for fp in discovered_ius.all_forward.values()]
+        ius_to_process = [(fp, None) for fp in discovered_ius.all_forward]
     else:
-        ius_to_process = list(discovered_ius.with_history.values())
+        ius_to_process = discovered_ius.with_history
 
     for fp_fileinfo, hs_fileinfo in tqdm(
-        ius_to_process, desc="Canonicalise Trachoma results"
+            ius_to_process, desc="Canonicalise Trachoma results"
     ):
         output_directory_structure.write_canonical(
             output_dir,
@@ -164,12 +153,12 @@ def canonicalise_raw_trachoma_results(
 
 
 def run_postprocessing_pipeline(
-    input_dir: str | PathLike | Path,
-    output_dir: str | PathLike | Path,
-    historic_dir: Optional[str | PathLike | Path] = None,
-    historic_prefix: str = "",
-    start_year: int = 1970,
-    stop_year: int = 2041,
+        input_dir: str | PathLike | Path,
+        output_dir: str | PathLike | Path,
+        historic_dir: Optional[str | PathLike | Path] = None,
+        historic_prefix: str = "",
+        start_year: int = 1970,
+        stop_year: int = 2041,
 ):
     with CollectAndPrintWarnings() as collected_warnings:
         canonicalise_raw_trachoma_results(
