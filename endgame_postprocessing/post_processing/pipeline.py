@@ -8,12 +8,14 @@ import endgame_postprocessing.model_wrappers.constants as constants
 from endgame_postprocessing.post_processing import (
     composite_run,
     iu_data_fixup,
-    output_directory_structure, canonical_columns,
+    output_directory_structure,
+    canonical_columns,
 )
 from endgame_postprocessing.post_processing.aggregation import (
     africa_lvl_aggregate,
     aggregate_post_processed_files,
-    single_country_aggregate, africa_composite,
+    single_country_aggregate,
+    africa_composite,
 )
 from endgame_postprocessing.post_processing.aggregation import (
     iu_lvl_aggregate,
@@ -46,9 +48,7 @@ def iu_statistical_aggregates(working_directory, threshold):
                 post_processing_start_time=1970,
                 post_processing_end_time=2041,
                 threshold=threshold,
-                measure_summary_map={
-                    canonical_columns.PROCESSED_PREVALENCE: measure_summary_float
-                },
+                measure_summary_map={canonical_columns.PROCESSED_PREVALENCE: measure_summary_float},
                 pct_runs_under_threshold=constants.PCT_RUNS_UNDER_THRESHOLD,
             )
 
@@ -56,9 +56,7 @@ def iu_statistical_aggregates(working_directory, threshold):
                 working_directory, file_info, iu_statistical_aggregate
             )
 
-            custom_progress_bar_update(
-                pbar, file_info.scenario_index, file_info.total_scenarios
-            )
+            custom_progress_bar_update(pbar, file_info.scenario_index, file_info.total_scenarios)
 
 
 def country_composite(working_directory, iu_meta_data):
@@ -79,14 +77,12 @@ def country_composite(working_directory, iu_meta_data):
         canonical_ius_by_country[country] += file_info_for_canonical_iu
 
     for country, ius_for_country in tqdm(
-            canonical_ius_by_country.items(), desc="Building country composites"
+        canonical_ius_by_country.items(), desc="Building country composites"
     ):
-        country_composite = composite_run.build_composite_run_multiple_scenarios(list(
-            [
-                pd.read_csv(iu_for_country.file_path)
-                for iu_for_country in ius_for_country
-            ]
-        ), iu_meta_data)
+        country_composite = composite_run.build_composite_run_multiple_scenarios(
+            list([pd.read_csv(iu_for_country.file_path) for iu_for_country in ius_for_country]),
+            iu_meta_data,
+        )
         output_directory_structure.write_country_composite(
             working_directory, country, country_composite
         )
@@ -94,10 +90,10 @@ def country_composite(working_directory, iu_meta_data):
 
 
 def country_aggregate(
-        country_composite: pd.DataFrame,
-        iu_lvl_data: pd.DataFrame,
-        country_code: str,
-        iu_meta_data: IUData,
+    country_composite: pd.DataFrame,
+    iu_lvl_data: pd.DataFrame,
+    country_code: str,
+    iu_meta_data: IUData,
 ):
     country_statistical_aggregates = single_country_aggregate(country_composite)
     country_iu_summary_aggregates = country_lvl_aggregate(
@@ -118,11 +114,9 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
         [
             file_info.iu
             for file_info in post_process_file_generator(
-            file_directory=output_directory_structure.get_canonical_dir(
-                working_directory
-            ),
-            end_of_file="_canonical.csv",
-        )
+                file_directory=output_directory_structure.get_canonical_dir(working_directory),
+                end_of_file="_canonical.csv",
+            )
         ]
     )
 
@@ -131,9 +125,7 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
         simulated_IUs=all_ius,
     )
 
-    output_directory_structure.write_meta_data_file(
-        working_directory, fixedup_meta_data_file
-    )
+    output_directory_structure.write_meta_data_file(working_directory, fixedup_meta_data_file)
 
     iu_meta_data = IUData(
         fixedup_meta_data_file,
@@ -159,10 +151,7 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
     country_aggregates = [
         country_aggregate(
             country_composite,
-            all_iu_data[
-                all_iu_data["country_code"]
-                == country_composite["country_code"].values[0]
-                ],
+            all_iu_data[all_iu_data["country_code"] == country_composite["country_code"].values[0]],
             country_composite["country_code"].values[0],
             iu_meta_data,
         )
@@ -182,7 +171,8 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
     africa_aggregates = (
         africa_lvl_aggregate(
             *africa_composite(working_directory, iu_meta_data),
-            prevalence_threshold=pipeline_config.threshold
+            prevalence_threshold=pipeline_config.threshold,
+            pct_runs_threshold=[0.9, 1.0],
         )
         .sort_values(["scenario", "year_id"])
         .reset_index(drop=True)
