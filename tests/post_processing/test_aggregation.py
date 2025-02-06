@@ -19,14 +19,10 @@ def test_aggregate_post_processed_files_empty_directory_empty_dataframe(fs):
 
 
 def test_aggregate_post_processed_files_dir_containing_two_csvs_concatenated(
-        fs: FakeFilesystem,
+    fs: FakeFilesystem,
 ):
-    fs.create_file(
-        "dir/a.csv", contents=pd.DataFrame({"A": [1], "B": [2]}).to_csv(index=False)
-    )
-    fs.create_file(
-        "dir/b.csv", contents=pd.DataFrame({"A": [3], "B": [4]}).to_csv(index=False)
-    )
+    fs.create_file("dir/a.csv", contents=pd.DataFrame({"A": [1], "B": [2]}).to_csv(index=False))
+    fs.create_file("dir/b.csv", contents=pd.DataFrame({"A": [3], "B": [4]}).to_csv(index=False))
     expected_combined_data = pd.DataFrame({"A": [1, 3], "B": [2, 4]})
     actual = aggregation.aggregate_post_processed_files("dir")
     pdt.assert_frame_equal(
@@ -37,14 +33,10 @@ def test_aggregate_post_processed_files_dir_containing_two_csvs_concatenated(
 
 
 def test_aggregate_post_processed_files_dir_containing_two_csvs_w_mismatched_columns_concatenated(
-        fs: FakeFilesystem,
+    fs: FakeFilesystem,
 ):
-    fs.create_file(
-        "dir/a.csv", contents=pd.DataFrame({"A": [1], "B": [2]}).to_csv(index=False)
-    )
-    fs.create_file(
-        "dir/b.csv", contents=pd.DataFrame({"C": [3], "D": [4]}).to_csv(index=False)
-    )
+    fs.create_file("dir/a.csv", contents=pd.DataFrame({"A": [1], "B": [2]}).to_csv(index=False))
+    fs.create_file("dir/b.csv", contents=pd.DataFrame({"C": [3], "D": [4]}).to_csv(index=False))
     expected_combined_data = pd.DataFrame({"A": [1, 3], "B": [2, 4]})
     actual = aggregation.aggregate_post_processed_files("dir")
     pdt.assert_frame_equal(
@@ -56,11 +48,9 @@ def test_aggregate_post_processed_files_dir_containing_two_csvs_w_mismatched_col
 
 
 def test_aggregate_post_processed_files_dir_containing_nested_csvs_concatenated(
-        fs: FakeFilesystem,
+    fs: FakeFilesystem,
 ):
-    fs.create_file(
-        "dir/a.csv", contents=pd.DataFrame({"A": [1], "B": [2]}).to_csv(index=False)
-    )
+    fs.create_file("dir/a.csv", contents=pd.DataFrame({"A": [1], "B": [2]}).to_csv(index=False))
     fs.create_file(
         "dir/nested/b.csv",
         contents=pd.DataFrame({"A": [3], "B": [4]}).to_csv(index=False),
@@ -75,14 +65,10 @@ def test_aggregate_post_processed_files_dir_containing_nested_csvs_concatenated(
 
 
 def test_aggregate_post_processed_files_dir_containing_two_csvs_filter_set(
-        fs: FakeFilesystem,
+    fs: FakeFilesystem,
 ):
-    fs.create_file(
-        "dir/a.csv", contents=pd.DataFrame({"A": [1], "B": [2]}).to_csv(index=False)
-    )
-    fs.create_file(
-        "dir/b.csv", contents=pd.DataFrame({"A": [3], "B": [4]}).to_csv(index=False)
-    )
+    fs.create_file("dir/a.csv", contents=pd.DataFrame({"A": [1], "B": [2]}).to_csv(index=False))
+    fs.create_file("dir/b.csv", contents=pd.DataFrame({"A": [3], "B": [4]}).to_csv(index=False))
     expected_combined_data = pd.DataFrame({"A": [1], "B": [2]})
     actual = aggregation.aggregate_post_processed_files("dir", specific_files="a.csv")
     pdt.assert_frame_equal(
@@ -94,9 +80,7 @@ def test_aggregate_post_processed_files_dir_containing_two_csvs_filter_set(
 
 def test_iu_lvl_aggregate_mean_replaced_with_nan():
     df_with_mean = pd.DataFrame({"mean": ["", 1.0]})
-    iu_aggregate = aggregation.iu_lvl_aggregate(
-        df_with_mean, typing_map={"mean": float}
-    )
+    iu_aggregate = aggregation.iu_lvl_aggregate(df_with_mean, typing_map={"mean": float})
     pdt.assert_frame_equal(iu_aggregate, pd.DataFrame({"mean": [np.nan, 1.0]}))
 
 
@@ -105,17 +89,13 @@ def test_iu_lvl_aggregate_non_mean_replaced_with_none():
     iu_aggregate = aggregation.iu_lvl_aggregate(
         df_with_mean_and_other, typing_map={"mean": float, "other": float}
     )
-    pdt.assert_frame_equal(
-        iu_aggregate, pd.DataFrame({"other": [None, 1.0], "mean": [1.0, 2.0]})
-    )
+    pdt.assert_frame_equal(iu_aggregate, pd.DataFrame({"other": [None, 1.0], "mean": [1.0, 2.0]}))
 
 
 def test_iu_lvl_aggregate_incorrectly_typed_mean_raises_type_error():
     iu_data_with_type_error = pd.DataFrame({"mean": ["wrong type"]})
     with pytest.raises(ValueError):
-        aggregation.iu_lvl_aggregate(
-            iu_data_with_type_error, typing_map={"mean": float}
-        )
+        aggregation.iu_lvl_aggregate(iu_data_with_type_error, typing_map={"mean": float})
 
 
 # column containing an NA and a NaN
@@ -270,7 +250,7 @@ def test_africa_lvl_aggregate_success():
                 "draw_2": [0.4],
                 "draw_3": [0.5],
             }
-        )
+        ),
     ]
 
     composite_africa_data = pd.DataFrame(
@@ -288,27 +268,38 @@ def test_africa_lvl_aggregate_success():
     africa_data = aggregation.africa_lvl_aggregate(
         canonical_ius,
         composite_africa_data,
-        prevalence_threshold=0.05
+        prevalence_threshold=0.05,
+        pct_runs_threshold=[0.5, 1.0],
     )
     pdt.assert_frame_equal(
         africa_data,
         pd.DataFrame(
             {
-                "scenario": ["scenario_1", "scenario_1"],
-                "measure": ["M1", "prob_all_ius_under_threshold"],
-                "year_id": [2010, 2010],
-                "mean": [0.5, 0.25],
-                "2.5_percentile": [0.215, np.NAN],
-                "5_percentile": [0.23, np.NAN],
-                "10_percentile": [0.26, np.NAN],
-                "25_percentile": [0.35, np.NAN],
-                "50_percentile": [0.5, np.NAN],
-                "75_percentile": [0.65, np.NAN],
-                "90_percentile": [0.74, np.NAN],
-                "95_percentile": [0.77, np.NAN],
-                "97.5_percentile": [0.785, np.NAN],
-                "standard_deviation": [np.std([0.2, 0.4, 0.6, 0.8]), np.NAN],
-                "median": [0.5, np.NAN],
+                "scenario": ["scenario_1", "scenario_1", "scenario_1", "scenario_1"],
+                "measure": [
+                    "M1",
+                    "prob_all_ius_under_threshold",
+                    "prop_ius_with_50pct_runs_under_threshold",
+                    "prop_ius_with_100pct_runs_under_threshold",
+                ],
+                "year_id": [2010, 2010, 2010, 2010],
+                "mean": [0.5, 0.25, 0.0, 0.0],
+                "2.5_percentile": [0.215, np.NAN, np.NAN, np.NAN],
+                "5_percentile": [0.23, np.NAN, np.NAN, np.NAN],
+                "10_percentile": [0.26, np.NAN, np.NAN, np.NAN],
+                "25_percentile": [0.35, np.NAN, np.NAN, np.NAN],
+                "50_percentile": [0.5, np.NAN, np.NAN, np.NAN],
+                "75_percentile": [0.65, np.NAN, np.NAN, np.NAN],
+                "90_percentile": [0.74, np.NAN, np.NAN, np.NAN],
+                "95_percentile": [0.77, np.NAN, np.NAN, np.NAN],
+                "97.5_percentile": [0.785, np.NAN, np.NAN, np.NAN],
+                "standard_deviation": [
+                    np.std([0.2, 0.4, 0.6, 0.8]),
+                    np.NAN,
+                    np.NAN,
+                    np.NAN,
+                ],
+                "median": [0.5, np.NAN, np.NAN, np.NAN],
             }
         ),
         check_dtype=False,
@@ -340,7 +331,7 @@ def test_africa_lvl_aggregate_multiple_measures_success():
                 "draw_2": [0.4],
                 "draw_3": [0.5],
             }
-        )
+        ),
     ]
 
     composite_africa_data = pd.DataFrame(
@@ -358,30 +349,40 @@ def test_africa_lvl_aggregate_multiple_measures_success():
     africa_data = aggregation.africa_lvl_aggregate(
         canonical_ius,
         composite_africa_data,
-        prevalence_threshold=0.05
+        prevalence_threshold=0.05,
+        pct_runs_threshold=[0.5, 1.0],
     )
     pdt.assert_frame_equal(
         africa_data,
         pd.DataFrame(
             {
-
-                "scenario": ["scenario_1", "scenario_1", "scenario_1"],
-                "measure": ["M1", "M2", "prob_all_ius_under_threshold"],
-                "year_id": [2010, 2010, 2010],
-                "mean": [0.5, 0.5, 0.25],
-                "2.5_percentile": [0.215, 0.215, np.NAN],
-                "5_percentile": [0.23, 0.23, np.NAN],
-                "10_percentile": [0.26, 0.26, np.NAN],
-                "25_percentile": [0.35, 0.35, np.NAN],
-                "50_percentile": [0.5, 0.5, np.NAN],
-                "75_percentile": [0.65, 0.65, np.NAN],
-                "90_percentile": [0.74, 0.74, np.NAN],
-                "95_percentile": [0.77, 0.77, np.NAN],
-                "97.5_percentile": [0.785, 0.785, np.NAN],
-                "standard_deviation": [np.std([0.2, 0.4, 0.6, 0.8]),
-                                       np.std([0.2, 0.4, 0.6, 0.8]),
-                                       np.NAN],
-                "median": [0.5, 0.5, np.NAN],
+                "scenario": ["scenario_1", "scenario_1", "scenario_1", "scenario_1", "scenario_1"],
+                "measure": [
+                    "M1",
+                    "M2",
+                    "prob_all_ius_under_threshold",
+                    "prop_ius_with_50pct_runs_under_threshold",
+                    "prop_ius_with_100pct_runs_under_threshold",
+                ],
+                "year_id": [2010, 2010, 2010, 2010, 2010],
+                "mean": [0.5, 0.5, 0.25, 0.0, 0.0],
+                "2.5_percentile": [0.215, 0.215, np.NAN, np.NAN, np.NAN],
+                "5_percentile": [0.23, 0.23, np.NAN, np.NAN, np.NAN],
+                "10_percentile": [0.26, 0.26, np.NAN, np.NAN, np.NAN],
+                "25_percentile": [0.35, 0.35, np.NAN, np.NAN, np.NAN],
+                "50_percentile": [0.5, 0.5, np.NAN, np.NAN, np.NAN],
+                "75_percentile": [0.65, 0.65, np.NAN, np.NAN, np.NAN],
+                "90_percentile": [0.74, 0.74, np.NAN, np.NAN, np.NAN],
+                "95_percentile": [0.77, 0.77, np.NAN, np.NAN, np.NAN],
+                "97.5_percentile": [0.785, 0.785, np.NAN, np.NAN, np.NAN],
+                "standard_deviation": [
+                    np.std([0.2, 0.4, 0.6, 0.8]),
+                    np.std([0.2, 0.4, 0.6, 0.8]),
+                    np.NAN,
+                    np.NAN,
+                    np.NAN,
+                ],
+                "median": [0.5, 0.5, np.NAN, np.NAN, np.NAN],
             }
         ),
         check_dtype=False,
@@ -395,9 +396,7 @@ def test_calc_count_of_pct_runs_with_thresholds():
 
 def test_calc_count_of_pct_runs_with_divisor():
     result = aggregation._calc_count_of_pct_runs(
-        pd.Series([0.1, 0.2, 0.3]),
-        pct_of_runs=0.2,
-        denominator_val=3
+        pd.Series([0.1, 0.2, 0.3]), pct_of_runs=0.2, denominator_val=3
     )
     npt.assert_equal(result, 2 / 3)
 
