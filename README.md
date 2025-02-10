@@ -223,6 +223,14 @@ the `year_of_ius_passing_Xpct_under_threshold` is the year all simulated IUs rea
 - **processed_prevalence** - the composite prevalence in Africa. The prevalence for a specific draw is worked out by
   taking the prevalence for each IU we have results for, multiplying it by its priority population, summing across the
   IUs, then dividing by the priority population of all included IUs.
+- **prob_all_ius_under_threshold** - probability of disease elimination. It is worked out
+  by 
+  - identifying the draws below the prevalence threshold across all IUs
+  - checking if all IUs, for a given year-draw combination, are below threshold
+  - compute the proportion of draws in every year, where the previous holds true
+- **pct_ius_with_Xpct_runs_under_threshold** - It is worked out by
+  - for each year and IU, compute the proportion of draws below the threshold
+  - compute proportion of IUs where `Xpct` of runs are under threshold 
 
 ##### aggregation_info.json
 
