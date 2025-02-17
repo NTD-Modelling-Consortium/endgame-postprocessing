@@ -1,0 +1,24 @@
+{
+    "warnings": [
+        {
+            "message": "Unexpected file /home/thomas/dev/endgame-postprocessing/tests/end_to_end/oncho/example_input_data/oncho/PopulationMetadatafile.csv found in /home/thomas/dev/endgame-postprocessing/tests/end_to_end/oncho/example_input_data/oncho",
+            "file": "post_processing/file_util.py",
+            "line": 34
+        },
+        {
+            "message": "IU AAA00007 found in scenario_2 but not found in histories.",
+            "file": "post_processing/file_util.py",
+            "line": 120
+        },
+        {
+            "message": "IU AAA00007 found in scenario_1 but not found in histories.",
+            "file": "post_processing/file_util.py",
+            "line": 120
+        },
+        {
+            "message": "IU AAA00005 was not found in forward_projections and as such will not have the historic data",
+            "file": "model_wrappers/oncho/testRun.py",
+            "line": 87
+        }
+    ]
+}
