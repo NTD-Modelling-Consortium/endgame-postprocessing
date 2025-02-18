@@ -51,27 +51,19 @@ def test_oncho_end_to_end(snapshot):
     )
 
     with open(f'{output_path}/aggregation_info.json', "r") as f:
-        w = json.load(f)["warnings"]
+        aggregation_info = json.load(f)
 
-        assert (
-            "IU AAA00007 found in scenario_1 but not found in histories." in
-            [warning["message"] for warning in w]
-        )
-        assert (
-            "IU AAA00007 found in scenario_2 but not found in histories." in
-            [warning["message"] for warning in w]
-        )
-        assert (
-            "IU AAA00005 was not found in forward_projections and as such will not have the historic data" in # noqa 501
-            [warning["message"] for warning in w]
-        )
         # TODO: fix the warning/test so that it is consistant between dev and prod. Currently,
         # the warning outputs the full directory, which will be different in github and locally
         new_warnings = [
-            warning for warning in w
-            if "example_input_data/oncho/PopulationMetadatafile.csv" not in warning["message"]
+            warning
+            for warning in aggregation_info["warnings"]
+            if "example_input_data/oncho/PopulationMetadatafile.csv"
+            not in warning["message"]
         ]
     with open(f'{output_path}/aggregation_info.json', "w") as f:
-        json.dump(new_warnings, f, indent=4)
+        new_aggregation_info = aggregation_info
+        new_aggregation_info["warnings"] = new_warnings
+        json.dump(new_aggregation_info, f, indent=4)
 
     validate_expected_dir(snapshot, test_root, output_path, known_good_subpath)
