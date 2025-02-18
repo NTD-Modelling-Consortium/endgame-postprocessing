@@ -11,3 +11,9 @@ class CustomFileInfo:
     country: str
     iu: str
     file_path: str
+
+    def __lt__(self, other):
+        return self.file_path < other.file_path
+
+    def __eq__(self, other):
+        return self.file_path == other.file_path

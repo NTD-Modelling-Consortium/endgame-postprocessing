@@ -1,9 +1,9 @@
 import shutil
-import warnings
 import endgame_postprocessing.model_wrappers.oncho.testRun as oncho_runner
 
 from pathlib import Path
 import pytest
+import json
 
 from tests.end_to_end.snapshot_with_csv import validate_expected_dir
 
@@ -44,23 +44,26 @@ def test_oncho_end_to_end(snapshot):
     if output_path.exists():
         shutil.rmtree(output_path)
 
-    with warnings.catch_warnings(record=True) as w:
-        oncho_runner.run_postprocessing_pipeline(
-            input_dir=input_data, output_dir=output_path, historic_dir=historic_data,
-            historic_prefix="output_full_MTP_",
-            start_year=2000
-        )
-        assert (
-            "IU AAA00007 found in scenario_1 but not found in histories." in
-            [str(warning.message) for warning in w]
-        )
-        assert (
-            "IU AAA00007 found in scenario_2 but not found in histories." in
-            [str(warning.message) for warning in w]
-        )
-        assert (
-            "IU AAA00005 was not found in forward_projections and as such will not have the historic data" in # noqa 501
-            [str(warning.message) for warning in w]
-        )
+    oncho_runner.run_postprocessing_pipeline(
+        input_dir=input_data, output_dir=output_path, historic_dir=historic_data,
+        historic_prefix="output_full_MTP_",
+        start_year=2000
+    )
+
+    with open(f'{output_path}/aggregation_info.json', "r") as f:
+        aggregation_info = json.load(f)
+
+        # TODO: fix the warning/test so that it is consistant between dev and prod. Currently,
+        # the warning outputs the full directory, which will be different in github and locally
+        new_warnings = [
+            warning
+            for warning in aggregation_info["warnings"]
+            if "example_input_data/oncho/PopulationMetadatafile.csv"
+            not in warning["message"]
+        ]
+    with open(f'{output_path}/aggregation_info.json', "w") as f:
+        new_aggregation_info = aggregation_info
+        new_aggregation_info["warnings"] = new_warnings
+        json.dump(new_aggregation_info, f, indent=4)
 
     validate_expected_dir(snapshot, test_root, output_path, known_good_subpath)
