@@ -53,11 +53,20 @@ def _get_pipeline_config_from_scenario_file(mixed_scenarios_desc):
         disease = Disease.ONCHO
     elif mixed_scenarios_desc["disease"] == "trachoma":
         disease = Disease.TRACHOMA
-    else:
+    elif mixed_scenarios_desc["disease"] == "lf":
         disease = Disease.LF
+    else:
+        raise Exception(
+            f"Unexpected disease: {mixed_scenarios_desc['disease']}, must be one of 'oncho', 'trachoma', 'lf'"
+        )  # noqa: E501
 
     if "threshold" in mixed_scenarios_desc:
-        threshold = float(mixed_scenarios_desc["threshold"])
+        try:
+            threshold = float(mixed_scenarios_desc["threshold"])
+        except ValueError as e:
+            raise Exception(f"threshold must be a number: {e}")
+        if threshold < 0.0 or threshold > 1.0:
+            raise Exception(f"threshold is {threshold}, it must be between 0 and 1")
         return PipelineConfig(disease=disease, threshold=threshold)
     else:
         return PipelineConfig(disease=disease)
