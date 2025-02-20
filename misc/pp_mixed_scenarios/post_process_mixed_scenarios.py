@@ -7,7 +7,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor, wait
 from pathlib import Path
 from pprint import pprint
-from typing import List, Tuple, Callable, Optional
+from typing import List, Tuple, Callable, Optional, Dict
 
 import pandas as pd
 import yaml
@@ -48,13 +48,7 @@ def _load_mixed_scenarios_desc(mixed_scenarios_desc_file: Path):
         )
     mixed_scenarios_desc = yaml.load(mixed_scenarios_desc_file.read_text(), Loader=yaml.FullLoader)
 
-    required_fields = {
-        "default_scenario",
-        "overridden_ius",
-        "scenario_name",
-        "disease",
-        "threshold",
-    }
+    required_fields = {"default_scenario", "overridden_ius", "scenario_name", "disease"}
     missing_fields = required_fields - mixed_scenarios_desc.keys()
     if missing_fields:
         raise ValueError(
@@ -80,10 +74,34 @@ def _load_mixed_scenarios_desc(mixed_scenarios_desc_file: Path):
     if mixed_scenarios_desc.get("disease") not in ["oncho", "lf", "trachoma"]:
         raise ValueError(f"Invalid 'disease' field. Must be one of: oncho, lf, trachoma.")
 
-    if not isinstance(mixed_scenarios_desc.get("threshold"), (int, float)):
-        raise ValueError("The 'threshold' field must be a numeric value.")
+    if "threshold" in mixed_scenarios_desc:
+        try:
+            threshold = float(mixed_scenarios_desc["threshold"])
+        except ValueError as e:
+            raise Exception(f"threshold must be a number: {e}")
+
+        if threshold < 0.0 or threshold > 1.0:
+            raise ValueError(f"threshold is {threshold}, it must be between 0 and 1")
 
     return mixed_scenarios_desc
+
+
+def _get_pipeline_config_from_scenario_file(mixed_scenarios_desc):
+    # We're guaranteed that the disease value exists and is valid because `mixed_scenarios_desc`
+    # has already been verified by this point.
+    if mixed_scenarios_desc["disease"] == "oncho":
+        disease = Disease.ONCHO
+    elif mixed_scenarios_desc["disease"] == "trachoma":
+        disease = Disease.TRACHOMA
+    else:
+        disease = Disease.LF
+
+    # We're guaranteed that the threshold is valid, if it exists, because `mixed_scenarios_desc`
+    # has already been verified by this point.
+    if "threshold" in mixed_scenarios_desc:
+        return PipelineConfig(disease=disease, threshold=mixed_scenarios_desc["threshold"])
+    else:
+        return PipelineConfig(disease=disease)
 
 
 def _collect_source_target_paths(
@@ -163,7 +181,9 @@ def _copy_with_rename(
         wait(futures)
 
 
-def _prepare_output_directory(input_directory, output_directory, mixed_scenarios_desc):
+def _prepare_output_directory(
+    input_directory: Path, output_directory: Path, mixed_scenarios_desc: Dict
+):
     """
     Prepare the output directory structure, copy files, and rename them during copying.
 
@@ -276,7 +296,7 @@ def main():
         return
 
     output_directory = (
-        args.output_directory if args.output_directory else working_directory / "output"
+        Path(args.output_directory) if args.output_directory else working_directory / "output"
     )
     _prepare_output_directory(input_directory, output_directory, mixed_scenarios_desc)
     t_finish = time.time()
@@ -284,18 +304,13 @@ def main():
 
     t_start = time.time()
 
-    if mixed_scenarios_desc["disease"] == "oncho":
-        disease = Disease.ONCHO
-    elif mixed_scenarios_desc["disease"] == "trachoma":
-        disease = Disease.TRACHOMA
-    else:
-        disease = Disease.LF
+    pipeline_config = _get_pipeline_config_from_scenario_file(mixed_scenarios_desc)
 
     with CollectAndPrintWarnings() as collected_warnings:
         pipeline.pipeline(
             input_directory,
             output_directory,
-            PipelineConfig(disease=disease),
+            pipeline_config,
         )
 
         output_directory_structure.write_results_metadata_file(
