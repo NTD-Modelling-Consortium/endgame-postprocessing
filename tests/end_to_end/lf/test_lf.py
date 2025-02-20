@@ -1,10 +1,9 @@
 import shutil
-
-import pytest
-import endgame_postprocessing.model_wrappers.lf.testRun as lf_runner
-
 from pathlib import Path
 
+import pytest
+
+import endgame_postprocessing.model_wrappers.lf.testRun as lf_runner
 from tests.end_to_end.snapshot_with_csv import validate_expected_dir
 
 
