@@ -93,3 +93,32 @@ python post_process_mixed_scenarios.py -w path/to/working_directory -o path/to/o
 
 For any issues or questions, please refer to the comments in the script or reach out to the
 development team.
+
+## Using the Docker image
+
+Install [Docker](https://docs.docker.com/get-started/get-docker/).
+
+Build the image (this will take a few minutes)
+
+```
+docker build . -t mix-and-match
+```
+
+Run the command:
+
+```
+docker run --mount type=bind,src={absolute path to data},dst=/ntdmc/data mix-and-match -w /ntdmc/data -s /ntdmc/data/{scenario file}
+```
+
+Where `{absolute path to data}` should be replaced with path to the diseases working directory
+(e.g. the path to the folder that contains the YAML file and the input folder)
+
+And `{scenario file}` should be the name (only) of the mix YAML file (e.g. `mixed_scenarios_desc_1.yaml`).
+
+So if you have LF downloaded to /home/username/ntdmc/lf/ then it would be:
+
+```
+docker run --mount type=bind,src=/home/username/ntdmc/lf/,dst=/ntdmc/data mix-and-match -w /ntdmc/data -s /ntdmc/data/mixed_scenarios_desc_1.yaml
+```
+
+_Note: the path cannot contain `~`. To find the full path for a folder use can use `pwd`._
