@@ -56,7 +56,11 @@ def _get_pipeline_config_from_scenario_file(mixed_scenarios_desc):
     else:
         disease = Disease.LF
 
-    return PipelineConfig(disease=disease)
+    if "threshold" in mixed_scenarios_desc:
+        threshold = float(mixed_scenarios_desc["threshold"])
+        return PipelineConfig(disease=disease, threshold=threshold)
+    else:
+        return PipelineConfig(disease=disease)
 
 
 def _collect_source_target_paths(
