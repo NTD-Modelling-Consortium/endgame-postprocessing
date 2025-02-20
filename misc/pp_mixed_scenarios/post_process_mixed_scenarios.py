@@ -16,6 +16,7 @@ from endgame_postprocessing.post_processing import pipeline, output_directory_st
 from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.generation_metadata import produce_generation_metadata
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
+from endgame_postprocessing.post_processing.warnings_collector import CollectAndPrintWarnings
 
 
 def _validate_working_directory(working_directory):
@@ -28,23 +29,60 @@ def _validate_working_directory(working_directory):
     input_directory = working_directory / "input"
     if not (input_directory / "PopulationMetadatafile.csv").exists():
         raise FileNotFoundError(
-            f"Required PopulationMetadatafile.csv not found. Please ensure it exists in the input directory."
+            f"Required PopulationMetadatafile.csv not found. Please ensure it exists in the"
+            f" input directory."
         )
     if not (input_directory / "canonical_results").is_dir():
         raise FileNotFoundError(
             f"Required directory 'canonical_results' not found in the input directory. "
             f"Please ensure it exists and contains the necessary scenario subdirectories."
         )
-    return input_directory / "canonical_results"
+    return input_directory
 
 
-def _load_mixed_scenarios_desc(working_directory):
-    mixed_scenarios_desc_file = working_directory / "mixed_scenarios_desc.yaml"
+def _load_mixed_scenarios_desc(mixed_scenarios_desc_file: Path):
     if not mixed_scenarios_desc_file.exists():
         raise FileNotFoundError(
-            f"Required file '{mixed_scenarios_desc_file}' not found. Please ensure it exists in the working directory."
+            f"Required file '{mixed_scenarios_desc_file}' not found."
+            f" Please ensure it exists in the working directory."
         )
     mixed_scenarios_desc = yaml.load(mixed_scenarios_desc_file.read_text(), Loader=yaml.FullLoader)
+
+    required_fields = {
+        "default_scenario",
+        "overridden_ius",
+        "scenario_name",
+        "disease",
+        "threshold",
+    }
+    missing_fields = required_fields - mixed_scenarios_desc.keys()
+    if missing_fields:
+        raise ValueError(
+            f"Invalid YAML structure. Missing required fields: {', '.join(missing_fields)}\n"
+            f"Expected structure:\n"
+            f"  default_scenario: <string>\n"
+            f"  overridden_ius:\n"
+            f"    <scenario>: [<IU1>, <IU2>, ...]\n"
+            f"  scenario_name: <string>\n"
+            f"  disease: <oncho|lf|trachoma>\n"
+            f"  threshold: <number>"
+        )
+
+    if not isinstance(mixed_scenarios_desc.get("overridden_ius"), dict):
+        raise ValueError(
+            "The 'overridden_ius' field must be a dictionary where keys are scenarios and values"
+            " are lists of IUs.\n"
+            "Expected structure:\n"
+            "  overridden_ius:\n"
+            "    <scenario>: [<IU1>, <IU2>, ...]"
+        )
+
+    if mixed_scenarios_desc.get("disease") not in ["oncho", "lf", "trachoma"]:
+        raise ValueError(f"Invalid 'disease' field. Must be one of: oncho, lf, trachoma.")
+
+    if not isinstance(mixed_scenarios_desc.get("threshold"), (int, float)):
+        raise ValueError("The 'threshold' field must be a numeric value.")
+
     return mixed_scenarios_desc
 
 
@@ -54,7 +92,8 @@ def _collect_source_target_paths(
     mixed_scenarios_desc: dict,
 ) -> List[Tuple[Path, Path]]:
     """
-    Collect all source-to-destination mappings in one pass for the default scenario and overridden IUs.
+    Collect all source-to-destination mappings in one pass for the default scenario and overridden
+     IUs.
 
     :param input_canonical_results_dir: Path to the base canonical_results directory.
     :param output_scenario_directory: Path to the output scenario directory.
@@ -124,21 +163,21 @@ def _copy_with_rename(
         wait(futures)
 
 
-def _prepare_output_directory(working_directory, mixed_scenarios_desc, pattern, replacement):
+def _prepare_output_directory(input_directory, output_directory, mixed_scenarios_desc):
     """
     Prepare the output directory structure, copy files, and rename them during copying.
 
-    :param working_directory: Path to the working directory (Path object).
+    :param input_directory: Path to the directory containing the input canonical results.
+    :param output_directory: Path to the output directory. This directory will be created if it does not exist.
     :param mixed_scenarios_desc: Dictionary with mixed scenarios description.
-    :param pattern: Regex pattern to match in filenames.
-    :param replacement: String to replace the matched portion of filenames.
-    :return: Path to the prepared output canonical results directory.
     """
-    input_canonical_results_dir = working_directory / "input" / "canonical_results"
-    output_canonical_results_dir = working_directory / "output" / "canonical_results"
+    target_scenario_name = mixed_scenarios_desc["scenario_name"]
+
+    input_canonical_results_dir = input_directory / "canonical_results"
+    output_canonical_results_dir = output_directory / "canonical_results"
     output_canonical_results_dir.mkdir(parents=True, exist_ok=True)
 
-    output_scenario_directory = output_canonical_results_dir / mixed_scenarios_desc["scenario_name"]
+    output_scenario_directory = output_canonical_results_dir / target_scenario_name
     output_scenario_directory.mkdir(parents=True, exist_ok=True)
 
     # Collect all source and target paths
@@ -148,24 +187,20 @@ def _prepare_output_directory(working_directory, mixed_scenarios_desc, pattern, 
 
     def rename_scenario_column(path_to_iu: Path):
         df = pd.read_csv(path_to_iu)
-        df["scenario"] = mixed_scenarios_desc["scenario_name"]
+        df["scenario"] = target_scenario_name
         df.to_csv(path_to_iu, index=False)
 
     # Perform the copy and renaming in a single pass
     _copy_with_rename(
         paths_to_copy,
-        pattern,
-        replacement,
+        r"scenario_\w+_",
+        f"{target_scenario_name}_",
         rename_scenario_column,
     )
 
     # Write mixed_scenarios_desc to a JSON file in the output directory
-    mixed_scenarios_metadata_path = (
-        output_canonical_results_dir.parent / "mixed_scenarios_metadata.json"
-    )
+    mixed_scenarios_metadata_path = output_directory / "mixed_scenarios_metadata.json"
     mixed_scenarios_metadata_path.write_text(json.dumps(mixed_scenarios_desc, indent=4))
-
-    return output_canonical_results_dir
 
 
 def main():
@@ -194,6 +229,26 @@ def main():
         required=True,
         help="Path to the working directory. See README for more details.",
     )
+    parser.add_argument(
+        "-o",
+        "--output-directory",
+        type=str,
+        required=False,
+        help="Path to the output directory. If not specified, the script will create a"
+        " new directory in the working directory.",
+    )
+    parser.add_argument(
+        "-s",
+        "--scenarios-desc",
+        type=lambda p: (
+            p
+            if p.endswith((".yaml", ".yml"))
+            else parser.error("The scenarios description file must be a YAML file (.yaml or .yml).")
+        ),
+        required=True,
+        help="Path to the scenarios description .yaml file.",
+    )
+
     args = parser.parse_args()
 
     working_directory = Path(args.working_directory).resolve()
@@ -201,25 +256,29 @@ def main():
 
     t_start = time.time()
     try:
-        input_canonical_results_dir = _validate_working_directory(working_directory)
+        input_directory = _validate_working_directory(working_directory)
     except FileNotFoundError as e:
         print(f"Error: {e}")
+        return
+    except Exception as e:
+        print(f"Unexpected error: {e}")
         return
 
     try:
-        mixed_scenarios_desc = _load_mixed_scenarios_desc(working_directory)
+        mixed_scenarios_desc = _load_mixed_scenarios_desc(Path(args.scenarios_desc))
         print("The mixed scenarios description file has been successfully loaded:")
         pprint(mixed_scenarios_desc, indent=2)
-    except FileNotFoundError as e:
+    except (FileNotFoundError, ValueError) as e:
         print(f"Error: {e}")
         return
+    except Exception as e:
+        print(f"Unexpected error: {e}")
+        return
 
-    output_canonical_results_dir = _prepare_output_directory(
-        working_directory,
-        mixed_scenarios_desc,
-        r"scenario_\w+_",
-        f"{mixed_scenarios_desc['scenario_name']}_",
+    output_directory = (
+        args.output_directory if args.output_directory else working_directory / "output"
     )
+    _prepare_output_directory(input_directory, output_directory, mixed_scenarios_desc)
     t_finish = time.time()
     print(f"Time taken to prepare output directory: {t_finish - t_start:.2f} seconds")
 
@@ -232,15 +291,16 @@ def main():
     else:
         disease = Disease.LF
 
-    pipeline.pipeline(
-        input_canonical_results_dir.parent,
-        output_canonical_results_dir.parent,
-        PipelineConfig(disease=disease),
-    )
+    with CollectAndPrintWarnings() as collected_warnings:
+        pipeline.pipeline(
+            input_directory,
+            output_directory,
+            PipelineConfig(disease=disease),
+        )
 
-    output_directory_structure.write_results_metadata_file(
-        output_canonical_results_dir.parent, produce_generation_metadata(warnings=[])
-    )
+        output_directory_structure.write_results_metadata_file(
+            output_directory, produce_generation_metadata(warnings=collected_warnings)
+        )
 
     t_finish = time.time()
     print(f"Time taken to run pipeline: {t_finish - t_start:.2f} seconds")
