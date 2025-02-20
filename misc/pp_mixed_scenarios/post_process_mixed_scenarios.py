@@ -29,13 +29,13 @@ def _validate_working_directory(working_directory):
     input_directory = working_directory / "input"
     if not (input_directory / "PopulationMetadatafile.csv").exists():
         raise FileNotFoundError(
-            f"Required PopulationMetadatafile.csv not found. Please ensure it exists in the"
-            f" input directory."
+            "Required PopulationMetadatafile.csv not found. Please ensure it exists in the"
+            " input directory."
         )
     if not (input_directory / "canonical_results").is_dir():
         raise FileNotFoundError(
-            f"Required directory 'canonical_results' not found in the input directory. "
-            f"Please ensure it exists and contains the necessary scenario subdirectories."
+            "Required directory 'canonical_results' not found in the input directory. "
+            "Please ensure it exists and contains the necessary scenario subdirectories."
         )
     return input_directory
 
@@ -72,7 +72,7 @@ def _load_mixed_scenarios_desc(mixed_scenarios_desc_file: Path):
         )
 
     if mixed_scenarios_desc.get("disease") not in ["oncho", "lf", "trachoma"]:
-        raise ValueError(f"Invalid 'disease' field. Must be one of: oncho, lf, trachoma.")
+        raise ValueError("Invalid 'disease' field. Must be one of: oncho, lf, trachoma.")
 
     if "threshold" in mixed_scenarios_desc:
         try:
@@ -188,7 +188,8 @@ def _prepare_output_directory(
     Prepare the output directory structure, copy files, and rename them during copying.
 
     :param input_directory: Path to the directory containing the input canonical results.
-    :param output_directory: Path to the output directory. This directory will be created if it does not exist.
+    :param output_directory: Path to the output directory. This directory will be created if
+     it does not exist.
     :param mixed_scenarios_desc: Dictionary with mixed scenarios description.
     """
     target_scenario_name = mixed_scenarios_desc["scenario_name"]

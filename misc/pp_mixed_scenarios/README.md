@@ -8,14 +8,42 @@ guidelines outlined below.
 
 ## Directory Structure
 
-The working directory should contain the following folders and files:
+The working directory, can be named anything but probably makes sense to name it after a disease.
+It should contain the following folders and files:
+
+### Required Directory Structure:
+
+```bash
+disease_1/
+├── mixed_scenarios_desc_1.yaml
+├── mixed_scenarios_desc_2.yaml
+├── mixed_scenarios_desc_3.yaml
+├── input/
+│   ├── canonical_results/
+│   │   ├── scenario_0/
+│   │   ├── scenario_1/
+│   │   ├── scenario_2/
+│   │   └── ... (additional scenarios as needed)
+│   └── PopulationMetadatafile.csv
+└── output/ (created by the script)
+    ├── canonical_results/
+    │   ├── scenario_x1/ (processed scenarios)
+    │   └── ... (additional processed scenarios)
+    ├── aggregated/
+    ├── composite/
+    ├── ius/
+    ├── aggregation_info.json
+    ├── iu_metadata.csv
+    ├── mixed_scenarios_metadata.json
+```
+
 ---
 
-## File Details
+## Details
 
 ### User-Provided Files:
 
-1. **`mixed_scenarios_desc.yaml`**
+1. **Scenarios Description File `.yaml`**
     - This file contains the configuration for processing different scenarios. Its structure should
       follow the example provided below:
         ```yaml
@@ -52,7 +80,7 @@ The working directory should contain the following folders and files:
 To run the script, use the following command:
 
 ```bash
-python post_process_mixed_scenarios.py -w path/to/working_directory
+python post_process_mixed_scenarios.py -w path/to/working_directory -o path/to/output_directory -s path/to/yaml
 ```
 
 ---
