@@ -20,6 +20,8 @@ The working directory should contain the following folders and files:
       follow the example provided below:
         ```yaml
            disease: lf                       # Valid are `lf`, `oncho` and `trachoma`
+           threshold: 0.01                   # Optional - the threshold that counts as elimination 
+                                             # (default 0.01 (1%), Trachoma should use 0.05 (5%))
            default_scenario: scenario_0      # Default scenario to process results from
            overridden_ius:
                scenario_1: [CAF09661, CAF09662]  # IUs to take from scenario_1
