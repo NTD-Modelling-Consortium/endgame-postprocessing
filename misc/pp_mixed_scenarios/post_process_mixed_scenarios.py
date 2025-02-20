@@ -48,6 +48,17 @@ def _load_mixed_scenarios_desc(working_directory):
     return mixed_scenarios_desc
 
 
+def _get_pipeline_config_from_scenario_file(mixed_scenarios_desc):
+    if mixed_scenarios_desc["disease"] == "oncho":
+        disease = Disease.ONCHO
+    elif mixed_scenarios_desc["disease"] == "trachoma":
+        disease = Disease.TRACHOMA
+    else:
+        disease = Disease.LF
+
+    return PipelineConfig(disease=disease)
+
+
 def _collect_source_target_paths(
     input_canonical_results_dir: Path,
     output_scenario_directory: Path,
@@ -225,17 +236,12 @@ def main():
 
     t_start = time.time()
 
-    if mixed_scenarios_desc["disease"] == "oncho":
-        disease = Disease.ONCHO
-    elif mixed_scenarios_desc["disease"] == "trachoma":
-        disease = Disease.TRACHOMA
-    else:
-        disease = Disease.LF
+    pipeline_config = _get_pipeline_config_from_scenario_file(mixed_scenarios_desc)
 
     pipeline.pipeline(
         input_canonical_results_dir.parent,
         output_canonical_results_dir.parent,
-        PipelineConfig(disease=disease),
+        pipeline_config,
     )
 
     output_directory_structure.write_results_metadata_file(
