@@ -1,13 +1,16 @@
 import argparse
+import enum
 import json
 import os
 import re
 import shutil
 import time
+from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, wait
+from itertools import chain
 from pathlib import Path
 from pprint import pprint
-from typing import List, Tuple, Callable, Optional, Dict
+from typing import List, Tuple, Callable, Optional, Dict, Iterable, Set
 
 import pandas as pd
 import yaml
@@ -19,39 +22,21 @@ from endgame_postprocessing.post_processing.pipeline_config import PipelineConfi
 from endgame_postprocessing.post_processing.warnings_collector import CollectAndPrintWarnings
 
 
-def _validate_working_directory(working_directory):
-    """
-    Validate the structure of the working directory to ensure required files and folders exist.
-    Raises FileNotFoundError if a required file or directory is missing.
+class MixedScenariosFileNotFound(FileNotFoundError):
+    """Raised when the mixed scenarios description YAML file is not found."""
 
-    :param working_directory: Path to the working directory.
-    """
-    input_directory = working_directory / "input"
-    if not (input_directory / "PopulationMetadatafile.csv").exists():
-        raise FileNotFoundError(
-            "Required PopulationMetadatafile.csv not found. Please ensure it exists in the"
-            " input directory."
-        )
-    if not (input_directory / "canonical_results").is_dir():
-        raise FileNotFoundError(
-            "Required directory 'canonical_results' not found in the input directory. "
-            "Please ensure it exists and contains the necessary scenario subdirectories."
-        )
-    return input_directory
-
-
-def _load_mixed_scenarios_desc(mixed_scenarios_desc_file: Path):
-    if not mixed_scenarios_desc_file.exists():
-        raise FileNotFoundError(
-            f"Required file '{mixed_scenarios_desc_file}' not found."
+    def __init__(self, file_path: Path):
+        super().__init__(
+            f"Required file '{file_path}' not found."
             f" Please ensure it exists in the working directory."
         )
-    mixed_scenarios_desc = yaml.load(mixed_scenarios_desc_file.read_text(), Loader=yaml.FullLoader)
 
-    required_fields = {"default_scenario", "overridden_ius", "scenario_name", "disease"}
-    missing_fields = required_fields - mixed_scenarios_desc.keys()
-    if missing_fields:
-        raise ValueError(
+
+class MissingFieldsError(ValueError):
+    """Raised when the required fields in the mixed scenarios description YAML file are missing."""
+
+    def __init__(self, missing_fields: Iterable[str]):
+        super().__init__(
             f"Invalid YAML structure. Missing required fields: {', '.join(missing_fields)}\n"
             f"Expected structure:\n"
             f"  default_scenario: <string>\n"
@@ -62,8 +47,13 @@ def _load_mixed_scenarios_desc(mixed_scenarios_desc_file: Path):
             f"  threshold: <number>"
         )
 
-    if not isinstance(mixed_scenarios_desc.get("overridden_ius"), dict):
-        raise ValueError(
+
+class InvalidOverriddenIUsError(ValueError):
+    """Raised when the overridden IUs in the mixed scenarios description YAML file is not
+    a dictionary."""
+
+    def __init__(self):
+        super().__init__(
             "The 'overridden_ius' field must be a dictionary where keys are scenarios and values"
             " are lists of IUs.\n"
             "Expected structure:\n"
@@ -71,17 +61,142 @@ def _load_mixed_scenarios_desc(mixed_scenarios_desc_file: Path):
             "    <scenario>: [<IU1>, <IU2>, ...]"
         )
 
+
+class InvalidThresholdError(ValueError):
+    """Raised when the 'threshold' field in the mixed scenarios description
+    YAML file is invalid or out of range."""
+
+    def __init__(self, threshold: float):
+        super().__init__(f"threshold is {threshold}, it must be between 0 and 1")
+
+
+class InvalidDiseaseFieldError(ValueError):
+    """Raised when the 'disease' field in the mixed scenarios description YAML
+    file has an invalid or unrecognized value."""
+
+    def __init__(self, invalid_disease: str, valid_set: Set[str]):
+        super().__init__(
+            f"Invalid 'disease' field - {invalid_disease}. Must be one of: {', '.join(valid_set)}."
+        )
+
+
+class DuplicateIUError(ValueError):
+    """Raised when duplicate IUs are found among the overridden IUs."""
+
+    def __init__(self, ius_to_scenarios_mapping: Dict[str, Iterable[str]]):
+        report = [
+            f"{iu} was duplicated in {' and '.join(sorted(scenarios))}"
+            for iu, scenarios in ius_to_scenarios_mapping.items()
+        ]
+        super().__init__(f"Duplicate IUs found in overridden_ius: {report}")
+
+
+class InvalidInputDirectoryError(Exception):
+    """Raised when there's a problem with the input directory."""
+
+    class ErrorType(enum.Enum):
+        MISSING_POPULATION_METADATA_FILE = 1
+        MISSING_CANONICAL_RESULTS_DIRECTORY = 2
+        MISSING_SCENARIOS_FROM_SPECIFICATION = 3
+
+    def __init__(self, message: str):
+        super().__init__(message)
+
+    @staticmethod
+    def missing_population_metadata_file(path_to_file: Path):
+        return InvalidInputDirectoryError(
+            f"Missing PopulationMetadatafile.csv in the input directory: {path_to_file}"
+        )
+
+    @staticmethod
+    def missing_canonical_results_directory(path_to_dir: Path):
+        return InvalidInputDirectoryError(
+            f"Missing 'canonical_results' directory in the input directory: {path_to_dir}. "
+            f"Ensure it contains the scenario directories containing the IUs"
+        )
+
+    @staticmethod
+    def missing_scenarios_from_specification(listed_scenarios: Iterable[str]):
+        return InvalidInputDirectoryError(
+            f"Scenarios mentioned in specification are missing from the input directory:"
+            f" {', '.join(listed_scenarios)}"
+        )
+
+
+def _validate_working_directory(working_directory: Path, mixed_scenarios_desc: Dict):
+    """
+    Validate the structure of the working directory to ensure required files and folders exist.
+    Raises FileNotFoundError if a required file or directory is missing.
+
+    :param working_directory: Path to the working directory.
+    """
+    input_directory = working_directory / "input"
+    population_metadata_file = input_directory / "PopulationMetadatafile.csv"
+    if not population_metadata_file.exists():
+        raise InvalidInputDirectoryError.missing_population_metadata_file(population_metadata_file)
+
+    input_canonical_results_dir = input_directory / "canonical_results"
+    if not input_canonical_results_dir.is_dir():
+        raise InvalidInputDirectoryError.missing_canonical_results_directory(
+            input_canonical_results_dir
+        )
+
+    # We'll check that the scenarios listed as `default` and `overridden`
+    # in the mixed scenarios description yaml are available in the source data
+    overridden_scenarios = mixed_scenarios_desc.get("overridden_ius", {}).keys()
+    listed_scenarios = {mixed_scenarios_desc["default_scenario"], *overridden_scenarios}
+    available_directories = {d.name for d in input_canonical_results_dir.iterdir() if d.is_dir()}
+
+    missing_scenarios = listed_scenarios - available_directories
+    if missing_scenarios:
+        raise InvalidInputDirectoryError.missing_scenarios_from_specification(missing_scenarios)
+
+    return input_directory
+
+
+def _find_duplicate_ius(overridden_ius_dict: Dict[str, List[str]]):
+    iu_counter = Counter(chain.from_iterable(overridden_ius_dict.values()))
+
+    duplicated_iu_scenarios = defaultdict(set)
+    for scenario, ius in overridden_ius_dict.items():
+        for iu in ius:
+            if iu_counter[iu] > 1:
+                duplicated_iu_scenarios[iu].add(scenario)
+
+    if duplicated_iu_scenarios:
+        raise DuplicateIUError(duplicated_iu_scenarios)
+
+
+def _load_mixed_scenarios_desc(mixed_scenarios_desc_file: Path):
+    if not mixed_scenarios_desc_file.exists():
+        raise MixedScenariosFileNotFound(mixed_scenarios_desc_file)
+
+    mixed_scenarios_desc = yaml.load(mixed_scenarios_desc_file.read_text(), Loader=yaml.FullLoader)
+
+    required_fields = {"default_scenario", "overridden_ius", "scenario_name", "disease"}
+    missing_fields = required_fields - mixed_scenarios_desc.keys()
+    if missing_fields:
+        raise MissingFieldsError(missing_fields)
+
+    if not isinstance(mixed_scenarios_desc.get("overridden_ius"), dict):
+        raise InvalidOverriddenIUsError()
+
     if mixed_scenarios_desc.get("disease") not in ["oncho", "lf", "trachoma"]:
-        raise ValueError("Invalid 'disease' field. Must be one of: oncho, lf, trachoma.")
+        raise InvalidDiseaseFieldError(mixed_scenarios_desc["disease"], {"oncho", "lf", "trachoma"})
 
     if "threshold" in mixed_scenarios_desc:
         try:
             threshold = float(mixed_scenarios_desc["threshold"])
         except ValueError as e:
-            raise Exception(f"threshold must be a number: {e}")
+            raise ValueError(f"Threshold must be a number: {e}")
 
         if threshold < 0.0 or threshold > 1.0:
-            raise ValueError(f"threshold is {threshold}, it must be between 0 and 1")
+            raise InvalidThresholdError(threshold)
+
+    try:
+        _find_duplicate_ius(mixed_scenarios_desc["overridden_ius"])
+    except DuplicateIUError as e:
+        raise e
 
     return mixed_scenarios_desc
 
@@ -277,8 +392,10 @@ def main():
 
     t_start = time.time()
     try:
-        input_directory = _validate_working_directory(working_directory)
-    except FileNotFoundError as e:
+        mixed_scenarios_desc = _load_mixed_scenarios_desc(Path(args.scenarios_desc))
+        print("The mixed scenarios description file has been successfully loaded:")
+        pprint(mixed_scenarios_desc, indent=2)
+    except (FileNotFoundError, ValueError) as e:
         print(f"Error: {e}")
         return
     except Exception as e:
@@ -286,10 +403,8 @@ def main():
         return
 
     try:
-        mixed_scenarios_desc = _load_mixed_scenarios_desc(Path(args.scenarios_desc))
-        print("The mixed scenarios description file has been successfully loaded:")
-        pprint(mixed_scenarios_desc, indent=2)
-    except (FileNotFoundError, ValueError) as e:
+        input_directory = _validate_working_directory(working_directory, mixed_scenarios_desc)
+    except FileNotFoundError as e:
         print(f"Error: {e}")
         return
     except Exception as e:

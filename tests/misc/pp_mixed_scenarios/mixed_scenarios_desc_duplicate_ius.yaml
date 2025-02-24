@@ -1,0 +1,6 @@
+disease: lf                       # Valid are `lf`, `oncho` and `trachoma`
+default_scenario: scenario_0      # Default scenario to process results from
+overridden_ius:
+  scenario_1: [ CAF09661, CAF09662 ]  # IUs to take from scenario_1
+  scenario_2: [ CAF09663, CAF09661 ]            # IUs to take from scenario_2
+scenario_name: scenario_x1        # Name applied to the processed scenario set
