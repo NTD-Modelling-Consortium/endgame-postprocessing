@@ -4,7 +4,10 @@ import os
 import re
 import shutil
 import time
+from collections import Counter, defaultdict
 from concurrent.futures import ThreadPoolExecutor, wait
+from dataclasses import dataclass
+from itertools import chain
 from pathlib import Path
 from pprint import pprint
 from typing import List, Tuple, Callable, Optional, Dict
@@ -17,9 +20,66 @@ from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.generation_metadata import produce_generation_metadata
 from endgame_postprocessing.post_processing.pipeline_config import PipelineConfig
 from endgame_postprocessing.post_processing.warnings_collector import CollectAndPrintWarnings
+from misc.pp_mixed_scenarios.exceptions import (
+    MissingCanonicalResultsDirectoryError,
+    MissingPopulationMetadataFileError,
+    MissingScenariosFromSpecificationError,
+    DuplicateIUError,
+    MixedScenariosFileNotFound,
+    MissingFieldsError,
+    InvalidOverriddenIUsError,
+    InvalidDiseaseFieldError,
+    InvalidThresholdError,
+)
 
 
-def _validate_working_directory(working_directory):
+@dataclass
+class MixedScenariosDescription:
+    disease: str
+    threshold: Optional[float]
+    default_scenario: str
+    overridden_ius: Dict[str, List[str]]
+    scenario_name: str
+
+    @staticmethod
+    def from_dict(data: Dict) -> "MixedScenariosDescription":
+        return MixedScenariosDescription(
+            disease=data["disease"],
+            threshold=data.get("threshold"),
+            default_scenario=data["default_scenario"],
+            overridden_ius=data["overridden_ius"],
+            scenario_name=data["scenario_name"],
+        )
+
+    def to_dict(self) -> Dict:
+        return {
+            "disease": self.disease,
+            "threshold": self.threshold,
+            "default_scenario": self.default_scenario,
+            "overridden_ius": self.overridden_ius,
+            "scenario_name": self.scenario_name,
+        }
+
+    @staticmethod
+    def from_yaml(yaml_str: str) -> "MixedScenariosDescription":
+        data = yaml.safe_load(yaml_str)
+        return MixedScenariosDescription.from_dict(data)
+
+    def to_yaml(self) -> str:
+        return yaml.dump(self.to_dict(), sort_keys=False)
+
+    @staticmethod
+    def from_json(json_str: str) -> "MixedScenariosDescription":
+        data = json.loads(json_str)
+        return MixedScenariosDescription.from_dict(data)
+
+    def to_json(self, indent: int = 4) -> str:
+        return json.dumps(self.to_dict(), indent=indent)
+
+
+def _validate_working_directory(
+    working_directory: Path, mixed_scenarios_desc: MixedScenariosDescription
+):
     """
     Validate the structure of the working directory to ensure required files and folders exist.
     Raises FileNotFoundError if a required file or directory is missing.
@@ -27,79 +87,96 @@ def _validate_working_directory(working_directory):
     :param working_directory: Path to the working directory.
     """
     input_directory = working_directory / "input"
-    if not (input_directory / "PopulationMetadatafile.csv").exists():
-        raise FileNotFoundError(
-            "Required PopulationMetadatafile.csv not found. Please ensure it exists in the"
-            " input directory."
-        )
-    if not (input_directory / "canonical_results").is_dir():
-        raise FileNotFoundError(
-            "Required directory 'canonical_results' not found in the input directory. "
-            "Please ensure it exists and contains the necessary scenario subdirectories."
-        )
+    population_metadata_file = input_directory / "PopulationMetadatafile.csv"
+    if not population_metadata_file.exists():
+        raise MissingPopulationMetadataFileError(population_metadata_file)
+
+    input_canonical_results_dir = input_directory / "canonical_results"
+    if not input_canonical_results_dir.is_dir():
+        raise MissingCanonicalResultsDirectoryError(input_canonical_results_dir)
+
+    # We'll check that the scenarios listed as `default` and `overridden`
+    # in the mixed scenarios description yaml are available in the source data
+    overridden_scenarios = mixed_scenarios_desc.overridden_ius.keys()
+    listed_scenarios = {mixed_scenarios_desc.default_scenario, *overridden_scenarios}
+    available_directories = {d.name for d in input_canonical_results_dir.iterdir() if d.is_dir()}
+
+    missing_scenarios = listed_scenarios - available_directories
+    if missing_scenarios:
+        raise MissingScenariosFromSpecificationError(missing_scenarios)
+
     return input_directory
 
 
-def _load_mixed_scenarios_desc(mixed_scenarios_desc_file: Path):
+def _find_duplicate_ius(overridden_ius_dict: Dict[str, List[str]]):
+    iu_counter = Counter(chain.from_iterable(overridden_ius_dict.values()))
+
+    duplicated_iu_scenarios = defaultdict(set)
+    for scenario, ius in overridden_ius_dict.items():
+        for iu in ius:
+            if iu_counter[iu] > 1:
+                duplicated_iu_scenarios[iu].add(scenario)
+
+    if duplicated_iu_scenarios:
+        raise DuplicateIUError(duplicated_iu_scenarios)
+
+
+def _load_mixed_scenarios_desc(mixed_scenarios_desc_file: Path) -> MixedScenariosDescription:
     if not mixed_scenarios_desc_file.exists():
-        raise FileNotFoundError(
-            f"Required file '{mixed_scenarios_desc_file}' not found."
-            f" Please ensure it exists in the working directory."
-        )
+        raise MixedScenariosFileNotFound(mixed_scenarios_desc_file)
+
     mixed_scenarios_desc = yaml.load(mixed_scenarios_desc_file.read_text(), Loader=yaml.FullLoader)
 
     required_fields = {"default_scenario", "overridden_ius", "scenario_name", "disease"}
     missing_fields = required_fields - mixed_scenarios_desc.keys()
     if missing_fields:
-        raise ValueError(
-            f"Invalid YAML structure. Missing required fields: {', '.join(missing_fields)}\n"
-            f"Expected structure:\n"
-            f"  default_scenario: <string>\n"
-            f"  overridden_ius:\n"
-            f"    <scenario>: [<IU1>, <IU2>, ...]\n"
-            f"  scenario_name: <string>\n"
-            f"  disease: <oncho|lf|trachoma>\n"
-            f"  threshold: <number>"
-        )
+        raise MissingFieldsError(missing_fields)
 
     if not isinstance(mixed_scenarios_desc.get("overridden_ius"), dict):
-        raise ValueError(
-            "The 'overridden_ius' field must be a dictionary where keys are scenarios and values"
-            " are lists of IUs.\n"
-            "Expected structure:\n"
-            "  overridden_ius:\n"
-            "    <scenario>: [<IU1>, <IU2>, ...]"
-        )
+        raise InvalidOverriddenIUsError()
+
+    if (
+        isinstance(mixed_scenarios_desc.get("overridden_ius"), dict)
+        and mixed_scenarios_desc.get("overridden_ius") == {}
+    ):
+        raise InvalidOverriddenIUsError()
 
     if mixed_scenarios_desc.get("disease") not in ["oncho", "lf", "trachoma"]:
-        raise ValueError("Invalid 'disease' field. Must be one of: oncho, lf, trachoma.")
+        raise InvalidDiseaseFieldError(mixed_scenarios_desc["disease"], {"oncho", "lf", "trachoma"})
 
     if "threshold" in mixed_scenarios_desc:
         try:
             threshold = float(mixed_scenarios_desc["threshold"])
         except ValueError as e:
-            raise Exception(f"threshold must be a number: {e}")
+            raise ValueError(f"Threshold must be a number: {e}")
 
         if threshold < 0.0 or threshold > 1.0:
-            raise ValueError(f"threshold is {threshold}, it must be between 0 and 1")
+            raise InvalidThresholdError(threshold)
 
-    return mixed_scenarios_desc
+    try:
+        _find_duplicate_ius(mixed_scenarios_desc["overridden_ius"])
+    except DuplicateIUError as e:
+        raise e
+
+    return MixedScenariosDescription.from_dict(mixed_scenarios_desc)
 
 
-def _get_pipeline_config_from_scenario_file(mixed_scenarios_desc):
+def _get_pipeline_config_from_scenario_file(
+    mixed_scenarios_desc: MixedScenariosDescription,
+) -> PipelineConfig:
     # We're guaranteed that the disease value exists and is valid because `mixed_scenarios_desc`
     # has already been verified by this point.
-    if mixed_scenarios_desc["disease"] == "oncho":
+    if mixed_scenarios_desc.disease == "oncho":
         disease = Disease.ONCHO
-    elif mixed_scenarios_desc["disease"] == "trachoma":
+    elif mixed_scenarios_desc.disease == "trachoma":
         disease = Disease.TRACHOMA
     else:
         disease = Disease.LF
 
     # We're guaranteed that the threshold is valid, if it exists, because `mixed_scenarios_desc`
     # has already been verified by this point.
-    if "threshold" in mixed_scenarios_desc:
-        return PipelineConfig(disease=disease, threshold=mixed_scenarios_desc["threshold"])
+    if mixed_scenarios_desc.threshold is not None:
+        return PipelineConfig(disease=disease, threshold=mixed_scenarios_desc.threshold)
     else:
         return PipelineConfig(disease=disease)
 
@@ -107,7 +184,7 @@ def _get_pipeline_config_from_scenario_file(mixed_scenarios_desc):
 def _collect_source_target_paths(
     input_canonical_results_dir: Path,
     output_canonical_results_dir: Path,
-    mixed_scenarios_desc: dict,
+    mixed_scenarios_desc: MixedScenariosDescription,
 ) -> List[Tuple[Path, Path]]:
     """
     Collect all source-to-destination mappings in one pass for the default scenario and overridden
@@ -121,12 +198,12 @@ def _collect_source_target_paths(
     paths_to_copy = []
 
     # Add default scenario directory
-    default_scenario_source = input_canonical_results_dir / mixed_scenarios_desc["default_scenario"]
-    output_scenario_directory = output_canonical_results_dir / mixed_scenarios_desc["scenario_name"]
+    default_scenario_source = input_canonical_results_dir / mixed_scenarios_desc.default_scenario
+    output_scenario_directory = output_canonical_results_dir / mixed_scenarios_desc.scenario_name
     paths_to_copy.append((default_scenario_source, output_scenario_directory))
 
     # Add overridden IU directories
-    for scenario, ius in mixed_scenarios_desc["overridden_ius"].items():
+    for scenario, ius in mixed_scenarios_desc.overridden_ius.items():
         input_scenario_directory = input_canonical_results_dir / scenario
         for iu in ius:
             source_path = input_scenario_directory / iu[:3] / iu
@@ -201,7 +278,7 @@ def _validate_output_directory(paths_to_copy: List[Tuple[Path, Path]]) -> bool:
 
 def _prepare_output_directory(
     output_directory: Path,
-    mixed_scenarios_desc: Dict,
+    mixed_scenarios_desc: MixedScenariosDescription,
     ius_to_copy: List[Tuple[Path, Path]],
 ):
     """
@@ -211,7 +288,7 @@ def _prepare_output_directory(
      it does not exist.
     :param mixed_scenarios_desc: Dictionary with mixed scenarios description.
     """
-    target_scenario_name = mixed_scenarios_desc["scenario_name"]
+    target_scenario_name = mixed_scenarios_desc.scenario_name
 
     output_canonical_results_dir = output_directory / "canonical_results"
     print(f"Verifying if '{output_canonical_results_dir}' directory exists, else creating it...")
@@ -239,7 +316,7 @@ def _prepare_output_directory(
     # Write mixed_scenarios_desc to a JSON file in the output directory
     mixed_scenarios_metadata_path = output_directory / "mixed_scenarios_metadata.json"
     print(f"Writing mixed_scenarios_desc to '{mixed_scenarios_metadata_path}'...")
-    mixed_scenarios_metadata_path.write_text(json.dumps(mixed_scenarios_desc, indent=4))
+    mixed_scenarios_metadata_path.write_text(mixed_scenarios_desc.to_json())
 
 
 def main():
@@ -302,9 +379,17 @@ def main():
 
     t_start = time.time()
     try:
-        print("Validating working directory...")
-        input_directory = _validate_working_directory(working_directory)
-    except FileNotFoundError as e:
+        print("Loading mixed scenarios description file...")
+        mixed_scenarios_desc = _load_mixed_scenarios_desc(Path(args.scenarios_desc))
+        print("The mixed scenarios description file has been successfully loaded:")
+        pprint(mixed_scenarios_desc, indent=2)
+    except (
+        MixedScenariosFileNotFound,
+        MissingFieldsError,
+        InvalidOverriddenIUsError,
+        InvalidDiseaseFieldError,
+        InvalidThresholdError,
+    ) as e:
         print(f"Error: {e}")
         return
     except Exception as e:
@@ -312,11 +397,13 @@ def main():
         return
 
     try:
-        print("Loading mixed scenarios description file...")
-        mixed_scenarios_desc = _load_mixed_scenarios_desc(Path(args.scenarios_desc))
-        print("The mixed scenarios description file has been successfully loaded:")
-        pprint(mixed_scenarios_desc, indent=2)
-    except (FileNotFoundError, ValueError) as e:
+        print("Validating working directory...")
+        input_directory = _validate_working_directory(working_directory, mixed_scenarios_desc)
+    except (
+        MissingPopulationMetadataFileError,
+        MissingCanonicalResultsDirectoryError,
+        MissingScenariosFromSpecificationError,
+    ) as e:
         print(f"Error: {e}")
         return
     except Exception as e:
