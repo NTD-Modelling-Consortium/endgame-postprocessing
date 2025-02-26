@@ -70,14 +70,11 @@ def test_check_mixed_scenarios_desc_invalid_disease_field_error(fs):
         ),
     )
 
-    expected_exception = InvalidDiseaseFieldError("invalid_disease", {"oncho", "lf", "trachoma"})
-
-    try:
+    with pytest.raises(InvalidDiseaseFieldError) as exc_info:
         _load_mixed_scenarios_desc(spec_yaml)
-    except InvalidDiseaseFieldError as e:
-        assert e.args == expected_exception.args
-    else:
-        pytest.fail("InvalidDiseaseFieldError not raised.")
+
+    assert exc_info.value.disease == "invalid_disease"
+    assert exc_info.value.valid_set == {"oncho", "lf", "trachoma"}
 
 
 def test_check_mixed_scenarios_desc_invalid_threshold_error(fs):
@@ -95,12 +92,10 @@ def test_check_mixed_scenarios_desc_invalid_threshold_error(fs):
         ),
     )
 
-    try:
+    with pytest.raises(InvalidThresholdError) as exc_info:
         _load_mixed_scenarios_desc(spec_yaml)
-    except InvalidThresholdError as e:
-        assert str(e) == str(InvalidThresholdError(1.5))
-    else:
-        pytest.fail("InvalidThresholdError not raised.")
+
+    assert exc_info.value.threshold == 1.5
 
 
 def test_check_mixed_scenarios_desc_invalid_overridden_ius_error(fs):
@@ -117,12 +112,24 @@ def test_check_mixed_scenarios_desc_invalid_overridden_ius_error(fs):
         ),
     )
 
-    try:
+    with pytest.raises(InvalidOverriddenIUsError):
         _load_mixed_scenarios_desc(spec_yaml)
-    except InvalidOverriddenIUsError as e:
-        assert str(e) == str(InvalidOverriddenIUsError())
-    else:
-        pytest.fail("InvalidOverriddenIUsError not raised.")
+
+
+def test_check_mixed_scenarios_desc_invalid_overridden_ius_null(fs):
+    spec_yaml = Path("mixed_scenarios_invalid_overridden_ius.yaml")
+    fs.create_file(
+        spec_yaml,
+        contents=r"""
+        disease: lf
+        default_scenario: scenario_0
+        overridden_ius: null
+        scenario_name: scenario_x1
+        """,
+    )
+
+    with pytest.raises(InvalidOverriddenIUsError):
+        _load_mixed_scenarios_desc(spec_yaml)
 
 
 def test_check_mixed_scenarios_desc_missing_fields_error(fs):
@@ -138,14 +145,9 @@ def test_check_mixed_scenarios_desc_missing_fields_error(fs):
         ),
     )
 
-    expected_exception = MissingFieldsError({"overridden_ius", "scenario_name"})
-
-    try:
+    with pytest.raises(MissingFieldsError) as e:
         _load_mixed_scenarios_desc(spec_yaml)
-    except MissingFieldsError as e:
-        assert e.args == expected_exception.args
-    else:
-        pytest.fail("MissingFieldsError not raised.")
+    assert e.value.missing_fields == {"overridden_ius", "scenario_name"}
 
 
 def test_check_mixed_scenarios_desc_valid(fs):
@@ -165,7 +167,7 @@ def test_check_mixed_scenarios_desc_valid(fs):
     try:
         desc = _load_mixed_scenarios_desc(Path("mixed_scenarios_desc_valid.yaml"))
     except Exception as e:
-        pytest.fail(f"Test failed due to exception: {e}")
+        pytest.fail(f"Test failed due to unexpected exception: {e}")
     else:
         assert desc.disease == spec_yaml_contents["disease"]
         assert desc.default_scenario == spec_yaml_contents["default_scenario"]
@@ -177,10 +179,11 @@ def test_check_mixed_scenarios_desc_valid(fs):
 def test_load_mixed_scenarios_desc_file_not_found(fs):
     fs.create_file("some_file.yaml", contents="{}")
 
-    with pytest.raises(
-        MixedScenariosFileNotFound,
-    ):
-        _load_mixed_scenarios_desc(Path("non_existent_file.yaml"))
+    non_existent_file_path = Path("non_existent_file.yaml")
+    with pytest.raises(MixedScenariosFileNotFound) as e:
+        _load_mixed_scenarios_desc(non_existent_file_path)
+
+    assert e.value.file_path == non_existent_file_path
 
 
 def test_check_mixed_scenarios_desc_duplicate_ius(fs):
@@ -197,10 +200,13 @@ def test_check_mixed_scenarios_desc_duplicate_ius(fs):
         "mixed_scenarios_desc_duplicate_ius.yaml",
         contents=yaml.dump(data=spec_yaml_contents),
     )
-    with pytest.raises(
-        DuplicateIUError,
-    ):
+
+    duplicate_ius_to_scenarios_mapping = {"CAF09661": {"scenario_1", "scenario_2"}}
+
+    with pytest.raises(DuplicateIUError) as e:
         _load_mixed_scenarios_desc(Path("mixed_scenarios_desc_duplicate_ius.yaml"))
+
+    assert e.value.ius_to_scenarios_mapping == duplicate_ius_to_scenarios_mapping
 
 
 def test_check_mixed_scenarios_desc_missing_default_scenario(fs):
@@ -228,11 +234,12 @@ def test_check_mixed_scenarios_desc_missing_default_scenario(fs):
         ),
     )
 
-    with pytest.raises(MissingScenariosFromSpecificationError):
+    with pytest.raises(MissingScenariosFromSpecificationError) as e:
         _validate_working_directory(
             wd,
             _load_mixed_scenarios_desc(spec_yaml),
         )
+    assert e.value.listed_scenarios == {"scenario_a"}
 
 
 def test_check_mixed_scenarios_valid_working_directory(fs):
@@ -293,11 +300,12 @@ def test_check_mixed_scenarios_desc_missing_population_metadata_file(fs):
         ),
     )
 
-    with pytest.raises(MissingPopulationMetadataFileError):
+    with pytest.raises(MissingPopulationMetadataFileError) as e:
         _validate_working_directory(
             wd,
             _load_mixed_scenarios_desc(spec_yaml),
         )
+    assert e.value.path_to_file == input_directory / "PopulationMetadatafile.csv"
 
 
 def test_check_mixed_scenarios_desc_missing_canonical_results_directory(fs):
@@ -322,11 +330,12 @@ def test_check_mixed_scenarios_desc_missing_canonical_results_directory(fs):
         ),
     )
 
-    with pytest.raises(MissingCanonicalResultsDirectoryError):
+    with pytest.raises(MissingCanonicalResultsDirectoryError) as e:
         _validate_working_directory(
             wd,
             _load_mixed_scenarios_desc(spec_yaml),
         )
+    assert e.value.path_to_dir == input_directory / "canonical_results"
 
 
 def test_check_mixed_scenarios_desc_missing_overridden_scenarios(fs):
@@ -354,11 +363,12 @@ def test_check_mixed_scenarios_desc_missing_overridden_scenarios(fs):
         ),
     )
 
-    with pytest.raises(MissingScenariosFromSpecificationError):
+    with pytest.raises(MissingScenariosFromSpecificationError) as e:
         _validate_working_directory(
             wd,
             _load_mixed_scenarios_desc(spec_yaml),
         )
+    assert e.value.listed_scenarios == {"scenario_0", "scenario_1x", "scenario_2x"}
 
 
 def test_find_duplicate_ius_basic_duplicates():
@@ -368,19 +378,16 @@ def test_find_duplicate_ius_basic_duplicates():
         "scenario_3": ["IU_6", "IU_1", "IU_3", "IU_6"],
     }
 
-    expected_iu_to_scenarios_mapping = {
-        "IU_1": ["scenario_1", "scenario_3"],
-        "IU_2": ["scenario_1", "scenario_2"],
-        "IU_3": ["scenario_1", "scenario_3"],
-        "IU_6": ["scenario_3"],
+    duplicate_iu_to_scenarios_mapping = {
+        "IU_1": {"scenario_1", "scenario_3"},
+        "IU_2": {"scenario_1", "scenario_2"},
+        "IU_3": {"scenario_1", "scenario_3"},
+        "IU_6": {"scenario_3"},
     }
 
-    try:
+    with pytest.raises(DuplicateIUError) as e:
         _find_duplicate_ius(overridden_ius)
-    except DuplicateIUError as e:
-        assert str(e) == str(DuplicateIUError(expected_iu_to_scenarios_mapping))
-    else:
-        pytest.fail("DuplicateIUError not raised.")
+    assert e.value.ius_to_scenarios_mapping == duplicate_iu_to_scenarios_mapping
 
 
 def test_find_duplicate_ius_no_duplicates():
@@ -397,13 +404,10 @@ def test_find_duplicate_ius_all_within_scenario():
         "scenario_2": ["IU_2", "IU_4", "IU_5", "IU_2"],
     }
 
-    expected_exception = DuplicateIUError({"IU_1": ["scenario_1"], "IU_2": ["scenario_2"]})
-    try:
+    duplicate_ius_to_scenarios_mapping = {"IU_1": {"scenario_1"}, "IU_2": {"scenario_2"}}
+    with pytest.raises(DuplicateIUError) as e:
         _find_duplicate_ius(overridden_ius)
-    except DuplicateIUError as e:
-        assert str(e) == str(expected_exception)
-    else:
-        pytest.fail("DuplicateIUError not raised.")
+    assert e.value.ius_to_scenarios_mapping == duplicate_ius_to_scenarios_mapping
 
 
 def test_find_duplicate_ius_empty_dict():
@@ -423,22 +427,17 @@ def test_find_duplicate_ius_complex_case():
         "scenario_3": ["IU_4", "IU_1", "IU_7", "IU_8", "IU_6", "IU_1"],
     }
 
-    expected_exception = DuplicateIUError(
-        {
-            "IU_1": ["scenario_1", "scenario_3"],
-            "IU_2": ["scenario_1"],
-            "IU_3": ["scenario_1", "scenario_2"],
-            "IU_4": ["scenario_1", "scenario_3"],
-            "IU_6": ["scenario_2", "scenario_3"],
-        }
-    )
+    duplicate_ius_to_scenarios_mapping = {
+        "IU_1": {"scenario_1", "scenario_3"},
+        "IU_2": {"scenario_1"},
+        "IU_3": {"scenario_1", "scenario_2"},
+        "IU_4": {"scenario_1", "scenario_3"},
+        "IU_6": {"scenario_2", "scenario_3"},
+    }
 
-    try:
+    with pytest.raises(DuplicateIUError) as e:
         _find_duplicate_ius(overridden_ius)
-    except DuplicateIUError as e:
-        assert str(e) == str(expected_exception)
-    else:
-        pytest.fail("DuplicateIUError not raised.")
+    assert e.value.ius_to_scenarios_mapping == duplicate_ius_to_scenarios_mapping
 
 
 def test_collect_source_target_paths(fs):
