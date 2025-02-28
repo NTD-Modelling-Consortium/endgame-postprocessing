@@ -1,3 +1,6 @@
+import itertools
+import pprint
+import re
 from pathlib import Path
 
 import pytest
@@ -23,6 +26,7 @@ from misc.pp_mixed_scenarios.post_process_mixed_scenarios import (
     _validate_working_directory,
     MixedScenariosDescription,
     _collect_source_target_paths,
+    _prepare_output_directory,
 )
 
 
@@ -443,7 +447,8 @@ def test_find_duplicate_ius_complex_case():
 def test_collect_source_target_paths(fs):
     # Setup fake directories and files
     input_canonical_results_dir = Path("/fake/input/canonical_results")
-    output_scenario_directory = Path("/fake/output/scenario_x1")
+    output_canonical_results_dir = Path("/fake/output/canonical_results")
+    output_scenario_directory = output_canonical_results_dir / "scenario_x1"
 
     fs.create_dir(input_canonical_results_dir)
     fs.create_dir(output_scenario_directory)
@@ -469,7 +474,7 @@ def test_collect_source_target_paths(fs):
     # Call the function
     result = _collect_source_target_paths(
         input_canonical_results_dir,
-        output_scenario_directory,
+        output_canonical_results_dir,
         mixed_scenarios_desc,
     )
 
@@ -495,3 +500,149 @@ def test_collect_source_target_paths(fs):
 
     # Assert that the result matches the expected output
     assert result == expected
+
+
+def _create_json_schema_for_output_directory(
+    input_directory: Path, mixed_scenarios_desc: MixedScenariosDescription
+):
+    input_canonical_results_dir = input_directory / "canonical_results"
+    input_default_scenario_dir = input_canonical_results_dir / mixed_scenarios_desc.default_scenario
+
+    def _process_country_directory(country_dir: Path):
+        """Process a single country directory yielding (country_code, iu_info) pairs."""
+        return (
+            {
+                "IU": iu_dir.name,
+                "COUNTRY_CODE": iu_dir.name[:3],
+                "IU_CODE": iu_dir.name[3:],  # extract the numeric portion
+            }
+            for iu_dir in country_dir.iterdir()
+            if iu_dir.is_dir() and re.match(r"[A-Z]{3}\d{5}", iu_dir.name) is not None
+        )
+
+    ius_grouped_by_country = (
+        (country_dir.name, _process_country_directory(country_dir))
+        for country_dir in input_default_scenario_dir.iterdir()
+        if country_dir.is_dir()
+    )
+
+    schema = {
+        "type": "directory",
+        "name": "output",
+        "contents": [
+            {
+                "type": "directory",
+                "name": "canonical_results",
+                "contents": [
+                    {
+                        "type": "directory",
+                        "name": mixed_scenarios_desc.scenario_name,
+                        "contents": [],
+                    }
+                ],
+            },
+            {"type": "file", "name": "mixed_scenarios_metadata.json"},
+        ],
+    }
+
+    output_canonical_results_dir = schema["contents"][0]  # canonical_results directory
+    output_scenario_dir = output_canonical_results_dir["contents"][0]  # target scenario directory
+    output_scenario_dir["contents"] = [
+        {
+            "type": "directory",
+            "name": cc,
+            "contents": [
+                {
+                    "type": "directory",
+                    "name": iu["IU"],
+                    "contents": [
+                        {
+                            "type": "file",
+                            "name": f"{iu['IU']}_{mixed_scenarios_desc.scenario_name}_canonical.csv",
+                        }
+                    ],
+                }
+                for iu in ius
+            ],
+        }
+        for cc, ius in ius_grouped_by_country
+    ]
+
+    return schema
+
+
+def tree(directory: Path) -> dict:
+    """
+    Recursively generates a dictionary representing the directory and file structure.
+    """
+    output = {"type": "directory", "name": str(directory.name), "contents": []}
+    try:
+        # List all items in the directory
+        for entry in directory.iterdir():
+            if entry.is_dir():
+                # If the entry is a directory, recursively call the function
+                output["contents"].append(tree(entry))
+            else:
+                # If the entry is a file, add it to the contents
+                output["contents"].append({"type": "file", "name": str(entry.name)})
+    except PermissionError:
+        # Handle permission errors gracefully
+        output["contents"].append({"type": "error", "name": "Permission Denied"})
+
+    return output
+
+
+def test_mixed_scenarios_validate_output_directory(fs):
+    wd = Path("disease")
+
+    # Simulate a canonical set of input data for a disease
+    input_directory = wd / "input"
+    input_canonical_results = input_directory / "canonical_results"
+    country_codes = ["AGO", "BFA", "CAF"]
+    country_numeric_codes = ["09661", "09662", "09663"]
+    for scenario in ["scenario_0", "scenario_1", "scenario_2"]:
+        input_scenario_directory = input_canonical_results / scenario
+        fs.create_dir(input_scenario_directory)
+        for cc, nc in itertools.product(country_codes, country_numeric_codes):
+            country_iu_code = f"{cc}{nc}"
+            fs.create_file(
+                input_scenario_directory
+                / cc
+                / country_iu_code
+                / f"{country_iu_code}_{scenario}_canonical.csv"
+            )
+
+    fs.create_file(input_directory / "PopulationMetadatafile.csv")
+
+    mixed_scenarios_desc = MixedScenariosDescription(
+        disease="lf",
+        default_scenario="scenario_0",
+        overridden_ius={
+            "scenario_1": ["CAF09661", "CAF09662"],
+            "scenario_2": ["CAF09663"],
+        },
+        scenario_name="scenario_x1",
+        threshold=None,
+    )
+
+    expected_output_json_schema = _create_json_schema_for_output_directory(
+        input_directory, mixed_scenarios_desc
+    )
+
+    try:
+        _validate_working_directory(wd, mixed_scenarios_desc)
+    except Exception as e:
+        pytest.fail(f"Test failed due to unexpected exception: {e}")
+
+    ius_to_copy = _collect_source_target_paths(
+        input_canonical_results, wd / "output" / "canonical_results", mixed_scenarios_desc
+    )
+
+    _prepare_output_directory(
+        wd / "output", mixed_scenarios_desc, ius_to_copy, rename_target_scenario_column=False
+    )
+
+    output_directory_json_structure = tree(wd / "output")
+    pprint.pprint(output_directory_json_structure, indent=2)
+
+    assert output_directory_json_structure == expected_output_json_schema

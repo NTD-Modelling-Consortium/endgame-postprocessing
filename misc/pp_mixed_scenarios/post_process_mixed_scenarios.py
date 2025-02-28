@@ -280,6 +280,7 @@ def _prepare_output_directory(
     output_directory: Path,
     mixed_scenarios_desc: MixedScenariosDescription,
     ius_to_copy: List[Tuple[Path, Path]],
+    rename_target_scenario_column=True,
 ):
     """
     Prepare the output directory structure, copy files, and rename them during copying.
@@ -310,7 +311,7 @@ def _prepare_output_directory(
         ius_to_copy,
         r"scenario_\w+_",
         f"{target_scenario_name}_",
-        rename_scenario_column,
+        rename_scenario_column if rename_target_scenario_column else None,
     )
 
     # Write mixed_scenarios_desc to a JSON file in the output directory
