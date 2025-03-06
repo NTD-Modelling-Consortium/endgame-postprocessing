@@ -1,6 +1,7 @@
 import itertools
 from multiprocessing import Pool
 import os
+import warnings
 
 import pandas as pd
 from endgame_postprocessing.post_processing import (
@@ -24,7 +25,16 @@ def canonicalise_one(file_info):
     output_dir = "local_data/epioncho-2025-03-04"
     start_year = 2023
     stop_year = 2040
+    raw_pop_file = pd.read_csv(f"{input_dir}/PopulationMetadatafile.csv")
+    raw_pop_file.drop_duplicates()
+    new_iu_code = raw_pop_file.ADMIN0ISO3 + raw_pop_file["IU_ID"].apply(
+        lambda id: str.zfill(str(id), 5)
+    )
     with CollectAndPrintWarnings() as collected_warnings:
+        # Exclude IUs that aren't in the population file
+        if not new_iu_code.str.contains(file_info.iu).any():
+            warnings.warn(f"Excluding {file_info.iu} as not found in population file")
+            return collected_warnings
         raw_iu = pd.read_csv(file_info.file_path)
         raw_iu_filtered = raw_iu[
             (raw_iu["year_id"] >= start_year) & (raw_iu["year_id"] <= stop_year)
