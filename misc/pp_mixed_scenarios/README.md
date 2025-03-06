@@ -90,6 +90,7 @@ python post_process_mixed_scenarios.py -w path/to/working_directory -o path/to/o
 1. Ensure that all **user-provided files and directories** are correctly named and located as per
    the expected structure.
 2. The `output_directory` does not need to exist beforehand; the script will create it if necessary.
+3. The `path/to/yaml` and `path/to/output_directory` is *not* relative to the working directory, they can be located anywhere.
 
 For any issues or questions, please refer to the comments in the script or reach out to the
 development team.
