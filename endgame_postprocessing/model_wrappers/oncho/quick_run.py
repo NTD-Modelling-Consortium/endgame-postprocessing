@@ -21,7 +21,7 @@ from endgame_postprocessing.post_processing.warnings_collector import (
 )
 
 
-def canonicalise_one(file_info):
+def canonicalise_one(file_info: CustomFileInfo):
     output_dir = "local_data/epioncho-2025-03-04"
     start_year = 2023
     stop_year = 2040
