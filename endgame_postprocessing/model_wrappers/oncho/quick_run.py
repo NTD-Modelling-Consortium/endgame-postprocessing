@@ -22,8 +22,8 @@ from endgame_postprocessing.post_processing.warnings_collector import (
 
 def canonicalise_one(file_info):
     output_dir = "local_data/epioncho-2025-03-04"
-    start_year = 1970
-    stop_year = 2041
+    start_year = 2023
+    stop_year = 2040
     with CollectAndPrintWarnings() as collected_warnings:
         raw_iu = pd.read_csv(file_info.file_path)
         raw_iu_filtered = raw_iu[
