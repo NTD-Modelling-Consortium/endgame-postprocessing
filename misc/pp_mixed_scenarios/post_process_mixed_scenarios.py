@@ -183,7 +183,7 @@ def _get_pipeline_config_from_scenario_file(
 
 def _collect_source_target_paths(
     input_canonical_results_dir: Path,
-    output_scenario_directory: Path,
+    output_canonical_results_dir: Path,
     mixed_scenarios_desc: MixedScenariosDescription,
 ) -> List[Tuple[Path, Path]]:
     """
@@ -191,7 +191,7 @@ def _collect_source_target_paths(
      IUs.
 
     :param input_canonical_results_dir: Path to the base canonical_results directory.
-    :param output_scenario_directory: Path to the output scenario directory.
+    :param output_canonical_results_dir: Path to the canonical_results directory in the output.
     :param mixed_scenarios_desc: Dictionary describing the mixed scenarios.
     :return: List of tuples containing (source_path, destination_path).
     """
@@ -199,6 +199,7 @@ def _collect_source_target_paths(
 
     # Add default scenario directory
     default_scenario_source = input_canonical_results_dir / mixed_scenarios_desc.default_scenario
+    output_scenario_directory = output_canonical_results_dir / mixed_scenarios_desc.scenario_name
     paths_to_copy.append((default_scenario_source, output_scenario_directory))
 
     # Add overridden IU directories
@@ -258,48 +259,64 @@ def _copy_with_rename(
         wait(futures)
 
 
+def _validate_output_directory(paths_to_copy: List[Tuple[Path, Path]]) -> bool:
+    """
+    Validate that all files/directories specified in paths_to_copy exist in the output directory.
+
+    :param paths_to_copy: List of tuples containing (source_path, destination_path).
+    :return: True if all destination paths exist, False otherwise.
+    """
+    for _, dst in paths_to_copy:
+        if dst.is_dir() and not dst.exists():
+            print(f"Missing directory: {dst}")
+            return False
+        elif dst.is_file() and not dst.exists():
+            print(f"Missing file: {dst}")
+            return False
+    return True
+
+
 def _prepare_output_directory(
-    input_directory: Path,
     output_directory: Path,
     mixed_scenarios_desc: MixedScenariosDescription,
+    ius_to_copy: List[Tuple[Path, Path]],
+    rename_target_scenario_column=True,
 ):
     """
     Prepare the output directory structure, copy files, and rename them during copying.
 
-    :param input_directory: Path to the directory containing the input canonical results.
     :param output_directory: Path to the output directory. This directory will be created if
      it does not exist.
     :param mixed_scenarios_desc: Dictionary with mixed scenarios description.
     """
     target_scenario_name = mixed_scenarios_desc.scenario_name
 
-    input_canonical_results_dir = input_directory / "canonical_results"
     output_canonical_results_dir = output_directory / "canonical_results"
+    print(f"Verifying if '{output_canonical_results_dir}' directory exists, else creating it...")
     output_canonical_results_dir.mkdir(parents=True, exist_ok=True)
 
     output_scenario_directory = output_canonical_results_dir / target_scenario_name
+    print(f"Verifying if '{output_scenario_directory}' directory exists, else creating it...")
     output_scenario_directory.mkdir(parents=True, exist_ok=True)
 
     # Collect all source and target paths
-    paths_to_copy = _collect_source_target_paths(
-        input_canonical_results_dir, output_scenario_directory, mixed_scenarios_desc
-    )
-
     def rename_scenario_column(path_to_iu: Path):
         df = pd.read_csv(path_to_iu)
         df["scenario"] = target_scenario_name
         df.to_csv(path_to_iu, index=False)
 
     # Perform the copy and renaming in a single pass
+    print(f"Copying IUs with renamed scenario columns in '{output_scenario_directory}'...")
     _copy_with_rename(
-        paths_to_copy,
+        ius_to_copy,
         r"scenario_\w+_",
         f"{target_scenario_name}_",
-        rename_scenario_column,
+        rename_scenario_column if rename_target_scenario_column else None,
     )
 
     # Write mixed_scenarios_desc to a JSON file in the output directory
     mixed_scenarios_metadata_path = output_directory / "mixed_scenarios_metadata.json"
+    print(f"Writing mixed_scenarios_desc to '{mixed_scenarios_metadata_path}'...")
     mixed_scenarios_metadata_path.write_text(mixed_scenarios_desc.to_json())
 
 
@@ -348,6 +365,13 @@ def main():
         required=True,
         help="Path to the scenarios description .yaml file.",
     )
+    parser.add_argument(
+        "--validate-output-directory",
+        action="store_true",
+        required=False,
+        default=False,
+        help="Validate the output directory after copying files.",
+    )
 
     args = parser.parse_args()
 
@@ -356,6 +380,7 @@ def main():
 
     t_start = time.time()
     try:
+        print("Loading mixed scenarios description file...")
         mixed_scenarios_desc = _load_mixed_scenarios_desc(Path(args.scenarios_desc))
         print("The mixed scenarios description file has been successfully loaded:")
         pprint(mixed_scenarios_desc, indent=2)
@@ -373,6 +398,7 @@ def main():
         return
 
     try:
+        print("Validating working directory...")
         input_directory = _validate_working_directory(working_directory, mixed_scenarios_desc)
     except (
         MissingPopulationMetadataFileError,
@@ -385,12 +411,35 @@ def main():
         print(f"Unexpected error: {e}")
         return
 
+    print("Preparing output directory...")
     output_directory = (
         Path(args.output_directory) if args.output_directory else working_directory / "output"
     )
-    _prepare_output_directory(input_directory, output_directory, mixed_scenarios_desc)
+
+    input_canonical_results_dir = input_directory / "canonical_results"
+    output_canonical_results_dir = output_directory / "canonical_results"
+
+    # Collect all source and target paths
+    print(f"Collecting IUs to copy from '{input_canonical_results_dir}'")
+    paths_to_copy = _collect_source_target_paths(
+        input_canonical_results_dir, output_canonical_results_dir, mixed_scenarios_desc
+    )
+
+    _prepare_output_directory(output_directory, mixed_scenarios_desc, paths_to_copy)
+
     t_finish = time.time()
     print(f"Time taken to prepare output directory: {t_finish - t_start:.2f} seconds")
+
+    # Validate the output directory
+    if args.validate_output_directory:
+        print("Validating the output directory...")
+        is_validation_succeeded = _validate_output_directory(paths_to_copy)
+        print(
+            f"Output directory validation succeeded: {'Yes' if is_validation_succeeded else 'No'}"
+        )
+        if not is_validation_succeeded:
+            print("Aborting post-processing due to output directory failing validation.")
+            return
 
     t_start = time.time()
 
