@@ -268,6 +268,8 @@ def _calc_extinction_metrics(
     canonical_iu_dataframes: List[pd.DataFrame],
     extinction_threshold: float = 0.01,
     pct_runs_threshold: List[float] = [0.5, 0.75, 0.9, 1.0],
+    minimum_year=float('-inf'),
+    maximum_year=float('inf')
 ):
     """
     Computes two metrics for each scenario:
@@ -305,6 +307,10 @@ def _calc_extinction_metrics(
         # 1. Compute Metric 1: Proportion of draws where all IUs are under threshold
         # Compute boolean mask indicating draws below the threshold for all IUs
         # Shape: [P,M,N]
+        ius = [iu[
+            (iu["year_id"] >= minimum_year) &
+            (iu["year_id"] <= maximum_year)
+        ].reset_index() for iu in ius]
         ius_below_threshold = (
             _extract_columns_as_numpy_array(ius, draw_columns) <= extinction_threshold
         )
@@ -382,6 +388,8 @@ def aggregate_draws(composite_data: pd.DataFrame) -> pd.DataFrame:
 def africa_composite(
     wd: str | os.PathLike | Path,
     iu_metadata: IUData,
+    minimum_year=float('-inf'),
+    maximum_year=float('inf')
 ) -> Tuple[List[pd.DataFrame], pd.DataFrame]:
     canonical_ius = [
         pd.read_csv(iu.file_path)
@@ -397,6 +405,8 @@ def africa_composite(
     composite = composite_run.build_composite_run_multiple_scenarios(
         canonical_iu_runs=canonical_ius,
         iu_data=iu_metadata,
+        minimum_year=minimum_year,
+        maximum_year=maximum_year,
         is_africa=True,
     )
 
@@ -414,6 +424,8 @@ def africa_lvl_aggregate(
     composite_africa: pd.DataFrame,
     prevalence_threshold: float = 0.01,
     pct_runs_threshold: List[float] = [0.9],
+    minimum_year=float('-inf'),
+    maximum_year=float('inf')
 ) -> pd.DataFrame:
     """
     Aggregates continent level prevalence and probability of extinction data.
@@ -430,7 +442,8 @@ def africa_lvl_aggregate(
         pd.DataFrame: A dataframe with aggregated prevalence metrics and extinction probabilities.
     """
     extinction_dfs = _calc_extinction_metrics(
-        canonical_ius, prevalence_threshold, pct_runs_threshold
+        canonical_ius, prevalence_threshold, pct_runs_threshold,
+        minimum_year, maximum_year
     )
 
     # Collapse the prevalence from all the draws into an average metric

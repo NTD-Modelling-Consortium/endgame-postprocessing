@@ -39,6 +39,7 @@ class MixedScenariosDescription:
     threshold: Optional[float]
     default_scenario: str
     overridden_ius: Dict[str, List[str]]
+    default_ius: List[str]
     scenario_name: str
 
     @staticmethod
@@ -48,6 +49,7 @@ class MixedScenariosDescription:
             threshold=data.get("threshold"),
             default_scenario=data["default_scenario"],
             overridden_ius=data["overridden_ius"],
+            default_ius=data["default_ius"],
             scenario_name=data["scenario_name"],
         )
 
@@ -57,6 +59,7 @@ class MixedScenariosDescription:
             "threshold": self.threshold,
             "default_scenario": self.default_scenario,
             "overridden_ius": self.overridden_ius,
+            "default_ius": self.default_ius,
             "scenario_name": self.scenario_name,
         }
 
@@ -199,7 +202,10 @@ def _collect_source_target_paths(
 
     # Add default scenario directory
     default_scenario_source = input_canonical_results_dir / mixed_scenarios_desc.default_scenario
-    paths_to_copy.append((default_scenario_source, output_scenario_directory))
+    for iu in mixed_scenarios_desc.default_ius:
+        source_path = default_scenario_source / iu[:3] / iu
+        destination_path = output_scenario_directory / iu[:3] / iu
+        paths_to_copy.append((source_path, destination_path))
 
     # Add overridden IU directories
     for scenario, ius in mixed_scenarios_desc.overridden_ius.items():
@@ -235,7 +241,7 @@ def _copy_with_rename(
             for item in src.rglob("*"):  # Recursively copy all contents
                 relative_path = item.relative_to(src)
                 target_path = dst / relative_path
-
+                dst.mkdir(parents=True, exist_ok=True)
                 if item.is_dir():
                     target_path.mkdir(exist_ok=True)
                 else:  # Apply renaming logic to files

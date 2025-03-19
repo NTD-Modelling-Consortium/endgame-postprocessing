@@ -25,18 +25,24 @@ def _get_priority_populations(ius, iu_metadata: IUData):
 def build_composite_run(
         canonical_iu_runs: List[pd.DataFrame],
         iu_data: IUData,
+        minimum_year: float,
+        maximum_year: float,
         is_africa=False,
 ):
+    filtered_canonical_iu_runs = [iu[
+        (iu["year_id"] >= minimum_year) &
+        (iu["year_id"] <= maximum_year)
+    ].reset_index() for iu in canonical_iu_runs]
     # Assumptions: same number of draws in each IU run
     # Same year IDs in each one
-    draw_columns, all_ius_draws = canonical_columns.extract_draws(canonical_iu_runs)
+    draw_columns, all_ius_draws = canonical_columns.extract_draws(filtered_canonical_iu_runs)
 
     # Compute the mean number of disease cases as a proportion of the population
     # in each draw, for every IU
     # List[DataFrame] - Each row, of every IU dataframe, corresponds to the number
     # of cases, in that year, across all the draws (columns)
     iu_case_numbers = all_ius_draws * _get_priority_populations(
-        canonical_iu_runs, iu_data
+        filtered_canonical_iu_runs, iu_data
     )
 
     # DataFrame - Sum up the total number of cases from all the IUs
@@ -46,7 +52,7 @@ def build_composite_run(
         total_population = iu_data.get_priority_population_for_africa()
     else:
         total_population = iu_data.get_priority_population_for_country(
-            canonical_iu_runs[0][canonical_columns.COUNTRY_CODE].iloc[0]
+            filtered_canonical_iu_runs[0][canonical_columns.COUNTRY_CODE].iloc[0]
         )
 
     # DataFrame - Mean prevalence (across all IUs) for all the years
@@ -66,7 +72,7 @@ def build_composite_run(
 
     return pd.concat(
         [
-            canonical_iu_runs[0][columns_to_use],
+            filtered_canonical_iu_runs[0][columns_to_use],
             prevalence,
         ],
         axis=1,
@@ -76,14 +82,16 @@ def build_composite_run(
 def build_composite_run_multiple_scenarios(
         canonical_iu_runs: list[pd.DataFrame],
         iu_data: IUData,
-        is_africa=False
+        minimum_year: float,
+        maximum_year: float,
+        is_africa=False,
 ):
     ius_by_scenario = itertools.groupby(
         canonical_iu_runs, lambda run: run["scenario"].iloc[0]
     )
 
     scenario_results = [
-        build_composite_run(list(ius), iu_data, is_africa)
+        build_composite_run(list(ius), iu_data, minimum_year, maximum_year, is_africa)
         for _, ius in ius_by_scenario
     ]
     return pd.concat(scenario_results, ignore_index=True)
