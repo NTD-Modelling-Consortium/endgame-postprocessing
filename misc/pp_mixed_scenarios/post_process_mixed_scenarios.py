@@ -39,7 +39,7 @@ class MixedScenariosDescription:
     threshold: Optional[float]
     default_scenario: str
     overridden_ius: Dict[str, List[str]]
-    default_ius: List[str]
+    default_ius: Optional[List[str]]
     scenario_name: str
 
     @staticmethod
@@ -49,7 +49,7 @@ class MixedScenariosDescription:
             threshold=data.get("threshold"),
             default_scenario=data["default_scenario"],
             overridden_ius=data["overridden_ius"],
-            default_ius=data["default_ius"],
+            default_ius=data.get("default_ius", []),
             scenario_name=data["scenario_name"],
         )
 
@@ -206,7 +206,8 @@ def _collect_source_target_paths(
         source_path = default_scenario_source / iu[:3] / iu
         destination_path = output_scenario_directory / iu[:3] / iu
         paths_to_copy.append((source_path, destination_path))
-
+    if len(mixed_scenarios_desc.default_ius) == 0:
+        paths_to_copy.append((default_scenario_source, output_scenario_directory))
     # Add overridden IU directories
     for scenario, ius in mixed_scenarios_desc.overridden_ius.items():
         input_scenario_directory = input_canonical_results_dir / scenario
