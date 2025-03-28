@@ -165,8 +165,16 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
             country_composite,
             all_iu_data[
                 (all_iu_data["country_code"] == country_composite["country_code"].values[0]) &
-                (all_iu_data["year_id"] >= minimum_year) &
-                (all_iu_data["year_id"] <= maximum_year)
+                (
+                    (
+                        (all_iu_data["year_id"] >= minimum_year) &
+                        (all_iu_data["year_id"] <= maximum_year)
+                    ) |
+                    (
+                        all_iu_data["year_id"].isna()
+                    )
+                )
+
             ],
             country_composite["country_code"].values[0],
             iu_meta_data,
