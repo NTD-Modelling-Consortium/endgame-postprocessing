@@ -259,3 +259,57 @@ def test_build_composite_multiple_scenarios():
             }
         ),
     )
+
+def test_build_composite_multiple_scenarios_with_filter():
+    canoncial_iu_scenario_1 = pd.DataFrame(
+        {
+            "iu_name": ["AAA00001"] * 4,
+            "scenario": ["scenario_1"] * 4,
+            "country_code": ["AAA"] * 4,
+            "measure": ["processed_prevalence"] * 4,
+            "year_id": [2010, 2011, 2012, 2013],
+            "draw_0": [0.2] * 4,
+            "draw_1": [0.3] * 4,
+        }
+    )
+    canoncial_iu_scenario_2 = pd.DataFrame(
+        {
+            "iu_name": ["AAA00001"] * 4,
+            "scenario": ["scenario_2"] * 4,
+            "country_code": ["AAA"] * 4,
+            "measure": ["processed_prevalence"] * 4,
+            "year_id": [2010, 2011, 2012, 2013],
+            "draw_0": [0.8] * 4,
+            "draw_1": [0.9] * 4,
+        }
+    )
+    population_data = IUData(
+        pd.DataFrame(
+            {
+                "IU_CODE": ["AAA00001"],
+                "ADMIN0ISO3": ["AAA"],
+                "Priority_Population_LF": [10],
+            }
+        ),
+        disease=Disease.LF,
+        iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
+    )
+    result = composite_run.build_composite_run_multiple_scenarios(
+        [canoncial_iu_scenario_1, canoncial_iu_scenario_2],
+        population_data,
+        2011,
+        2012
+        )
+    pdt.assert_frame_equal(
+        result,
+        pd.DataFrame(
+            {
+                "year_id": [2011, 2012, 2011, 2012],
+                "scenario": ["scenario_1", "scenario_1", "scenario_2", "scenario_2"],
+                "country_code": ["AAA"] * 4,
+                "measure": ["processed_prevalence"] * 4,
+                "draw_0": [0.2, 0.2, 0.8, 0.8],
+                "draw_1": [0.3, 0.3, 0.9, 0.9],
+            }
+        ),
+    )

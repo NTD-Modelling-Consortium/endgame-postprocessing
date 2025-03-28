@@ -25,8 +25,8 @@ def _get_priority_populations(ius, iu_metadata: IUData):
 def build_composite_run(
         canonical_iu_runs: List[pd.DataFrame],
         iu_data: IUData,
-        minimum_year: float,
-        maximum_year: float,
+        minimum_year: float=float("-inf"),
+        maximum_year: float=float("inf"),
         is_africa=False,
 ):
     filtered_canonical_iu_runs = [iu[
@@ -82,8 +82,8 @@ def build_composite_run(
 def build_composite_run_multiple_scenarios(
         canonical_iu_runs: list[pd.DataFrame],
         iu_data: IUData,
-        minimum_year: float,
-        maximum_year: float,
+        minimum_year: float=float("-inf"),
+        maximum_year: float=float("inf"),
         is_africa=False,
 ):
     ius_by_scenario = itertools.groupby(

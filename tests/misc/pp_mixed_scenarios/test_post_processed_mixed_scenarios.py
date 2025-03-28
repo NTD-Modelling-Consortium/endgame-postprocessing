@@ -439,7 +439,6 @@ def test_find_duplicate_ius_complex_case():
         _find_duplicate_ius(overridden_ius)
     assert e.value.ius_to_scenarios_mapping == duplicate_ius_to_scenarios_mapping
 
-
 def test_collect_source_target_paths(fs):
     # Setup fake directories and files
     input_canonical_results_dir = Path("/fake/input/canonical_results")
@@ -448,7 +447,6 @@ def test_collect_source_target_paths(fs):
     fs.create_dir(input_canonical_results_dir)
     fs.create_dir(output_scenario_directory)
 
-    # Prepare a MixedScenariosDescription mock object
     mixed_scenarios_desc = MixedScenariosDescription(
         disease="lf",
         scenario_name="scenario_x1",
@@ -457,6 +455,7 @@ def test_collect_source_target_paths(fs):
             "scenario_1": ["IU001", "IU002"],
             "scenario_2": ["IU003"],
         },
+        default_ius=[],
         threshold=None,
     )
 
@@ -478,6 +477,126 @@ def test_collect_source_target_paths(fs):
         (
             input_canonical_results_dir / mixed_scenarios_desc.default_scenario,
             output_scenario_directory,
+        ),
+        (
+            input_canonical_results_dir / "scenario_1/IU0/IU001",
+            output_scenario_directory / "IU0/IU001",
+        ),
+        (
+            input_canonical_results_dir / "scenario_1/IU0/IU002",
+            output_scenario_directory / "IU0/IU002",
+        ),
+        (
+            input_canonical_results_dir / "scenario_2/IU0/IU003",
+            output_scenario_directory / "IU0/IU003",
+        ),
+    ]
+
+    # Assert that the result matches the expected output
+    assert result == expected
+
+def test_collect_source_default_ius_empty_from_dict(fs):
+    # Setup fake directories and files
+    input_canonical_results_dir = Path("/fake/input/canonical_results")
+    output_scenario_directory = Path("/fake/output/scenario_x1")
+
+    fs.create_dir(input_canonical_results_dir)
+    fs.create_dir(output_scenario_directory)
+
+    mixed_scenarios_desc = MixedScenariosDescription.from_dict({
+            "disease":"lf",
+            "scenario_name":"scenario_x1",
+            "default_scenario":"scenario_0",
+            "overridden_ius":{
+                "scenario_1": ["IU001", "IU002"],
+                "scenario_2": ["IU003"],
+            }
+        }
+    )
+
+    # Add fake input structure
+    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU004")
+    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU005")
+    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU006")
+    fs.create_dir(input_canonical_results_dir / "scenario_1/IU0/IU001")
+    fs.create_dir(input_canonical_results_dir / "scenario_1/IU0/IU002")
+    fs.create_dir(input_canonical_results_dir / "scenario_2/IU0/IU003")
+
+    # Call the function
+    result = _collect_source_target_paths(
+        input_canonical_results_dir,
+        output_scenario_directory,
+        mixed_scenarios_desc,
+    )
+
+    # Expected output
+    expected = [
+        (
+            input_canonical_results_dir / mixed_scenarios_desc.default_scenario,
+            output_scenario_directory,
+        ),
+        (
+            input_canonical_results_dir / "scenario_1/IU0/IU001",
+            output_scenario_directory / "IU0/IU001",
+        ),
+        (
+            input_canonical_results_dir / "scenario_1/IU0/IU002",
+            output_scenario_directory / "IU0/IU002",
+        ),
+        (
+            input_canonical_results_dir / "scenario_2/IU0/IU003",
+            output_scenario_directory / "IU0/IU003",
+        ),
+    ]
+
+    # Assert that the result matches the expected output
+    assert result == expected
+
+def test_collect_source_target_paths_with_defaults(fs):
+    # Setup fake directories and files
+    input_canonical_results_dir = Path("/fake/input/canonical_results")
+    output_scenario_directory = Path("/fake/output/scenario_x1")
+
+    fs.create_dir(input_canonical_results_dir)
+    fs.create_dir(output_scenario_directory)
+
+    # Prepare a MixedScenariosDescription mock object
+    mixed_scenarios_desc = MixedScenariosDescription(
+        disease="lf",
+        scenario_name="scenario_x1",
+        default_scenario="scenario_0",
+        overridden_ius={
+            "scenario_1": ["IU001", "IU002"],
+            "scenario_2": ["IU003"],
+        },
+        default_ius=["IU004", "IU006"],
+        threshold=None,
+    )
+
+    # Add fake input structure
+    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU004")
+    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU005")
+    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU006")
+    fs.create_dir(input_canonical_results_dir / "scenario_1/IU0/IU001")
+    fs.create_dir(input_canonical_results_dir / "scenario_1/IU0/IU002")
+    fs.create_dir(input_canonical_results_dir / "scenario_2/IU0/IU003")
+
+    # Call the function
+    result = _collect_source_target_paths(
+        input_canonical_results_dir,
+        output_scenario_directory,
+        mixed_scenarios_desc,
+    )
+
+    # Expected output
+    expected = [
+        (
+            input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU004",
+            output_scenario_directory / "IU0/IU004",
+        ),
+                (
+            input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU006",
+            output_scenario_directory / "IU0/IU006",
         ),
         (
             input_canonical_results_dir / "scenario_1/IU0/IU001",
