@@ -595,5 +595,7 @@ def filter_to_maximum_year_range_for_all_ius(
                 # stats at a country level do not have an associated year_id
                 keep_na_year_id and iu["year_id"].isna()
             )
-        ] for iu in all_iu_data
+        # As we are returning a list of dataframes, the index is reset to make sure
+        # that all the dataframes will be aligned properly.
+        ].reset_index(drop=True) for iu in all_iu_data
     ]
