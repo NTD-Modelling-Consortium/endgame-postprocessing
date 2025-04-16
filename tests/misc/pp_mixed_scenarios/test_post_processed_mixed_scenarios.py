@@ -457,13 +457,19 @@ def test_collect_source_target_paths(fs):
 
     # Add fake input structure
     fs.create_file(
-        input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU004/IU004_scenario_0_canonical.csv"
+        input_canonical_results_dir /
+        mixed_scenarios_desc.default_scenario /
+        "IU0/IU004/IU004_scenario_0_canonical.csv"
     )
     fs.create_file(
-        input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU005/IU005_scenario_0_canonical.csv"
+        input_canonical_results_dir /
+        mixed_scenarios_desc.default_scenario /
+        "IU0/IU005/IU005_scenario_0_canonical.csv"
     )
     fs.create_file(
-        input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU006/IU006_scenario_0_canonical.csv"
+        input_canonical_results_dir /
+        mixed_scenarios_desc.default_scenario /
+        "IU0/IU006/IU006_scenario_0_canonical.csv"
     )
     fs.create_file(
         input_canonical_results_dir / "scenario_1/IU0/IU001/IU001_scenario_1_canonical.csv"

@@ -203,7 +203,10 @@ def _collect_source_target_paths(
 
     # Add default scenario directory
     if mixed_scenarios_desc.default_scenario:
-        default_scenario_source = input_canonical_results_dir / mixed_scenarios_desc.default_scenario
+        default_scenario_source = (
+            input_canonical_results_dir /
+            mixed_scenarios_desc.default_scenario
+        )
         paths_to_copy.append((default_scenario_source, output_scenario_directory))
 
     # Add overridden IU directories
