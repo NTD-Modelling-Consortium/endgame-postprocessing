@@ -444,9 +444,6 @@ def test_collect_source_target_paths(fs):
     input_canonical_results_dir = Path("/fake/input/canonical_results")
     output_scenario_directory = Path("/fake/output/scenario_x1")
 
-    fs.create_dir(input_canonical_results_dir)
-    fs.create_dir(output_scenario_directory)
-
     mixed_scenarios_desc = MixedScenariosDescription(
         disease="lf",
         scenario_name="scenario_x1",
@@ -511,9 +508,6 @@ def test_collect_source_no_default_scenario(fs):
     # Setup fake directories and files
     input_canonical_results_dir = Path("/fake/input/canonical_results")
     output_scenario_directory = Path("/fake/output/scenario_x1")
-
-    fs.create_dir(input_canonical_results_dir)
-    fs.create_dir(output_scenario_directory)
 
     mixed_scenarios_desc = MixedScenariosDescription.from_dict({
             "disease":"lf",
