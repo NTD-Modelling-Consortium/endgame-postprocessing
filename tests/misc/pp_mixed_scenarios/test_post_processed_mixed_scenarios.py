@@ -455,15 +455,28 @@ def test_collect_source_target_paths(fs):
             "scenario_1": ["IU001", "IU002"],
             "scenario_2": ["IU003"],
         },
-        default_ius=[],
         threshold=None,
     )
 
     # Add fake input structure
-    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario)
-    fs.create_dir(input_canonical_results_dir / "scenario_1/IU0/IU001")
-    fs.create_dir(input_canonical_results_dir / "scenario_1/IU0/IU002")
-    fs.create_dir(input_canonical_results_dir / "scenario_2/IU0/IU003")
+    fs.create_file(
+        input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU004/IU004_scenario_0_canonical.csv"
+    )
+    fs.create_file(
+        input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU005/IU005_scenario_0_canonical.csv"
+    )
+    fs.create_file(
+        input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU006/IU006_scenario_0_canonical.csv"
+    )
+    fs.create_file(
+        input_canonical_results_dir / "scenario_1/IU0/IU001/IU001_scenario_1_canonical.csv"
+    )
+    fs.create_file(
+        input_canonical_results_dir / "scenario_1/IU0/IU002/IU002_scenario_1_canonical.csv"
+    )
+    fs.create_file(
+        input_canonical_results_dir / "scenario_2/IU0/IU003/IU003_scenario_2_canonical.csv"
+    )
 
     # Call the function
     result = _collect_source_target_paths(
@@ -492,10 +505,9 @@ def test_collect_source_target_paths(fs):
         ),
     ]
 
-    # Assert that the result matches the expected output
     assert result == expected
 
-def test_collect_source_default_ius_empty_from_dict(fs):
+def test_collect_source_no_default_scenario(fs):
     # Setup fake directories and files
     input_canonical_results_dir = Path("/fake/input/canonical_results")
     output_scenario_directory = Path("/fake/output/scenario_x1")
@@ -506,7 +518,6 @@ def test_collect_source_default_ius_empty_from_dict(fs):
     mixed_scenarios_desc = MixedScenariosDescription.from_dict({
             "disease":"lf",
             "scenario_name":"scenario_x1",
-            "default_scenario":"scenario_0",
             "overridden_ius":{
                 "scenario_1": ["IU001", "IU002"],
                 "scenario_2": ["IU003"],
@@ -515,12 +526,19 @@ def test_collect_source_default_ius_empty_from_dict(fs):
     )
 
     # Add fake input structure
-    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU004")
-    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU005")
-    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU006")
-    fs.create_dir(input_canonical_results_dir / "scenario_1/IU0/IU001")
-    fs.create_dir(input_canonical_results_dir / "scenario_1/IU0/IU002")
-    fs.create_dir(input_canonical_results_dir / "scenario_2/IU0/IU003")
+    # Scenario_0 is not mentioned in the MixedScenariosDescription, so it should not be picked up
+    fs.create_file(
+        input_canonical_results_dir / "scenario_0/IU0/IU004/IU004_scenario_0_canonical.csv"
+    )
+    fs.create_file(
+        input_canonical_results_dir / "scenario_1/IU0/IU001/IU001_scenario_1_canonical.csv"
+    )
+    fs.create_file(
+        input_canonical_results_dir / "scenario_1/IU0/IU002/IU002_scenario_1_canonical.csv"
+    )
+    fs.create_file(
+        input_canonical_results_dir / "scenario_2/IU0/IU003/IU003_scenario_2_canonical.csv"
+    )
 
     # Call the function
     result = _collect_source_target_paths(
@@ -531,10 +549,6 @@ def test_collect_source_default_ius_empty_from_dict(fs):
 
     # Expected output
     expected = [
-        (
-            input_canonical_results_dir / mixed_scenarios_desc.default_scenario,
-            output_scenario_directory,
-        ),
         (
             input_canonical_results_dir / "scenario_1/IU0/IU001",
             output_scenario_directory / "IU0/IU001",
@@ -549,68 +563,4 @@ def test_collect_source_default_ius_empty_from_dict(fs):
         ),
     ]
 
-    # Assert that the result matches the expected output
-    assert result == expected
-
-def test_collect_source_target_paths_with_defaults(fs):
-    # Setup fake directories and files
-    input_canonical_results_dir = Path("/fake/input/canonical_results")
-    output_scenario_directory = Path("/fake/output/scenario_x1")
-
-    fs.create_dir(input_canonical_results_dir)
-    fs.create_dir(output_scenario_directory)
-
-    # Prepare a MixedScenariosDescription mock object
-    mixed_scenarios_desc = MixedScenariosDescription(
-        disease="lf",
-        scenario_name="scenario_x1",
-        default_scenario="scenario_0",
-        overridden_ius={
-            "scenario_1": ["IU001", "IU002"],
-            "scenario_2": ["IU003"],
-        },
-        default_ius=["IU004", "IU006"],
-        threshold=None,
-    )
-
-    # Add fake input structure
-    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU004")
-    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU005")
-    fs.create_dir(input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU006")
-    fs.create_dir(input_canonical_results_dir / "scenario_1/IU0/IU001")
-    fs.create_dir(input_canonical_results_dir / "scenario_1/IU0/IU002")
-    fs.create_dir(input_canonical_results_dir / "scenario_2/IU0/IU003")
-
-    # Call the function
-    result = _collect_source_target_paths(
-        input_canonical_results_dir,
-        output_scenario_directory,
-        mixed_scenarios_desc,
-    )
-
-    # Expected output
-    expected = [
-        (
-            input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU004",
-            output_scenario_directory / "IU0/IU004",
-        ),
-                (
-            input_canonical_results_dir / mixed_scenarios_desc.default_scenario / "IU0/IU006",
-            output_scenario_directory / "IU0/IU006",
-        ),
-        (
-            input_canonical_results_dir / "scenario_1/IU0/IU001",
-            output_scenario_directory / "IU0/IU001",
-        ),
-        (
-            input_canonical_results_dir / "scenario_1/IU0/IU002",
-            output_scenario_directory / "IU0/IU002",
-        ),
-        (
-            input_canonical_results_dir / "scenario_2/IU0/IU003",
-            output_scenario_directory / "IU0/IU003",
-        ),
-    ]
-
-    # Assert that the result matches the expected output
     assert result == expected
