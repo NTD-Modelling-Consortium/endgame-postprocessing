@@ -268,8 +268,6 @@ def _calc_extinction_metrics(
     canonical_iu_dataframes: List[pd.DataFrame],
     extinction_threshold: float = 0.01,
     pct_runs_threshold: List[float] = [0.5, 0.75, 0.9, 1.0],
-    minimum_year=float('-inf'),
-    maximum_year=float('inf')
 ):
     """
     Computes two metrics for each scenario:
@@ -307,10 +305,6 @@ def _calc_extinction_metrics(
         # 1. Compute Metric 1: Proportion of draws where all IUs are under threshold
         # Compute boolean mask indicating draws below the threshold for all IUs
         # Shape: [P,M,N]
-        ius = [iu[
-            (iu["year_id"] >= minimum_year) &
-            (iu["year_id"] <= maximum_year)
-        ].reset_index() for iu in ius]
         ius_below_threshold = (
             _extract_columns_as_numpy_array(ius, draw_columns) <= extinction_threshold
         )
@@ -388,25 +382,24 @@ def aggregate_draws(composite_data: pd.DataFrame) -> pd.DataFrame:
 def africa_composite(
     wd: str | os.PathLike | Path,
     iu_metadata: IUData,
-    minimum_year=float('-inf'),
-    maximum_year=float('inf')
 ) -> Tuple[List[pd.DataFrame], pd.DataFrame]:
-    canonical_ius = [
-        pd.read_csv(iu.file_path)
-        for iu in _tqdm_unknown_length(
-            post_process_file_generator(
-                file_directory=output_directory_structure.get_canonical_dir(wd),
-                end_of_file="_canonical.csv",
-            ),
-            desc="Building Africa composite run",
-        )
-    ]
+    canonical_ius = filter_to_maximum_year_range_for_all_ius(
+        [
+            pd.read_csv(iu.file_path)
+            for iu in _tqdm_unknown_length(
+                post_process_file_generator(
+                    file_directory=output_directory_structure.get_canonical_dir(wd),
+                    end_of_file="_canonical.csv",
+                ),
+                desc="Building Africa composite run",
+            )
+        ],
+        keep_na_year_id=False
+    )
 
     composite = composite_run.build_composite_run_multiple_scenarios(
         canonical_iu_runs=canonical_ius,
         iu_data=iu_metadata,
-        minimum_year=minimum_year,
-        maximum_year=maximum_year,
         is_africa=True,
     )
 
@@ -424,8 +417,6 @@ def africa_lvl_aggregate(
     composite_africa: pd.DataFrame,
     prevalence_threshold: float = 0.01,
     pct_runs_threshold: List[float] = [0.9],
-    minimum_year=float('-inf'),
-    maximum_year=float('inf')
 ) -> pd.DataFrame:
     """
     Aggregates continent level prevalence and probability of extinction data.
@@ -442,8 +433,7 @@ def africa_lvl_aggregate(
         pd.DataFrame: A dataframe with aggregated prevalence metrics and extinction probabilities.
     """
     extinction_dfs = _calc_extinction_metrics(
-        canonical_ius, prevalence_threshold, pct_runs_threshold,
-        minimum_year, maximum_year
+        canonical_ius, prevalence_threshold, pct_runs_threshold
     )
 
     # Collapse the prevalence from all the draws into an average metric
@@ -579,3 +569,31 @@ def country_lvl_aggregate(
         axis=0,
         ignore_index=True,
     )
+
+def filter_to_maximum_year_range_for_all_ius(
+    all_iu_data: list[pd.DataFrame],
+    keep_na_year_id: bool
+) -> list[pd.DataFrame]:
+    # Selecting the minimum starting year_id that exists for all IUs
+    minimum_year = max(
+        df["year_id"].min() for df in all_iu_data
+    )
+    # Selecting the maximum ending year_id that exists for all IUs
+    maximum_year = min(
+        df["year_id"].max() for df in all_iu_data
+    )
+
+    return [
+        iu[
+            (
+                (iu["year_id"] >= minimum_year) &
+                (iu["year_id"] <= maximum_year)
+            ) |
+            (
+                # Need to keep columns with year_id == NA as certain calculated
+                # iu metrics that are used to calculate percentage
+                # stats at a country level do not have an associated year_id
+                keep_na_year_id and iu["year_id"].isna()
+            )
+        ] for iu in all_iu_data
+    ]

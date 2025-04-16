@@ -16,6 +16,7 @@ from endgame_postprocessing.post_processing.aggregation import (
     aggregate_post_processed_files,
     single_country_aggregate,
     africa_composite,
+    filter_to_maximum_year_range_for_all_ius,
 )
 from endgame_postprocessing.post_processing.aggregation import (
     iu_lvl_aggregate,
@@ -62,8 +63,6 @@ def iu_statistical_aggregates(working_directory, threshold):
 def country_composite(
     working_directory,
     iu_meta_data,
-    minimum_year=float('-inf'),
-    maximum_year=float('inf')
 ):
     canonical_file_iter = post_process_file_generator(
         file_directory=output_directory_structure.get_canonical_dir(working_directory),
@@ -84,11 +83,15 @@ def country_composite(
     for country, ius_for_country in tqdm(
         canonical_ius_by_country.items(), desc="Building country composites"
     ):
+        cannonical_iu_data_for_country_composite = filter_to_maximum_year_range_for_all_ius(
+            list(
+                [pd.read_csv(iu_for_country.file_path) for iu_for_country in ius_for_country]
+            ),
+            keep_na_year_id=False
+        )
         country_composite = composite_run.build_composite_run_multiple_scenarios(
-            list([pd.read_csv(iu_for_country.file_path) for iu_for_country in ius_for_country]),
+            cannonical_iu_data_for_country_composite,
             iu_meta_data,
-            minimum_year,
-            maximum_year
         )
         output_directory_structure.write_country_composite(
             working_directory, country, country_composite
@@ -152,30 +155,23 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
         working_directory, all_iu_data, pipeline_config.disease
     )
 
-    # Selecting the minimum starting year_id that exists for all IUs
-    minimum_year = max(all_iu_data.groupby("iu_name")["year_id"].min().to_list())
-    # Selecting the maximum ending year_id that exists for all IUs
-    maximum_year = min(all_iu_data.groupby("iu_name")["year_id"].max().to_list())
-
     if not pipeline_config.include_country_and_continent_summaries:
         return
 
     country_aggregates = [
         country_aggregate(
             country_composite,
-            all_iu_data[
-                (all_iu_data["country_code"] == country_composite["country_code"].values[0]) &
-                (
-                    (
-                        (all_iu_data["year_id"] >= minimum_year) &
-                        (all_iu_data["year_id"] <= maximum_year)
-                    ) |
-                    (
-                        all_iu_data["year_id"].isna()
-                    )
-                )
-
-            ],
+            # The function returns a list, since the compiled iu aggregates already exist in a
+            # single data frame, its passed in as the sole item in the list
+            # and it will be the sole item returned
+            # The compiled iu aggregate dataframe is used because it contains newly calculated
+            # metrics needed for country level statistics.
+            filter_to_maximum_year_range_for_all_ius(
+                [all_iu_data[
+                    (all_iu_data["country_code"] == country_composite["country_code"].values[0])
+                ]],
+                keep_na_year_id=True
+            )[0],
             country_composite["country_code"].values[0],
             iu_meta_data,
         )
@@ -196,13 +192,9 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
         africa_lvl_aggregate(
             *africa_composite(
                 working_directory, iu_meta_data,
-                minimum_year=minimum_year,
-                maximum_year=maximum_year
             ),
             prevalence_threshold=pipeline_config.threshold,
             pct_runs_threshold=[0.9, 1.0],
-            minimum_year=minimum_year,
-            maximum_year=maximum_year,
         )
         .sort_values(["scenario", "year_id"])
         .reset_index(drop=True)
