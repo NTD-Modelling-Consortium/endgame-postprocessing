@@ -51,6 +51,7 @@ disease_1/
            threshold: 0.01                   # Optional - the threshold that counts as elimination 
                                              # (default 0.01 (1%), Trachoma should use 0.05 (5%))
            default_scenario: scenario_0      # Default scenario to process results from
+           default_ius: [CAF09664, CAF09665]
            overridden_ius:
                scenario_1: [CAF09661, CAF09662]  # IUs to take from scenario_1
                scenario_2: [CAF09663]            # IUs to take from scenario_2

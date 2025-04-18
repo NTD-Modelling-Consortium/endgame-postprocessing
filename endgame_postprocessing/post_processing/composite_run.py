@@ -76,7 +76,7 @@ def build_composite_run(
 def build_composite_run_multiple_scenarios(
         canonical_iu_runs: list[pd.DataFrame],
         iu_data: IUData,
-        is_africa=False
+        is_africa=False,
 ):
     ius_by_scenario = itertools.groupby(
         canonical_iu_runs, lambda run: run["scenario"].iloc[0]

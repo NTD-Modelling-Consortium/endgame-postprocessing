@@ -414,3 +414,86 @@ def test_year_all_ius_reach_threshold_with_NA_is_never():
 def test_year_all_ius_reach_threshold_with_only_valid_years_returns_max():
     result = aggregation.year_all_ius_reach_threshold(pd.Series([2035, 2030]))
     npt.assert_equal(result, 2035)
+
+def test_calc_extinction_metrics():
+    test_dfs = [
+        pd.DataFrame({
+            "year_id": [2021.0, 2022.0, 2023.0, 2024.0],
+            "scenario": ["scenario_1"] * 4,
+            "draw_0": [0.3, 0.2, 0.1, 0]
+        }),
+        pd.DataFrame({
+            "year_id": [2021.0, 2022.0, 2023.0, 2024.0],
+            "scenario": ["scenario_1"] * 4,
+            "draw_0": [0.4, 0.3, 0.2, 0.1]
+        })
+    ]
+    result = aggregation._calc_extinction_metrics(
+        test_dfs,
+        extinction_threshold=0.2,
+        pct_runs_threshold=[0.5]
+    )
+    expected = pd.DataFrame({
+        "year_id": [2021.0, 2022.0, 2023.0, 2024.0] * 2,
+        "scenario": ["scenario_1"] * 8,
+        "measure": ["prob_all_ius_under_threshold"] * 4 +
+            ["prop_ius_with_50pct_runs_under_threshold"] * 4,
+        "mean": [0, 0, 1, 1, 0, 0.5, 1, 1],
+    })
+    assert {'scenario_1'} == result.keys()
+    pdt.assert_frame_equal(
+        result["scenario_1"].reset_index(drop=True),
+        expected
+    )
+
+def test_filter_to_maximum_year_range_for_all_ius_no_nas():
+    test_dfs = [
+        pd.DataFrame({
+            "year_id": [2021.0, 2022.0, 2023.0, 2024.0, 2025.0, None],
+            "value": [1, 2, 3, 4, 5, -1]
+        }),
+        pd.DataFrame({
+            "year_id": [2020.0, 2021.0, 2022.0, 2023.0, 2024.0, None],
+            "value": [0, 1, 2, 3, 4, -1]
+        })
+    ]
+    result = aggregation.filter_to_maximum_year_range_for_all_ius(test_dfs, keep_na_year_id=False)
+    expected = [
+        pd.DataFrame({
+            "year_id": [2021.0, 2022.0, 2023.0, 2024.0],
+            "value": [1, 2, 3, 4]
+        }),
+        pd.DataFrame({
+            "year_id": [2021.0, 2022.0, 2023.0, 2024.0],
+            "value": [1, 2, 3, 4]
+        })
+    ]
+    assert len(result) == len(expected)
+    for res, exp in zip(result, expected):
+        pdt.assert_frame_equal(res, exp)
+
+def test_filter_to_maximum_year_range_for_all_ius_with_nas():
+    test_dfs = [
+        pd.DataFrame({
+            "year_id": [2021.0, 2022.0, 2023.0, 2024.0, 2025.0, None],
+            "value": [1, 2, 3, 4, 5, -1]
+        }),
+        pd.DataFrame({
+            "year_id": [2020.0, 2021.0, 2022.0, 2023.0, 2024.0, None],
+            "value": [0, 1, 2, 3, 4, -1]
+        })
+    ]
+    result = aggregation.filter_to_maximum_year_range_for_all_ius(test_dfs, keep_na_year_id=True)
+    expected = [
+        pd.DataFrame({
+            "year_id": [2021.0, 2022.0, 2023.0, 2024.0, None],
+            "value": [1, 2, 3, 4, -1]
+        }),
+        pd.DataFrame({
+            "year_id": [2021.0, 2022.0, 2023.0, 2024.0, None],
+            "value": [1, 2, 3, 4, -1]
+        })
+    ]
+    assert len(result) == len(expected)
+    for res, exp in zip(result, expected):
+        pdt.assert_frame_equal(res, exp)

@@ -37,7 +37,7 @@ from misc.pp_mixed_scenarios.exceptions import (
 class MixedScenariosDescription:
     disease: str
     threshold: Optional[float]
-    default_scenario: str
+    default_scenario: Optional[str]
     overridden_ius: Dict[str, List[str]]
     scenario_name: str
 
@@ -46,7 +46,7 @@ class MixedScenariosDescription:
         return MixedScenariosDescription(
             disease=data["disease"],
             threshold=data.get("threshold"),
-            default_scenario=data["default_scenario"],
+            default_scenario=data.get("default_scenario"),
             overridden_ius=data["overridden_ius"],
             scenario_name=data["scenario_name"],
         )
@@ -95,10 +95,14 @@ def _validate_working_directory(
     if not input_canonical_results_dir.is_dir():
         raise MissingCanonicalResultsDirectoryError(input_canonical_results_dir)
 
-    # We'll check that the scenarios listed as `default` and `overridden`
+    # We'll check that the scenarios listed as `default` (if it exists) and `overridden`
     # in the mixed scenarios description yaml are available in the source data
     overridden_scenarios = mixed_scenarios_desc.overridden_ius.keys()
-    listed_scenarios = {mixed_scenarios_desc.default_scenario, *overridden_scenarios}
+    listed_scenarios = (
+        {mixed_scenarios_desc.default_scenario, *overridden_scenarios}
+        if mixed_scenarios_desc.default_scenario
+        else overridden_scenarios
+    )
     available_directories = {d.name for d in input_canonical_results_dir.iterdir() if d.is_dir()}
 
     missing_scenarios = listed_scenarios - available_directories
@@ -127,7 +131,7 @@ def _load_mixed_scenarios_desc(mixed_scenarios_desc_file: Path) -> MixedScenario
 
     mixed_scenarios_desc = yaml.load(mixed_scenarios_desc_file.read_text(), Loader=yaml.FullLoader)
 
-    required_fields = {"default_scenario", "overridden_ius", "scenario_name", "disease"}
+    required_fields = {"overridden_ius", "scenario_name", "disease"}
     missing_fields = required_fields - mixed_scenarios_desc.keys()
     if missing_fields:
         raise MissingFieldsError(missing_fields)
@@ -198,8 +202,12 @@ def _collect_source_target_paths(
     paths_to_copy = []
 
     # Add default scenario directory
-    default_scenario_source = input_canonical_results_dir / mixed_scenarios_desc.default_scenario
-    paths_to_copy.append((default_scenario_source, output_scenario_directory))
+    if mixed_scenarios_desc.default_scenario:
+        default_scenario_source = (
+            input_canonical_results_dir /
+            mixed_scenarios_desc.default_scenario
+        )
+        paths_to_copy.append((default_scenario_source, output_scenario_directory))
 
     # Add overridden IU directories
     for scenario, ius in mixed_scenarios_desc.overridden_ius.items():
@@ -235,7 +243,7 @@ def _copy_with_rename(
             for item in src.rglob("*"):  # Recursively copy all contents
                 relative_path = item.relative_to(src)
                 target_path = dst / relative_path
-
+                dst.mkdir(parents=True, exist_ok=True)
                 if item.is_dir():
                     target_path.mkdir(exist_ok=True)
                 else:  # Apply renaming logic to files

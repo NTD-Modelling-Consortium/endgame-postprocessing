@@ -383,16 +383,19 @@ def africa_composite(
     wd: str | os.PathLike | Path,
     iu_metadata: IUData,
 ) -> Tuple[List[pd.DataFrame], pd.DataFrame]:
-    canonical_ius = [
-        pd.read_csv(iu.file_path)
-        for iu in _tqdm_unknown_length(
-            post_process_file_generator(
-                file_directory=output_directory_structure.get_canonical_dir(wd),
-                end_of_file="_canonical.csv",
-            ),
-            desc="Building Africa composite run",
-        )
-    ]
+    canonical_ius = filter_to_maximum_year_range_for_all_ius(
+        [
+            pd.read_csv(iu.file_path)
+            for iu in _tqdm_unknown_length(
+                post_process_file_generator(
+                    file_directory=output_directory_structure.get_canonical_dir(wd),
+                    end_of_file="_canonical.csv",
+                ),
+                desc="Building Africa composite run",
+            )
+        ],
+        keep_na_year_id=False
+    )
 
     composite = composite_run.build_composite_run_multiple_scenarios(
         canonical_iu_runs=canonical_ius,
@@ -566,3 +569,33 @@ def country_lvl_aggregate(
         axis=0,
         ignore_index=True,
     )
+
+def filter_to_maximum_year_range_for_all_ius(
+    all_iu_data: list[pd.DataFrame],
+    keep_na_year_id: bool
+) -> list[pd.DataFrame]:
+    # Selecting the minimum starting year_id that exists for all IUs
+    minimum_year = max(
+        df["year_id"].min() for df in all_iu_data
+    )
+    # Selecting the maximum ending year_id that exists for all IUs
+    maximum_year = min(
+        df["year_id"].max() for df in all_iu_data
+    )
+
+    return [
+        iu[
+            (
+                (iu["year_id"] >= minimum_year) &
+                (iu["year_id"] <= maximum_year)
+            ) |
+            (
+                # Need to keep columns with year_id == NA as certain calculated
+                # iu metrics that are used to calculate percentage
+                # stats at a country level do not have an associated year_id
+                keep_na_year_id and iu["year_id"].isna()
+            )
+        # As we are returning a list of dataframes, the index is reset to make sure
+        # that all the dataframes will be aligned properly.
+        ].reset_index(drop=True) for iu in all_iu_data
+    ]
