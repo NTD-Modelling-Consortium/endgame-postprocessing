@@ -50,8 +50,7 @@ disease_1/
            disease: lf                       # Valid are `lf`, `oncho` and `trachoma`
            threshold: 0.01                   # Optional - the threshold that counts as elimination 
                                              # (default 0.01 (1%), Trachoma should use 0.05 (5%))
-           default_scenario: scenario_0      # Default scenario to process results from
-           default_ius: [CAF09664, CAF09665]
+           default_scenario: scenario_0      # Default scenario to process results from (optional)
            overridden_ius:
                scenario_1: [CAF09661, CAF09662]  # IUs to take from scenario_1
                scenario_2: [CAF09663]            # IUs to take from scenario_2
@@ -95,6 +94,21 @@ python post_process_mixed_scenarios.py -w path/to/working_directory -o path/to/o
 
 For any issues or questions, please refer to the comments in the script or reach out to the
 development team.
+
+## Optional default_scenario
+There may be a case where you do not want to specify a default scenario. An example of this,
+would be a scenario where you only want to mix-and-match IUs that are currently endemic,
+and would want to exclude IUs that are not. In this case, you can list the IUs you want to
+include in the aggregate within the specified scenario in the `overridden_ius` section, and leave
+`default_scenario` blank. Only the IUs specified will be included.
+```yaml
+    disease: oncho                       # Valid are `lf`, `oncho` and `trachoma`
+    threshold: 0.01                      # The threshold to compare to
+    overridden_ius:
+        scenario_1: [CAF09661, CAF09662] # IUs to take from scenario_1
+        scenario_2: [CAF09663]           # IUs to take from scenario_2
+    scenario_name: scenario_x1           # Name applied to the processed scenario set
+```
 
 ## Using the Docker image
 
