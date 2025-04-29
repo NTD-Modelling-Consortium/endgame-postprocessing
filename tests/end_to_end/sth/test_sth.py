@@ -18,6 +18,7 @@ def test_sth_end_to_end_no_historic_one_worm(snapshot):
 
     run_sch.run_sth_postprocessing_pipeline(
         input_data,
+        historic_input_dir = None,
         output_dir=output_path,
         worm_directories=["ascaris"],
         num_jobs=1,
@@ -39,6 +40,7 @@ def test_sth_end_to_end_no_historic_many_worms(snapshot):
 
     run_sch.run_sth_postprocessing_pipeline(
         f"{input_data}/",  # currently requires trailing slash
+        historic_input_dir = None,
         output_dir=output_path,
         worm_directories=[
             "hookworm",
