@@ -19,6 +19,9 @@ disease_1/
 ├── mixed_scenarios_desc_2.yaml
 ├── mixed_scenarios_desc_3.yaml
 ├── input/
+│   ├── raw_data/ (raw data files, if you want to re-canonicalize)
+│   │   ├── scenario_0/
+│   │   └── ... (raw scenario data for all IUs and scenarios to be mix-and-matched)
 │   ├── canonical_results/
 │   │   ├── scenario_0/
 │   │   ├── scenario_1/
@@ -47,7 +50,7 @@ disease_1/
     - This file contains the configuration for processing different scenarios. Its structure should
       follow the example provided below:
         ```yaml
-           disease: lf                       # Valid are `lf`, `oncho` and `trachoma`
+           disease: oncho                    # Valid are `lf`, `oncho` and `trachoma`
            threshold: 0.01                   # Optional - the threshold that counts as elimination 
                                              # (default 0.01 (1%), Trachoma should use 0.05 (5%))
            default_scenario: scenario_0      # Default scenario to process results from (optional)
@@ -55,6 +58,17 @@ disease_1/
                scenario_1: [CAF09661, CAF09662]  # IUs to take from scenario_1
                scenario_2: [CAF09663]            # IUs to take from scenario_2
            scenario_name: scenario_x1        # Name applied to the processed scenario set
+           cannonicalize:                    # Optional - if you want to re-cannonicalize the input files. Should
+                                             # contain the parameters expected by the specific disease's cannonicalize
+                                             # function. The example below is for oncho
+               input_dir: "input/raw_data/"  # The input directory where the raw files live
+               output_dir: "input/"          # The output directory where you want the cannonical results to live
+               historic_dir: "input/historic-oncho/" # Optional - directory of historic results, if  exist.
+                                                         # Defaults to None
+               historic_prefix: "raw_outputs_" # Optional - Prefix of historic results, if they exist.
+                                               # Defaults to "*"
+               start_year: 1970              # Optional - Defaults to 1970
+               stop_year:  2041              # Optional - Defaults to 2041
         ```
 
 
