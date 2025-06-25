@@ -397,6 +397,12 @@ def main():
     except Exception as e:
         print(f"Unexpected error: {e}")
         return
+    pipeline_config = _get_pipeline_config_from_scenario_file(mixed_scenarios_desc)
+    with CollectAndPrintWarnings() as collected_warnings_cannonical:
+        if mixed_scenarios_desc.cannonicalize is not None:
+            _get_cannonicalize_function_by_disease(pipeline_config.disease)(
+                **mixed_scenarios_desc.cannonicalize
+            )
 
     try:
         input_directory = _validate_working_directory(working_directory, mixed_scenarios_desc)
@@ -422,11 +428,7 @@ def main():
 
     pipeline_config = _get_pipeline_config_from_scenario_file(mixed_scenarios_desc)
 
-    with CollectAndPrintWarnings() as collected_warnings:
-        if mixed_scenarios_desc.cannonicalize is not None:
-            _get_cannonicalize_function_by_disease(pipeline_config.disease)(
-                **mixed_scenarios_desc.cannonicalize
-            )
+    with CollectAndPrintWarnings() as collected_warnings_pipeline:
         pipeline.pipeline(
             input_directory,
             output_directory,
@@ -434,7 +436,9 @@ def main():
         )
 
         output_directory_structure.write_results_metadata_file(
-            output_directory, produce_generation_metadata(warnings=collected_warnings)
+            output_directory, produce_generation_metadata(
+                warnings=collected_warnings_cannonical + collected_warnings_pipeline
+            )
         )
 
     t_finish = time.time()
