@@ -44,7 +44,7 @@ class MixedScenariosDescription:
     default_scenario: Optional[str]
     overridden_ius: Dict[str, List[str]]
     scenario_name: str
-    cannonicalize: Optional[dict]
+    cannonicalize: Optional[dict] = None
 
     @staticmethod
     def from_dict(data: Dict) -> "MixedScenariosDescription":
