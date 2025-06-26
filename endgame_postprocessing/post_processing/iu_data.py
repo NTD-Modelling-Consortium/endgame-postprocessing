@@ -1,5 +1,6 @@
 import re
 from enum import Enum
+from typing import Optional
 
 import pandas as pd
 
@@ -10,7 +11,7 @@ from endgame_postprocessing.post_processing.endemicity_classification import (
 
 
 def _is_valid_iu_code(iu_code):
-    return re.match(r"[A-Z]{3}\d{5}$", iu_code)
+    return re.match(r"[A-Z]{3}.{0,5}[\d]{5}$", iu_code)
 
 
 def _get_capitalised_disease(disease: Disease):
@@ -41,11 +42,11 @@ class IUSelectionCriteria(Enum):
 class IUData:
 
     def __init__(
-        self,
-        input_data: pd.DataFrame,
-        disease: Disease,
-        iu_selection_criteria: IUSelectionCriteria,
-        simulated_IUs: set[str] = None,
+            self,
+            input_data: pd.DataFrame,
+            disease: Disease,
+            iu_selection_criteria: IUSelectionCriteria,
+            simulated_IUs: set[str] = None,
     ):
         self.disease = disease
         self.input_data = input_data
@@ -64,31 +65,41 @@ class IUData:
                 f", expected {population_column_name}"
             )
 
-        if input_data["IU_CODE"].nunique() != len(input_data):
-            raise InvalidIUDataFile("Duplicate IUs found")
+        if "Year" in input_data.columns:
+            if input_data.duplicated(subset=["IU_CODE", "Year"]).any():
+                raise InvalidIUDataFile("Duplicate IU and Year combination found")
+        else:
+            if input_data["IU_CODE"].duplicated().any():
+                raise InvalidIUDataFile("Duplicate IUs found")
 
-        if (
-            len(
+        if (len(
                 self.input_data[
                     self.input_data["IU_CODE"].apply(
                         lambda x: not bool(_is_valid_iu_code(x))
                     )
                 ]
-            )
-            != 0
-        ):
+        ) != 0):
             raise InvalidIUDataFile("IU_CODE contains invalid IU codes")
 
-    def get_priority_population_for_IU(self, iu_code):
+    def get_priority_population_for_IU(self, iu_code: str, year: Optional[int] = None):
         if not _is_valid_iu_code(iu_code):
             raise Exception(f"Invalid IU code: {iu_code}")
-        iu = self.input_data.loc[self.input_data.IU_CODE == iu_code]
+        iu: pd.Series = self.input_data.loc[self.input_data.IU_CODE == iu_code]
+        priority_population_column = _get_priority_population_column_for_disease(self.disease)
         if len(iu) == 0:
             # Consider using the preprocess_iu_meta_data function to add in every simulated IU into
             # the meta data file
             raise Exception(f"Could not find IU {iu_code} in the IU meta data file")
-        assert len(iu) == 1
-        return iu[_get_priority_population_column_for_disease(self.disease)].iat[0]
+
+        if "Year" in self.input_data.columns:
+            if year is not None:
+                return iu.loc[self.input_data["Year"] == year, priority_population_column].iat[0]
+
+            # return the populations for all the years
+            return iu.loc[:, priority_population_column].tolist()
+
+        if len(iu) == 1:
+            return iu[priority_population_column].iat[0]
 
     def get_priority_population_for_country(self, country_code):
         included_ius_in_country = self._get_included_ius_for_country(country_code)
@@ -106,7 +117,7 @@ class IUData:
     def _get_included_ius_for_country(self, country_code):
         return self.get_included_ius().loc[
             self.input_data["ADMIN0ISO3"] == country_code
-        ]
+            ]
 
     def get_included_ius(self):
         if self.iu_selection_criteria == IUSelectionCriteria.ALL_IUS:
