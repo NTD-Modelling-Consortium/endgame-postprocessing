@@ -3,6 +3,7 @@ from enum import Enum
 from typing import Optional
 
 import pandas as pd
+from numpy.f2py.cfuncs import includes
 
 from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.endemicity_classification import (
@@ -52,6 +53,7 @@ class IUData:
         self.input_data = input_data
         self.iu_selection_criteria = iu_selection_criteria
         self.simulated_IUs = simulated_IUs
+        self.has_yearly_data = "Year" in input_data.columns
         if iu_selection_criteria is IUSelectionCriteria.SIMULATED_IUS:
             assert simulated_IUs is not None
         # TODO: validate the required columns are as expcted
@@ -82,6 +84,22 @@ class IUData:
             raise InvalidIUDataFile("IU_CODE contains invalid IU codes")
 
     def get_priority_population_for_IU(self, iu_code: str, year: Optional[int] = None):
+        """
+        Fetches the priority population for a specific IU (Implementation Unit) and optionally, a specific year.
+    
+        Args:
+            iu_code (str): The code representing the Implementation Unit (IU).
+            year (Optional[int]): The year for which the priority population is requested. If not provided,
+                                  the method returns data for all available years.
+    
+        Returns:
+            int or list: The priority population for the specified IU and year, or a list of populations for
+                         all years if the year is not specified.
+    
+        Raises:
+            Exception: If the IU code is invalid or if the IU is not found in the meta data file.
+        """
+
         if not _is_valid_iu_code(iu_code):
             raise Exception(f"Invalid IU code: {iu_code}")
         iu: pd.Series = self.input_data.loc[self.input_data.IU_CODE == iu_code]
@@ -91,7 +109,7 @@ class IUData:
             # the meta data file
             raise Exception(f"Could not find IU {iu_code} in the IU meta data file")
 
-        if "Year" in self.input_data.columns:
+        if self.has_yearly_data:
             if year is not None:
                 return iu.loc[self.input_data["Year"] == year, priority_population_column].iat[0]
 
@@ -102,9 +120,17 @@ class IUData:
             return iu[priority_population_column].iat[0]
 
     def get_priority_population_for_country(self, country_code):
-        included_ius_in_country = self._get_included_ius_for_country(country_code)
+        included_ius_in_country: pd.DataFrame = self._get_included_ius_for_country(country_code)
         population_column = _get_priority_population_column_for_disease(self.disease)
-        return included_ius_in_country[population_column].sum()
+        if not self.has_yearly_data:
+            return included_ius_in_country[population_column].sum()
+
+        years = included_ius_in_country['Year'].unique()
+        return {
+            year: included_ius_in_country[included_ius_in_country['Year'] == year][
+                population_column].sum()
+            for year in years
+        }
 
     def get_priority_population_for_africa(self):
         return self.get_included_ius()[
