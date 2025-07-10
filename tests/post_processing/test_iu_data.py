@@ -234,6 +234,26 @@ def test_get_population_for_country():
     )
 
 
+def test_get_population_for_country_yearly():
+    metadata = create_dummy_population_file_for_disease_with_years(
+        Disease.LF,
+        {
+            "AAA00001": {1995: 100, 1996: 200},
+            "AAA00002": {1995: 300, 1996: 400},
+            "AAA00003": {1995: 500, 1996: 600},
+            "BBB00001": {1995: 700, 1996: 800},
+        }
+    )
+    iu_data = IUData(metadata, Disease.LF, IUSelectionCriteria.ALL_IUS)
+    population_data = iu_data.get_priority_population_for_country("AAA")
+
+    assert type(population_data) == dict
+    assert population_data == {
+        1995: sum([100, 300, 500]),
+        1996: sum([200, 400, 600]),
+    }
+
+
 def test_get_population_for_country_modelled_only():
     metadata = create_dummy_population_file({
         Disease.LF: {
@@ -256,7 +276,10 @@ def test_get_population_for_country_modelled_only():
 
 def test_get_africa_population():
     metadata = create_dummy_population_file({
-        Disease.LF: {"AAA00001": 100, "AAA00002": 200, "AAA00003": 300, "BBB00001": 400},
+        Disease.LF: {"AAA00001": 100,
+                     "AAA00002": 200,
+                     "AAA00003": 300,
+                     "BBB00001": 400},
     })
 
     assert (
@@ -267,6 +290,30 @@ def test_get_africa_population():
             ).get_priority_population_for_africa()
             == 1000
     )
+
+
+def test_get_africa_population_yearly():
+    iu_yearly_population_map = {
+        "AAA00001": {1995: 100, 1996: 200},
+        "AAA00002": {1995: 300, 1996: 400},
+        "AAA00003": {1995: 500, 1996: 600},
+        "BBB00001": {1995: 700, 1996: 800},
+    }
+
+    metadata = create_dummy_population_file_for_disease_with_years(
+        disease=Disease.LF,
+        iu_yearly_population_map=iu_yearly_population_map,
+    )
+
+    iu_data = IUData(metadata,
+                     disease=Disease.LF,
+                     iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
+    population_data = iu_data.get_priority_population_for_africa()
+    assert type(population_data) == dict
+    assert population_data == {
+        1995: sum([100, 300, 500, 700]),
+        1996: sum([200, 400, 600, 800]),
+    }
 
 
 def test_get_africa_population_modelled_ius_only():

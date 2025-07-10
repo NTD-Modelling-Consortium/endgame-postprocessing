@@ -125,17 +125,24 @@ class IUData:
         if not self.has_yearly_data:
             return included_ius_in_country[population_column].sum()
 
-        years = included_ius_in_country['Year'].unique()
+        years = included_ius_in_country["Year"].unique()
         return {
-            year: included_ius_in_country[included_ius_in_country['Year'] == year][
+            year: included_ius_in_country[included_ius_in_country["Year"] == year][
                 population_column].sum()
             for year in years
         }
 
     def get_priority_population_for_africa(self):
-        return self.get_included_ius()[
-            _get_priority_population_column_for_disease(self.disease)
-        ].sum()
+        included_ius = self.get_included_ius()
+        population_column = _get_priority_population_column_for_disease(self.disease)
+        if not self.has_yearly_data:
+            return included_ius[population_column].sum()
+
+        years = included_ius["Year"].unique()
+        return {
+            year: included_ius[included_ius["Year"] == year][population_column].sum()
+            for year in years
+        }
 
     def get_total_ius_in_country(self, country_code):
         return len(self._get_included_ius_for_country(country_code))

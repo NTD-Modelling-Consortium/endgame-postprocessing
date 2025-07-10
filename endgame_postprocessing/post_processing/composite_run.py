@@ -1,31 +1,31 @@
 import itertools
-from typing import List
+from typing import List, Dict
 
 import numpy as np
 import pandas as pd
-from numpy.ma.core import shape
 
 from endgame_postprocessing.post_processing import canonical_columns
 from endgame_postprocessing.post_processing.iu_data import IUData
 
 
-def build_iu_case_numbers(canonical_iu_run, population) -> pd.DataFrame:
-    return canonical_iu_run.loc[:, "draw_0":] * population
+def _get_priority_populations(ius: List[pd.DataFrame], iu_metadata: IUData):
+    """
+    Retrieves the priority populations for each Implementation Unit (IU) across multiple years.
 
+    Args:
+        ius (list[pd.DataFrame]): A list of DataFrames, each representing an IU, containing IU-specific data.
+        iu_metadata (IUData): An IUData object that provides metadata and helper methods for IUs.
 
-def _get_priority_populations(ius, iu_metadata: IUData):
-    # Get the population over the years for each IU
-    # populations[i]: List[int] => Yearly population
-    populations = [
+    Returns:
+        np.ndarray: A 3D numpy array where each element represents the yearly priority population for an IU.
+                    Shape is (number of IUs, years, 1).
+    """
+    return np.array([
         iu_metadata.get_priority_population_for_IU(
             iu_code=iu[canonical_columns.IU_NAME].iloc[0]
         )
         for iu in ius
-    ]
-    as_array = np.array(populations).reshape((len(ius),
-                                              len(populations[0]) if type(populations[0]) == list else 1,
-                                              -1))
-    return as_array
+    ]).reshape(len(ius), -1, 1)
     # return np.array(populations)[:, np.newaxis, np.newaxis]
 
 
@@ -34,9 +34,106 @@ def build_composite_run(
         iu_data: IUData,
         is_africa=False,
 ):
+    """
+    Build a composite run by aggregating disease prevalence data across multiple Implementation Units (IUs).
+
+    This function performs the following mathematical operations:
+
+    Step 1: Extract draws from canonical IUs (3D array)
+           
+    all_ius_draws:
+                        draws (columns)
+                     [draw_0, draw_1, ..., draw_n]
+           IU_0 ┌─┬─────────────────────────────┐
+                │ │ prevalence values...        │ year_0
+                │ ├─────────────────────────────┤
+                │ │ prevalence values...        │ year_1
+                │ ├─────────────────────────────┤
+                │ │ ...                         │ ...
+                │ └─────────────────────────────┘
+           IU_1 ├─┬─────────────────────────────┐
+                │ │ prevalence values...        │
+                │ ├─────────────────────────────┤
+                │ │ prevalence values...        │
+                │ └─────────────────────────────┘
+           ...  └─────────────────────────────────┘
+           
+    Shape: (num_IUs, num_years, num_draws)
+
+
+    Step 2: Get priority populations (3D array with single column)
+
+    populations:
+           IU_0 ┌─┐
+                │ │ pop_year_0
+                │ │ pop_year_1
+                │ │ ...
+                └─┘
+           IU_1 ┌─┐
+                │ │ pop_year_0
+                │ │ pop_year_1
+                └─┘
+           ...
+           
+    Shape: (num_IUs, num_years, 1)
+
+
+    Step 3: Element-wise multiplication (broadcasting)
+
+    case_numbers_across_ius = all_ius_draws * populations
+
+           IU_0 ┌─┬─────────────────────────────┐
+                │ │ cases = prev × pop          │ year_0
+                │ ├─────────────────────────────┤
+                │ │ cases = prev × pop          │ year_1
+                │ └─────────────────────────────┘
+           IU_1 ├─┬─────────────────────────────┐
+                │ │ cases = prev × pop          │
+                │ └─────────────────────────────┘
+           ...
+           
+    Shape: (num_IUs, num_years, num_draws)
+
+
+    Step 4: Sum across IUs (axis=0)
+
+    case_numbers_in_country = np.sum(..., axis=0)
+
+                ┌─────────────────────────────┐
+                │ Σ(IU_0 + IU_1 + ... IU_n)   │ year_0
+                ├─────────────────────────────┤
+                │ Σ(IU_0 + IU_1 + ... IU_n)   │ year_1
+                ├─────────────────────────────┤
+                │ ...                         │ ...
+                └─────────────────────────────┘
+                
+    Shape: (num_years, num_draws)
+
+
+    Step 5: Divide by total population
+
+    prevalence = case_numbers_in_country / total_population
+
+    total_population:     Final prevalence:
+    ┌─────────┐          ┌─────────────────────────────┐
+    │ pop_y0  │          │ total_cases/total_pop       │ year_0
+    │ pop_y1  │    →     │ total_cases/total_pop       │ year_1
+    │ ...     │          │ ...                         │ ...
+    └─────────┘          └─────────────────────────────┘
+
+    Shape: (years, 1)     Shape: (num_years, num_draws)
+
+    Args:
+        canonical_iu_runs: List of DataFrames containing prevalence data for each IU
+        iu_data: IUData object containing population metadata
+        is_africa: Whether to compute for Africa (True) or country level (False)
+
+    Returns:
+        pd.DataFrame: Composite prevalence data aggregated across all IUs
+    """
     # Assumptions: same number of draws in each IU run
     # Same year IDs in each one
-    draw_columns, all_ius_draws = canonical_columns.extract_draws(canonical_iu_runs)
+    draw_column_names, all_ius_draws = canonical_columns.extract_draws(canonical_iu_runs)
 
     # Compute the mean number of disease cases as a proportion of the population
     # in each draw, for every IU
@@ -60,7 +157,7 @@ def build_composite_run(
 
     # DataFrame - Mean prevalence (across all IUs) for all the years
     prevalence = pd.DataFrame(
-        summed_case_numbers / total_population, columns=draw_columns
+        summed_case_numbers / total_population, columns=draw_column_names
     )
 
     columns_to_use = [
