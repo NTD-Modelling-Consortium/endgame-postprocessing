@@ -1,11 +1,12 @@
 from pathlib import Path
-from typing import Dict, Optional, Union, TypeAlias
+from typing import Dict, Optional, Union, TypeAlias, List
 
 import more_itertools as miter
 import pandas as pd
 
-from endgame_postprocessing.post_processing import iu_data
+from endgame_postprocessing.post_processing import iu_data, canonical_columns
 from endgame_postprocessing.post_processing.disease import Disease
+from endgame_postprocessing.post_processing.iu_data import _get_priority_population_column_for_disease
 
 DEFAULT_POPULATION_SIZE = 10000
 
@@ -16,6 +17,57 @@ IUYearlyPopulationMap = Dict[str, YearlyPopulationMap]
 IUPopulationData = IUPopulationMap | IUYearlyPopulationMap
 
 DiseasePopulationData: TypeAlias = Dict[Disease, IUPopulationData]
+
+
+def create_population_metadata_file_with_yearly_data(raw_data_csv: Path,
+                                                     iuid_column: str,
+                                                     country_code_column: str,
+                                                     year_column: str,
+                                                     population_column: str,
+                                                     disease: Disease,
+                                                     save_to_file: Path | None = "PopulationMetadatafile.csv") -> pd.DataFrame:
+    """
+    Create a population metadata file with canonical structure from a raw data CSV file.
+    Args:
+        raw_data_csv: CSV file containing raw IU-wise population numbers (potentially yearly)
+        Note: Automatically constructs an "IU_CODE" column from the `country_code_column` and `iuid_column`.
+
+    Returns:
+        pandas DataFrame containing the population data
+    """
+    # Validate that all required columns exist in the provided CSV file
+    required_columns = {iuid_column, country_code_column, year_column, population_column}
+    input_data = pd.read_csv(raw_data_csv)
+    missing_columns = required_columns - set(input_data.columns)
+
+    if missing_columns:
+        raise ValueError(f"Missing required columns in the input data: {', '.join(missing_columns)}")
+
+    # Sort the input_data DataFrame by the iuid column
+    input_data.sort_values(by=[iuid_column, year_column], ascending=[True, True], inplace=True)
+
+    # Filter the 'sex' column if it exists to only select rows where value is "both"
+    if "sex" in input_data.columns:
+        input_data = input_data[input_data["sex"] == "both"]
+        input_data.drop(columns=["sex"], inplace=True)
+
+    priority_population_column_disease = _get_priority_population_column_for_disease(disease)
+    column_mapping = {
+        country_code_column: "ADMIN0ISO3",
+        year_column        : "Year",
+        population_column  : priority_population_column_disease
+    }
+
+    input_data.rename(columns=column_mapping, inplace=True)
+
+    # Create IU_CODE column in [A-Z]{3}[0-9]{5} format
+    input_data["IU_CODE"] = input_data["ADMIN0ISO3"] + input_data[iuid_column].astype(str).str.zfill(5)
+
+    input_data = input_data[["IU_CODE", "Year", "ADMIN0ISO3", priority_population_column_disease]]
+    if save_to_file is not None:
+        input_data.to_csv(save_to_file, index=False)
+
+    return input_data
 
 
 def create_dummy_population_file(disease_data: DiseasePopulationData,

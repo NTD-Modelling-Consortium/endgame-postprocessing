@@ -1,5 +1,10 @@
+from pathlib import Path
+
 import pandas as pd
 import pytest
+import pandas.testing as pdt
+from pyfakefs.fake_filesystem import FakeFilesystem
+
 from endgame_postprocessing.post_processing.iu_data import (
     IUData,
     IUSelectionCriteria,
@@ -8,7 +13,8 @@ from endgame_postprocessing.post_processing.iu_data import (
 
 from endgame_postprocessing.post_processing.disease import Disease
 from tests.test_util.create_dummy_pop_file import create_dummy_population_file_for_disease, \
-    create_dummy_population_file_for_disease_with_years, create_dummy_population_file
+    create_dummy_population_file_for_disease_with_years, create_dummy_population_file, \
+    create_population_metadata_file_with_yearly_data
 
 
 def test_iu_data_get_priority_population_iu_missing_raises_exception():
@@ -366,3 +372,39 @@ def test_simulated_ius_includes_simulated_iu():
             ).get_priority_population_for_africa()
             == 500
     )
+
+
+def test_create_yearly_population_metadatafile_from_raw_data(fs: FakeFilesystem):
+    raw_data_contents = {
+        "IU_ID"      : ["1", "1", "1", "1", "2", "2", "2", "2"],
+        "year_id"    : [1995, 1995, 1996, 1996, 1995, 1995, 1996, 1996],
+        "adj_pop"    : [10, 5, 15, 7, 20, 12, 25, 13],
+        "ihme_loc_id": ["AAA", "AAA", "AAA", "AAA", "BBB", "BBB", "BBB", "BBB"],
+        "sex"        : ["both", "male", "both", "female", "both", "male", "both", "female"],
+    }
+
+    path_to_raw_data = Path("raw_data.csv")
+    fs.create_file(file_path=path_to_raw_data,
+                   contents=pd.DataFrame(raw_data_contents).to_csv(index=False))
+    result_df = create_population_metadata_file_with_yearly_data(path_to_raw_data,
+                                                                 iuid_column="IU_ID",
+                                                                 country_code_column="ihme_loc_id",
+                                                                 year_column="year_id",
+                                                                 population_column="adj_pop",
+                                                                 disease=Disease.ONCHO,
+                                                                 save_to_file=None)
+
+    # Verify the data matches what we expect after filtering for sex="both"
+    raw_data_df = pd.read_csv(path_to_raw_data, usecols=["IU_ID", "year_id", "adj_pop", "ihme_loc_id", "sex"])
+    raw_data_df.sort_values(by=["IU_ID", "year_id"], inplace=True, ascending=[True, True])
+    raw_data_df = raw_data_df[raw_data_df["sex"] == "both"]
+    raw_data_df.drop(columns=["sex"], inplace=True)
+    raw_data_df.rename(columns={
+        "ihme_loc_id": "ADMIN0ISO3",
+        "year_id"    : "Year",
+        "adj_pop"    : "Priority_Population_Oncho",
+    }, inplace=True)
+
+    match_cols = list(raw_data_df.columns)
+    match_cols.remove("IU_ID")
+    pdt.assert_frame_equal(result_df[match_cols], raw_data_df[match_cols])
