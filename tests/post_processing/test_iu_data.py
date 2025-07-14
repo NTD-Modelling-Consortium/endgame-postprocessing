@@ -136,10 +136,56 @@ def test_iu_data_get_ius_in_country_one_iu_one_country():
     )
 
 
+def test_iu_data_get_ius_in_country_one_iu_one_country_yearly_population():
+    metadata = create_dummy_population_file_for_disease_with_years(
+        disease=Disease.ONCHO,
+        iu_yearly_population_map={
+            "AAA00001": {1995: 10, 1996: 20},
+            "BBB00001": {1995: 30, 1996: 40},
+        }, save_to_file=None)
+
+    assert (
+            IUData(
+                metadata,
+                disease=Disease.ONCHO,
+                iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
+            ).get_total_ius_in_country("AAA")
+            == 1
+    )
+
+
 def test_iu_data_get_ius_in_country_many_iu_one_country():
     metadata = create_dummy_population_file({
         Disease.LF: {"AAA00001": 10, "AAA00002": 10, "AAA00003": 10}
     })
+
+    assert (
+            IUData(
+                metadata,
+                disease=Disease.LF,
+                iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
+            ).get_total_ius_in_country("AAA")
+            == 3
+    )
+
+
+def test_iu_data_get_ius_in_country_many_iu_one_country_yearly_population():
+    metadata = create_dummy_population_file_for_disease_with_years(disease=Disease.LF,
+                                                                   iu_yearly_population_map={
+                                                                       "AAA00001": {
+                                                                           1995: 10,
+                                                                           1996: 20,
+                                                                       },
+                                                                       "AAA00002": {
+                                                                           1995: 30,
+                                                                           1996: 40,
+                                                                       },
+                                                                       "AAA00003": {
+                                                                           1995: 50,
+                                                                           1996: 60,
+                                                                       }
+                                                                   },
+                                                                   save_to_file=None)
 
     assert (
             IUData(

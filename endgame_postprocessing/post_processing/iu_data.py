@@ -5,6 +5,7 @@ from typing import Optional
 import pandas as pd
 from numpy.f2py.cfuncs import includes
 
+from endgame_postprocessing.post_processing import canonical_columns
 from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.endemicity_classification import (
     ENDEMICITY_CLASSIFIERS,
@@ -145,12 +146,15 @@ class IUData:
         }
 
     def get_total_ius_in_country(self, country_code):
-        return len(self._get_included_ius_for_country(country_code))
+        included_ius_in_country = self._get_included_ius_for_country(country_code)
+        if not self.has_yearly_data:
+            return len(included_ius_in_country)
+        else:
+            # For yearly data, count unique IU_CODEs, not total rows
+            return len(included_ius_in_country["IU_CODE"].unique())
 
     def _get_included_ius_for_country(self, country_code):
-        return self.get_included_ius().loc[
-            self.input_data["ADMIN0ISO3"] == country_code
-            ]
+        return self.get_included_ius().loc[self.input_data["ADMIN0ISO3"] == country_code]
 
     def get_included_ius(self):
         if self.iu_selection_criteria == IUSelectionCriteria.ALL_IUS:
