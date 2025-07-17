@@ -1,11 +1,12 @@
-import shutil
-import endgame_postprocessing.model_wrappers.oncho.testRun as oncho_runner
-
-from pathlib import Path
-import pytest
 import json
+import shutil
+from pathlib import Path
 
+import pytest
+
+import endgame_postprocessing.model_wrappers.oncho.testRun as oncho_runner
 from tests.end_to_end.snapshot_with_csv import validate_expected_dir
+
 
 def test_oncho_empty_input_directory(mocker):
     with pytest.raises(Exception) as exception:
@@ -20,6 +21,7 @@ def test_oncho_empty_input_directory(mocker):
 
     assert "No data for IUs found - see above warnings and check input directory" in str(exception)
 
+
 def test_oncho_bad_historic_prefix():
     input_data = Path(__file__).parent / "example_input_data" / "oncho"
     output_path = Path(__file__).parent / "generated_data"
@@ -33,6 +35,7 @@ def test_oncho_bad_historic_prefix():
             input_dir=input_data, output_dir=output_path, historic_dir=historic_data,
             historic_prefix="*"
         )
+
 
 def test_oncho_end_to_end(snapshot):
     test_root = Path(__file__).parent
@@ -59,7 +62,7 @@ def test_oncho_end_to_end(snapshot):
             warning
             for warning in aggregation_info["warnings"]
             if "example_input_data/oncho/PopulationMetadatafile.csv"
-            not in warning["message"]
+               not in warning["message"]
         ]
     with open(f'{output_path}/aggregation_info.json', "w") as f:
         new_aggregation_info = aggregation_info
