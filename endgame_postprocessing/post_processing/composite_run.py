@@ -148,14 +148,15 @@ def build_composite_run(
     summed_case_numbers = np.sum(iu_case_numbers, axis=0)
 
     if is_africa:
-        total_population = iu_data.get_priority_population_for_africa()
+        total_population_iter = iu_data.get_priority_population_for_africa()
     else:
-        total_population = iu_data.get_priority_population_for_country(
+        total_population_iter = iu_data.get_priority_population_for_country(
             canonical_iu_runs[0][canonical_columns.COUNTRY_CODE].iloc[0]
         )
 
-    if type(total_population) is dict:
-        total_population = np.array(list(total_population.values())).reshape((len(total_population), -1))
+    # Use islice to get the right number of years for both longitudinal and non-longitudinal data
+    num_years = canonical_iu_runs[0][canonical_columns.YEAR_ID].nunique()
+    total_population = np.array(list(itertools.islice(total_population_iter, num_years))).reshape((-1, 1))
 
     # DataFrame - Mean prevalence (across all IUs) for all the years
     prevalence = pd.DataFrame(

@@ -446,13 +446,12 @@ def _compute_prevalences_in_country(canonical_ius: List[pd.DataFrame],
         case_numbers_across_ius = all_ius_draws * populations
 
         case_numbers_in_country = np.sum(case_numbers_across_ius, axis=0)
-        total_population = population_data.get_priority_population_for_country(
+        total_population_iter = population_data.get_priority_population_for_country(
             ius_for_scenario[0][canonical_columns.COUNTRY_CODE].iloc[0]
         )
 
-        if type(total_population) is dict:
-            # population data is by year => in a given year what's the total population from all the IUs in the country
-            total_population = np.array(list(total_population.values())).reshape((-1, 1))
+        # Use islice to get the right number of years for both longitudinal and non-longitudinal data
+        total_population = np.array(list(itertools.islice(total_population_iter, num_years))).reshape((-1, 1))
 
         result.append(pd.DataFrame(
             case_numbers_in_country / total_population,

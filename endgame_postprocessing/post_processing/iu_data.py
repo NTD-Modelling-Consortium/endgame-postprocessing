@@ -209,70 +209,118 @@ class IUData:
 
         return iter(pop_iterator)
 
-    def get_priority_population_for_country(self, country_code: str):
+    def get_priority_population_for_country(self, country_code: str, year: Optional[int] = None) -> Iterator[int]:
         """
         Get the total priority population for a specific country.
         
         This method uses precomputed views for efficient lookups, avoiding the need
-        to filter and aggregate data on each call.
+        to filter and aggregate data on each call. Returns an iterator for consistency
+        with other get_priority_population methods.
         
         Args:
             country_code (str): The ISO3 country code (e.g., "ETH", "NGA")
+            year (Optional[int]): Specific year to get population for. If None, returns
+                iterator over all available years.
             
         Returns:
-            For non-longitudinal data:
-                int: Total population count for the country
-            For longitudinal data:
-                dict[int, int]: Dictionary mapping year to total population count
+            Iterator[int]: Iterator yielding population counts
+            
+        For non-longitudinal data:
+            - Without year: infinite iterator repeating the same population value
+            - With year: single-item iterator with the population value
+            
+        For longitudinal data:
+            - Without year: finite iterator over all years in chronological order
+            - With year: single-item iterator with the population for that year
                 
         Example:
             ```python
             # Non-longitudinal data
-            total_pop = iu_data.get_priority_population_for_country("ETH")
+            total_pop = next(iu_data.get_priority_population_for_country("ETH"))
             # Returns: 1500000
             
-            # Longitudinal data
-            yearly_pop = iu_data.get_priority_population_for_country("ETH")
-            # Returns: {2020: 1400000, 2021: 1500000, 2022: 1600000}
+            # Longitudinal data - all years
+            yearly_pops = list(iu_data.get_priority_population_for_country("ETH"))
+            # Returns: [1400000, 1500000, 1600000]
+            
+            # Specific year
+            pop_2021 = next(iu_data.get_priority_population_for_country("ETH", 2021))
+            # Returns: 1500000
             ```
         """
+        if year is not None:
+            # Return single value for specific year
+            if not self.is_longitudinal:
+                pop = self._country_population.get(country_code, 0)
+            else:
+                pop = self._country_population_by_year.get((country_code, year), 0)
+            return more_itertools.always_iterable(pop)
+        
         if not self.is_longitudinal:
-            return self._country_population.get(country_code, 0)
+            # Infinite iterator for non-longitudinal data
+            return itertools.repeat(self._country_population.get(country_code, 0))
 
-        # For longitudinal data, return dictionary of year -> population
-        result = {}
-        for (country, year), pop in self._country_population_by_year.items():
+        # Finite iterator over years for longitudinal data
+        country_data = []
+        for (country, year), pop in sorted(self._country_population_by_year.items()):
             if country == country_code:
-                result[year] = pop
-        return result
+                country_data.append((year, pop))
+        # Sort by year and return iterator over population values
+        return iter(pop for year, pop in sorted(country_data))
 
-    def get_priority_population_for_africa(self):
+    def get_priority_population_for_africa(self, year: Optional[int] = None) -> Iterator[int]:
         """
         Get the total priority population for all of Africa.
         
         This method uses precomputed views for efficient lookups, aggregating
-        population data across all countries and IUs.
+        population data across all countries and IUs. Returns an iterator for consistency
+        with other get_priority_population methods.
         
+        Args:
+            year (Optional[int]): Specific year to get population for. If None, returns
+                iterator over all available years.
+            
         Returns:
-            For non-longitudinal data:
-                int: Total population count for Africa
-            For longitudinal data:
-                dict[int, int]: Dictionary mapping year to total population count
+            Iterator[int]: Iterator yielding population counts
+            
+        For non-longitudinal data:
+            - Without year: infinite iterator repeating the same population value
+            - With year: single-item iterator with the population value
+            
+        For longitudinal data:
+            - Without year: finite iterator over all years in chronological order
+            - With year: single-item iterator with the population for that year
                 
         Example:
             ```python
             # Non-longitudinal data
-            total_pop = iu_data.get_priority_population_for_africa()
+            total_pop = next(iu_data.get_priority_population_for_africa())
             # Returns: 50000000
             
-            # Longitudinal data
-            yearly_pop = iu_data.get_priority_population_for_africa()
-            # Returns: {2020: 48000000, 2021: 50000000, 2022: 52000000}
+            # Longitudinal data - all years
+            yearly_pops = list(iu_data.get_priority_population_for_africa())
+            # Returns: [48000000, 50000000, 52000000]
+            
+            # Specific year
+            pop_2021 = next(iu_data.get_priority_population_for_africa(2021))
+            # Returns: 50000000
             ```
         """
+        if year is not None:
+            # Return single value for specific year
+            if not self.is_longitudinal:
+                pop = self._africa_total_population
+            else:
+                pop = self._africa_population_by_year.get(year, 0)
+            return more_itertools.always_iterable(pop)
+        
         if not self.is_longitudinal:
-            return self._africa_total_population
-        return self._africa_population_by_year
+            # Infinite iterator for non-longitudinal data
+            return itertools.repeat(self._africa_total_population)
+        else:
+            # Finite iterator over years for longitudinal data
+            # Sort by year and return iterator over population values
+            return iter(pop for year, pop in sorted(self._africa_population_by_year.items()))
 
     def get_total_ius_in_country(self, country_code: str) -> int:
         """
@@ -365,6 +413,31 @@ class IUData:
     
     @property
     def year_range(self):
+        """
+        Get the year range for longitudinal data.
+        
+        This property returns information about the temporal coverage of the population data.
+        For longitudinal data, it provides the minimum and maximum years available in the dataset.
+        For non-longitudinal data, it returns an empty dictionary.
+        
+        Returns:
+            dict: Dictionary containing year range information:
+                - For longitudinal data: {"min": int, "max": int} representing the earliest and latest years
+                - For non-longitudinal data: {} (empty dictionary)
+                
+        Example:
+            ```python
+            # Longitudinal data
+            iu_data = IUData(longitudinal_df, Disease.LF, IUSelectionCriteria.ALL_IUS)
+            year_range = iu_data.year_range
+            # Returns: {"min": 1995, "max": 2025}
+            
+            # Non-longitudinal data
+            iu_data = IUData(static_df, Disease.LF, IUSelectionCriteria.ALL_IUS)
+            year_range = iu_data.year_range
+            # Returns: {}
+            ```
+        """
         return self._year_range
 
     def _get_modelled_ius(self):

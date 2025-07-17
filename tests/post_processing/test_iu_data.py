@@ -1,5 +1,7 @@
+import itertools
 from pathlib import Path
 
+import more_itertools
 import pandas as pd
 import pytest
 import pandas.testing as pdt
@@ -24,9 +26,8 @@ def test_iu_data_get_priority_population_iu_missing_raises_exception():
             ius_population_map={},
             save_to_file=None,
         )
-        IUData(metadata,
-               disease=Disease.LF,
-               iu_selection_criteria=IUSelectionCriteria.ALL_IUS).get_priority_population_for_IU("AAA00001")
+        IUData(metadata, disease=Disease.LF,
+               iu_selection_criteria=IUSelectionCriteria.ALL_IUS).get_priority_population_for_iu("AAA00001")
 
 
 def test_iu_data_without_valid_priority_population_column_raises_exception():
@@ -34,11 +35,7 @@ def test_iu_data_without_valid_priority_population_column_raises_exception():
         metadata = create_dummy_population_file_for_disease(Disease.LF, {})
         metadata.rename(columns={"Priority_Population_LF": "Priority_Population_InvalidDisease"}, inplace=True)
 
-        IUData(
-            metadata,
-            disease=Disease.LF,
-            iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-        )
+        IUData(metadata, disease=Disease.LF, iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
     assert e.match(
         "No priority population found for disease LF, expected Priority_Population_LF"
     )
@@ -46,33 +43,39 @@ def test_iu_data_without_valid_priority_population_column_raises_exception():
 
 def test_iu_data_get_priority_population_invalid_iu_raises_exception():
     with (pytest.raises(Exception)):
-        IUData(pd.DataFrame({"IU_CODE": []}),
-               disease=Disease.LF,
-               iu_selection_criteria=IUSelectionCriteria.ALL_IUS).get_priority_population_for_IU("AAA0001")
+        IUData(pd.DataFrame({"IU_CODE": []}), disease=Disease.LF,
+               iu_selection_criteria=IUSelectionCriteria.ALL_IUS).get_priority_population_for_iu("AAA0001")
 
 
-def test_iu_data_get_priority_population_iu_in():
-    assert (
-            IUData(
-                pd.DataFrame({"IU_CODE": ["AAA00001"], "Priority_Population_LF": [10]}),
-                disease=Disease.LF,
-                iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-            ).get_priority_population_for_IU("AAA00001")
-            == 10
+def test_iu_data_get_priority_population_for_iu():
+    meta_data = IUData(
+        create_dummy_population_file_for_disease(
+            disease=Disease.LF,
+            ius_population_map={"AAA00001": 10},
+            save_to_file=None,
+        ),
+        disease=Disease.LF,
+        iu_selection_criteria=IUSelectionCriteria.ALL_IUS
     )
+    population = meta_data.get_priority_population_for_iu("AAA00001")
+
+    assert meta_data.is_longitudinal is False
+    assert 10 == next(population)
 
 
 def test_iu_data_get_priority_population_iu_from_oncho_all_years():
-    meta_data = create_dummy_population_file_for_disease_with_years(Disease.ONCHO, {
-        "AAAXXXX00001": {1995: 10,
-                         1996: 10}
-    }, save_to_file=None)
+    iudata = IUData(
+        create_dummy_population_file_for_disease_with_years(Disease.ONCHO,
+                                                            {
+                                                                "AAAXXXX00001": {1995: 10,
+                                                                                 1996: 10}
+                                                            }, save_to_file=None),
+        disease=Disease.ONCHO,
+        iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
+    yearly_population = list(iudata.get_priority_population_for_iu("AAAXXXX00001"))
 
-    iudata = IUData(meta_data,
-                    disease=Disease.ONCHO,
-                    iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
-    yearly_population = iudata.get_priority_population_for_IU("AAAXXXX00001")
-    assert len(yearly_population) > 0
+    assert iudata.is_longitudinal is True
+    assert len(yearly_population) == 2
     assert yearly_population[0] == 10
     assert yearly_population[1] == 10
 
@@ -83,12 +86,10 @@ def test_iu_data_get_priority_population_iu_from_oncho_specific_year():
                          1996: 10}
     }, save_to_file=None)
 
-    iudata = IUData(meta_data,
-                    disease=Disease.ONCHO,
-                    iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
-    yearly_population = iudata.get_priority_population_for_IU("AAAXXXX00001", 1996)
-    assert yearly_population is not None
-    assert yearly_population == 10
+    iudata = IUData(meta_data, disease=Disease.ONCHO, iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
+    yearly_population = iudata.get_priority_population_for_iu("AAAXXXX00001", 1996)
+    assert iudata.is_longitudinal is True
+    assert more_itertools.only(yearly_population) == 10
 
 
 def test_iu_data_get_priority_population_iu_in_from_oncho():
@@ -97,46 +98,36 @@ def test_iu_data_get_priority_population_iu_in_from_oncho():
         Disease.ONCHO: {"AAA00001": 20}
     })
 
-    assert (
-            IUData(
-                metadata,
-                disease=Disease.ONCHO,
-                iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-            ).get_priority_population_for_IU("AAA00001")
-            == 20
-    )
+    iudata = IUData(metadata, disease=Disease.ONCHO,
+                    iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
+    population = iudata.get_priority_population_for_iu("AAA00001")
+    assert iudata.is_longitudinal is False
+    assert more_itertools.first(population) == 20
 
 
 def test_duplicate_iu_raises_exception():
     with pytest.raises(InvalidIUDataFile):
-        IUData(
-            pd.DataFrame(
-                {
-                    "IU_CODE"               : ["AAA00001", "AAA00001"],
-                    "Priority_Population_LF": [10, 20],
-                }
-            ),
-            disease=Disease.LF,
-            iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-        )
+        IUData(pd.DataFrame(
+            {
+                "IU_CODE"               : ["AAA00001", "AAA00001"],
+                "Priority_Population_LF": [10, 20],
+            }
+        ), disease=Disease.LF, iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
 
 
-def test_iu_data_get_ius_in_country_one_iu_one_country():
+def test_iu_data_count_ius_in_country_one_iu_one_country():
     metadata = create_dummy_population_file({
         Disease.LF: {"AAA00001": 10}
     })
 
     assert (
-            IUData(
-                metadata,
-                disease=Disease.LF,
-                iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-            ).get_total_ius_in_country("AAA")
+            IUData(metadata, disease=Disease.LF,
+                   iu_selection_criteria=IUSelectionCriteria.ALL_IUS).get_total_ius_in_country("AAA")
             == 1
     )
 
 
-def test_iu_data_get_ius_in_country_one_iu_one_country_yearly_population():
+def test_iu_data_count_ius_in_country_one_iu_one_country_yearly_population():
     metadata = create_dummy_population_file_for_disease_with_years(
         disease=Disease.ONCHO,
         iu_yearly_population_map={
@@ -145,124 +136,114 @@ def test_iu_data_get_ius_in_country_one_iu_one_country_yearly_population():
         }, save_to_file=None)
 
     assert (
-            IUData(
-                metadata,
-                disease=Disease.ONCHO,
-                iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-            ).get_total_ius_in_country("AAA")
+            IUData(metadata, disease=Disease.ONCHO,
+                   iu_selection_criteria=IUSelectionCriteria.ALL_IUS).get_total_ius_in_country("AAA")
             == 1
     )
 
 
-def test_iu_data_get_ius_in_country_many_iu_one_country():
+def test_iu_data_count_ius_in_country_many_iu_one_country():
     metadata = create_dummy_population_file({
-        Disease.LF: {"AAA00001": 10, "AAA00002": 10, "AAA00003": 10}
+        Disease.LF: {
+            "AAA00001": 10,
+            "AAA00002": 10,
+            "AAA00003": 10,
+        }
     })
 
     assert (
-            IUData(
-                metadata,
-                disease=Disease.LF,
-                iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-            ).get_total_ius_in_country("AAA")
+            IUData(metadata, disease=Disease.LF,
+                   iu_selection_criteria=IUSelectionCriteria.ALL_IUS).get_total_ius_in_country("AAA")
             == 3
     )
 
 
-def test_iu_data_get_ius_in_country_many_iu_one_country_yearly_population():
-    metadata = create_dummy_population_file_for_disease_with_years(disease=Disease.LF,
-                                                                   iu_yearly_population_map={
-                                                                       "AAA00001": {
-                                                                           1995: 10,
-                                                                           1996: 20,
-                                                                       },
-                                                                       "AAA00002": {
-                                                                           1995: 30,
-                                                                           1996: 40,
-                                                                       },
-                                                                       "AAA00003": {
-                                                                           1995: 50,
-                                                                           1996: 60,
-                                                                       }
-                                                                   },
-                                                                   save_to_file=None)
+def test_iu_data_count_ius_in_country_many_iu_one_country_yearly_population():
+    metadata = create_dummy_population_file_for_disease_with_years(
+        disease=Disease.LF,
+        iu_yearly_population_map={
+            "AAA00001": {
+                1995: 10,
+                1996: 20,
+            },
+            "AAA00002": {
+                1995: 30,
+                1996: 40,
+            },
+            "AAA00003": {
+                1995: 50,
+                1996: 60,
+            }
+        },
+        save_to_file=None,
+    )
 
     assert (
-            IUData(
-                metadata,
-                disease=Disease.LF,
-                iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-            ).get_total_ius_in_country("AAA")
+            IUData(metadata, disease=Disease.LF,
+                   iu_selection_criteria=IUSelectionCriteria.ALL_IUS).get_total_ius_in_country("AAA")
             == 3
     )
 
 
 def test_iu_data_get_ius_in_country_only_modelled():
     assert (
-            IUData(
-                pd.DataFrame(
-                    {
-                        "ADMIN0ISO3"            : ["AAA"] * 3,
-                        "IU_CODE"               : ["AAA00001", "AAA00002", "AAA00003"],
-                        "Priority_Population_LF": [10] * 3,
-                        "Modelled_LF"           : [True, False, False],
-                    }
-                ),
-                disease=Disease.LF,
-                iu_selection_criteria=IUSelectionCriteria.MODELLED_IUS,
-            ).get_total_ius_in_country("AAA")
+            IUData(pd.DataFrame(
+                {
+                    "ADMIN0ISO3"            : ["AAA"] * 3,
+                    "IU_CODE"               : ["AAA00001", "AAA00002", "AAA00003"],
+                    "Priority_Population_LF": [10] * 3,
+                    "Modelled_LF"           : [True, False, False],
+                }
+            ), disease=Disease.LF,
+                iu_selection_criteria=IUSelectionCriteria.MODELLED_IUS).get_total_ius_in_country("AAA")
             == 1
     )
 
 
 def test_iu_data_get_ius_in_country_only_endemic_lf():
     assert (
-            IUData(
-                pd.DataFrame(
-                    {
-                        "ADMIN0ISO3"            : ["AAA"] * 3,
-                        "IU_CODE"               : ["AAA00001", "AAA00002", "AAA00003"],
-                        "Priority_Population_LF": [10] * 3,
-                        "Encemicity_LF"         : [
-                            "Endemic (MDA not delivered)",
-                            "Non-endemic",
-                            "Non-endemic",
-                        ],
-                    }
-                ),
-                disease=Disease.LF,
-                iu_selection_criteria=IUSelectionCriteria.ENDEMIC_IUS,
-            ).get_total_ius_in_country("AAA")
+            IUData(pd.DataFrame(
+                {
+                    "ADMIN0ISO3"            : ["AAA"] * 3,
+                    "IU_CODE"               : ["AAA00001", "AAA00002", "AAA00003"],
+                    "Priority_Population_LF": [10] * 3,
+                    "Encemicity_LF"         : [
+                        "Endemic (MDA not delivered)",
+                        "Non-endemic",
+                        "Non-endemic",
+                    ],
+                }
+            ), disease=Disease.LF,
+                iu_selection_criteria=IUSelectionCriteria.ENDEMIC_IUS).get_total_ius_in_country("AAA")
             == 1
     )
 
 
-def test_iu_data_get_ius_in_country_many_iu_many_country():
+def test_iu_data_count_ius_in_country_many_iu_many_country():
     metadata = create_dummy_population_file({
-        Disease.LF: {"AAA00001": 10, "AAA00002": 10, "AAA00003": 10, "BBB00001": 10},
+        Disease.LF: {
+            "AAA00001": 10,
+            "AAA00002": 10,
+            "AAA00003": 10,
+            "BBB00001": 10
+        },
     })
     assert (
-            IUData(
-                metadata,
-                disease=Disease.LF,
-                iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-            ).get_total_ius_in_country("AAA")
+            IUData(metadata, disease=Disease.LF,
+                   iu_selection_criteria=IUSelectionCriteria.ALL_IUS).get_total_ius_in_country("AAA")
             == 3
     )
 
 
-def test_iu_data_get_ius_in_country_many_iu_many_country_include_only_modelled():
+def test_iu_data_count_ius_in_country_many_iu_many_country_include_only_modelled():
     metadata = create_dummy_population_file({
         Disease.LF: {"AAA00001": 10, "AAA00002": 10, "AAA00003": 10, "BBB00001": 10},
     })
     metadata["Modelled_LF"] = [True, False, False, True]
 
     assert (
-            IUData(
-                metadata,
-                disease=Disease.LF,
-                iu_selection_criteria=IUSelectionCriteria.MODELLED_IUS,
-            ).get_total_ius_in_country("AAA")
+            IUData(metadata, disease=Disease.LF,
+                   iu_selection_criteria=IUSelectionCriteria.MODELLED_IUS).get_total_ius_in_country("AAA")
             == 1
     )
 
@@ -277,11 +258,8 @@ def test_get_population_for_country():
         }
     })
     assert (
-            IUData(
-                metadata,
-                disease=Disease.LF,
-                iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-            ).get_priority_population_for_country("AAA")
+            next(IUData(metadata, disease=Disease.LF,
+                   iu_selection_criteria=IUSelectionCriteria.ALL_IUS).get_priority_population_for_country("AAA"))
             == 600
     )
 
@@ -297,13 +275,13 @@ def test_get_population_for_country_yearly():
         }
     )
     iu_data = IUData(metadata, Disease.LF, IUSelectionCriteria.ALL_IUS)
-    population_data = iu_data.get_priority_population_for_country("AAA")
+    population_data = list(iu_data.get_priority_population_for_country("AAA"))
 
-    assert type(population_data) == dict
-    assert population_data == {
-        1995: sum([100, 300, 500]),
-        1996: sum([200, 400, 600]),
-    }
+    assert type(population_data) == list
+    assert population_data == [
+        sum([100, 300, 500]),  # 1995
+        sum([200, 400, 600]),  # 1996
+    ]
 
 
 def test_get_population_for_country_modelled_only():
@@ -317,11 +295,8 @@ def test_get_population_for_country_modelled_only():
     })
     metadata["Modelled_LF"] = [True, False, False, True]
     assert (
-            IUData(
-                metadata,
-                disease=Disease.LF,
-                iu_selection_criteria=IUSelectionCriteria.MODELLED_IUS,
-            ).get_priority_population_for_country("AAA")
+            next(IUData(metadata, disease=Disease.LF,
+                   iu_selection_criteria=IUSelectionCriteria.MODELLED_IUS).get_priority_population_for_country("AAA"))
             == 100
     )
 
@@ -335,11 +310,8 @@ def test_get_africa_population():
     })
 
     assert (
-            IUData(
-                metadata,
-                disease=Disease.LF,
-                iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-            ).get_priority_population_for_africa()
+            next(IUData(metadata, disease=Disease.LF,
+                   iu_selection_criteria=IUSelectionCriteria.ALL_IUS).get_priority_population_for_africa())
             == 1000
     )
 
@@ -357,15 +329,13 @@ def test_get_africa_population_yearly():
         iu_yearly_population_map=iu_yearly_population_map,
     )
 
-    iu_data = IUData(metadata,
-                     disease=Disease.LF,
-                     iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
-    population_data = iu_data.get_priority_population_for_africa()
-    assert type(population_data) == dict
-    assert population_data == {
-        1995: sum([100, 300, 500, 700]),
-        1996: sum([200, 400, 600, 800]),
-    }
+    iu_data = IUData(metadata, disease=Disease.LF, iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
+    population_data = list(iu_data.get_priority_population_for_africa())
+    assert type(population_data) == list
+    assert population_data == [
+        sum([100, 300, 500, 700]),  # 1995
+        sum([200, 400, 600, 800]),  # 1996
+    ]
 
 
 def test_get_africa_population_modelled_ius_only():
@@ -375,11 +345,8 @@ def test_get_africa_population_modelled_ius_only():
     metadata["Modelled_LF"] = [True, False, False, True]
 
     assert (
-            IUData(
-                metadata,
-                disease=Disease.LF,
-                iu_selection_criteria=IUSelectionCriteria.MODELLED_IUS,
-            ).get_priority_population_for_africa()
+            next(IUData(metadata, disease=Disease.LF,
+                   iu_selection_criteria=IUSelectionCriteria.MODELLED_IUS).get_priority_population_for_africa())
             == 500
     )
 
@@ -396,11 +363,8 @@ def test_get_africa_population_endemic_ius_only():
     ]
 
     assert (
-            IUData(
-                metadata,
-                disease=Disease.ONCHO,
-                iu_selection_criteria=IUSelectionCriteria.ENDEMIC_IUS,
-            ).get_priority_population_for_africa()
+            next(IUData(metadata, disease=Disease.ONCHO,
+                   iu_selection_criteria=IUSelectionCriteria.ENDEMIC_IUS).get_priority_population_for_africa())
             == 500
     )
 
@@ -410,12 +374,8 @@ def test_simulated_ius_includes_simulated_iu():
         Disease.ONCHO: {"AAA00001": 100, "AAA00002": 200, "AAA00003": 300, "BBB00001": 400},
     })
     assert (
-            IUData(
-                metadata,
-                disease=Disease.ONCHO,
-                iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
-                simulated_IUs=["AAA00001", "BBB00001"],
-            ).get_priority_population_for_africa()
+            next(IUData(metadata, disease=Disease.ONCHO, iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
+                   simulated_ius=["AAA00001", "BBB00001"]).get_priority_population_for_africa())
             == 500
     )
 

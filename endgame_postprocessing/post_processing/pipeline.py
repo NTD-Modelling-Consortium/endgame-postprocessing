@@ -137,12 +137,8 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
 
     output_directory_structure.write_meta_data_file(working_directory, fixedup_meta_data_file)
 
-    iu_meta_data = IUData(
-        fixedup_meta_data_file,
-        pipeline_config.disease,
-        iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
-        simulated_IUs=all_ius,
-    )
+    iu_meta_data = IUData(fixedup_meta_data_file, pipeline_config.disease,
+                          iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS, simulated_ius=all_ius)
 
     all_iu_data = (
         iu_lvl_aggregate(aggregate_post_processed_files(f"{working_directory}/ius/"))
