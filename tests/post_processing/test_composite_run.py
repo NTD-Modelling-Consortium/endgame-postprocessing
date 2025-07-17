@@ -24,12 +24,9 @@ def test_build_composite_run_from_one_iu():
             "draw_1"      : [0.3, 0.4],
         }
     )
-    population_data = IUData(
-        create_dummy_population_file_for_disease(Disease.LF,
-                                                 {"AAA00001": 100}),
-        Disease.LF,
-        iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-    )
+    population_data = IUData(create_dummy_population_file_for_disease(Disease.LF,
+                                                                      {"AAA00001": 100}), Disease.LF,
+                             iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
 
     prevalences_df = _compute_prevalences_in_country([canoncial_iu], population_data)
 
@@ -75,15 +72,12 @@ def test_build_composite_run_from_two_iu_but_second_iu_ignored():
         }
     )
     canonical_ius = [canoncial_iu1, canoncial_iu2]
-    population_data = IUData(
-        create_dummy_population_file_for_disease(Disease.LF,
-                                                 {
-                                                     "AAA00001": 100,
-                                                     "AAA00002": 0,
-                                                 }),
-        Disease.LF,
-        iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-    )
+    population_data = IUData(create_dummy_population_file_for_disease(Disease.LF,
+                                                                      {
+                                                                          "AAA00001": 100,
+                                                                          "AAA00002": 0,
+                                                                      }), Disease.LF,
+                             iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
 
     metadata_df = pd.DataFrame(
         {
@@ -132,15 +126,12 @@ def test_build_composite_run_from_two_equal_sized_ius():
         }
     )
     canonical_ius = [canoncial_iu1, canoncial_iu2]
-    population_data = IUData(
-        create_dummy_population_file_for_disease(Disease.LF,
-                                                 {
-                                                     "AAA00001": 10,
-                                                     "AAA00002": 10,
-                                                 }),
-        disease=Disease.LF,
-        iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-    )
+    population_data = IUData(create_dummy_population_file_for_disease(Disease.LF,
+                                                                      {
+                                                                          "AAA00001": 10,
+                                                                          "AAA00002": 10,
+                                                                      }), disease=Disease.LF,
+                             iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
 
     prevalences_df = _compute_prevalences_in_country(canonical_ius, population_data)
     metadata_df = pd.DataFrame(
@@ -186,23 +177,19 @@ def test_build_composite_run_retains_year_id():
     )
 
     canonical_ius = [canoncial_iu1, canoncial_iu2]
-    iu_metadata = IUData(
-        input_data=create_dummy_population_file_for_disease_with_years(
-            Disease.LF,
-            iu_yearly_population_map={
-                "AAA00001": {
-                    2010: 10,
-                    2011: 15,
-                },
-                "AAA00002": {
-                    2010: 20,
-                    2011: 25,
-                }
+    iu_metadata = IUData(input_data=create_dummy_population_file_for_disease_with_years(
+        Disease.LF,
+        iu_yearly_population_map={
+            "AAA00001": {
+                2010: 10,
+                2011: 15,
+            },
+            "AAA00002": {
+                2010: 20,
+                2011: 25,
             }
-        ),
-        disease=Disease.LF,
-        iu_selection_criteria=IUSelectionCriteria.ALL_IUS
-    )
+        }
+    ), disease=Disease.LF, iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
 
     prevalences_df = _compute_prevalences_in_country(canonical_ius, iu_metadata)
     metadata_df = pd.DataFrame(
@@ -251,17 +238,13 @@ def test_build_composite_multiple_scenarios():
         }
     )
     canonical_ius = [canoncial_iu_scenario_1, canoncial_iu_scenario_2]
-    population_data = IUData(
-        pd.DataFrame(
-            {
-                "IU_CODE"               : ["AAA00001"],
-                "ADMIN0ISO3"            : ["AAA"],
-                "Priority_Population_LF": [10],
-            }
-        ),
-        disease=Disease.LF,
-        iu_selection_criteria=IUSelectionCriteria.ALL_IUS,
-    )
+    population_data = IUData(pd.DataFrame(
+        {
+            "IU_CODE"               : ["AAA00001"],
+            "ADMIN0ISO3"            : ["AAA"],
+            "Priority_Population_LF": [10],
+        }
+    ), disease=Disease.LF, iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
     metadata_df = pd.DataFrame(
         {
             "year_id"     : [2010, 2011, 2010, 2011],
@@ -317,8 +300,7 @@ def test_build_composite_multiple_scenarios_with_longitudinal_population_data():
     })
 
     canonical_ius = [canonical_iu_scenario_1, canonical_iu_scenario_2]
-    population_data = IUData(input_data=population_data_df,
-                             disease=Disease.LF,
+    population_data = IUData(input_data=population_data_df, disease=Disease.LF,
                              iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
     metadata_df = pd.DataFrame(
         {
@@ -451,10 +433,15 @@ def _compute_prevalences_in_country(canonical_ius: List[pd.DataFrame],
 
         draw_column_names, all_ius_draws = canonical_columns.extract_draws(ius_for_scenario)
 
-        populations = np.array([
-            population_data.get_priority_population_for_IU(iu[canonical_columns.IU_NAME].iloc[0])
-            for iu in ius_for_scenario
-        ]).reshape((len(ius_for_scenario), -1, 1))
+        populations = []
+        num_years = ius_for_scenario[0][canonical_columns.YEAR_ID].nunique()
+        
+        for iu in ius_for_scenario:
+            iu_code = iu[canonical_columns.IU_NAME].iloc[0]
+            pop_iterator = population_data.get_priority_population_for_iu(iu_code)
+            populations.append(list(itertools.islice(pop_iterator, num_years)))
+        
+        populations = np.array(populations).reshape((len(ius_for_scenario), -1, 1))
 
         case_numbers_across_ius = all_ius_draws * populations
 

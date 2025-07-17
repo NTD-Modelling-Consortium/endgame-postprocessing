@@ -20,13 +20,15 @@ def _get_priority_populations(ius: List[pd.DataFrame], iu_metadata: IUData):
         np.ndarray: A 3D numpy array where each element represents the yearly priority population for an IU.
                     Shape is (number of IUs, years, 1).
     """
-    return np.array([
-        iu_metadata.get_priority_population_for_IU(
-            iu_code=iu[canonical_columns.IU_NAME].iloc[0]
-        )
-        for iu in ius
-    ]).reshape(len(ius), -1, 1)
-    # return np.array(populations)[:, np.newaxis, np.newaxis]
+    populations = []
+    num_years = ius[0][canonical_columns.YEAR_ID].nunique()
+    
+    for iu in ius:
+        iu_code = iu[canonical_columns.IU_NAME].iloc[0]        
+        pop_iterator = iu_metadata.get_priority_population_for_iu(iu_code)
+        populations.append(list(itertools.islice(pop_iterator, num_years)))
+    
+    return np.array(populations).reshape(len(ius), -1, 1)
 
 
 def build_composite_run(
