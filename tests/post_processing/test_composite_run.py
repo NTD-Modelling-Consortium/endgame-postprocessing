@@ -12,6 +12,168 @@ from tests.test_util.create_dummy_pop_file import create_dummy_population_file_f
     create_dummy_population_file_for_disease
 
 
+def test_trim_canonical_ius_to_year_range_perfect_overlap():
+    """Test trimming canonical IUs with perfect year range overlap."""
+    canonical_ius = [pd.DataFrame({
+        "iu_name": ["AAA00001"] * 3,
+        "year_id": [2010, 2011, 2012],
+        "scenario": ["scenario_1"] * 3,
+        "country_code": ["AAA"] * 3,
+        "measure": ["processed_prevalence"] * 3,
+        "draw_0": [0.1, 0.2, 0.3],
+    })]
+    
+    from endgame_postprocessing.post_processing.composite_run import _trim_canonical_ius_to_year_range
+    result = _trim_canonical_ius_to_year_range(canonical_ius, (2010, 2012))
+    
+    assert len(result) == 1
+    assert len(result[0]) == 3
+    assert list(result[0]["year_id"]) == [2010, 2011, 2012]
+
+
+def test_trim_canonical_ius_to_year_range_partial_trim():
+    """Test trimming canonical IUs that removes some years."""
+    canonical_ius = [pd.DataFrame({
+        "iu_name": ["AAA00001"] * 5,
+        "year_id": [2008, 2009, 2010, 2011, 2012],
+        "scenario": ["scenario_1"] * 5,
+        "country_code": ["AAA"] * 5,
+        "measure": ["processed_prevalence"] * 5,
+        "draw_0": [0.1, 0.2, 0.3, 0.4, 0.5],
+    })]
+    
+    from endgame_postprocessing.post_processing.composite_run import _trim_canonical_ius_to_year_range
+    result = _trim_canonical_ius_to_year_range(canonical_ius, (2010, 2012))
+    
+    assert len(result) == 1
+    assert len(result[0]) == 3
+    assert list(result[0]["year_id"]) == [2010, 2011, 2012]
+    assert list(result[0]["draw_0"]) == [0.3, 0.4, 0.5]
+
+
+def test_trim_canonical_ius_to_year_range_no_overlap():
+    """Test trimming canonical IUs with no year overlap."""
+    canonical_ius = [pd.DataFrame({
+        "iu_name": ["AAA00001"] * 2,
+        "year_id": [2000, 2001],
+        "scenario": ["scenario_1"] * 2,
+        "country_code": ["AAA"] * 2,
+        "measure": ["processed_prevalence"] * 2,
+        "draw_0": [0.1, 0.2],
+    })]
+    
+    from endgame_postprocessing.post_processing.composite_run import _trim_canonical_ius_to_year_range
+    result = _trim_canonical_ius_to_year_range(canonical_ius, (2010, 2012))
+    
+    assert len(result) == 0
+
+
+def test_build_composite_run_with_year_mismatch_partial_overlap():
+    """Test build_composite_run handles partial year overlap by trimming simulation data."""
+    # Simulation data spans 2008-2012, but metadata only covers 2010-2012
+    canonical_ius = [pd.DataFrame({
+        "iu_name": ["AAA00001"] * 5,
+        "year_id": [2008, 2009, 2010, 2011, 2012],
+        "scenario": ["scenario_1"] * 5,
+        "country_code": ["AAA"] * 5,
+        "measure": ["processed_prevalence"] * 5,
+        "draw_0": [0.1, 0.2, 0.3, 0.4, 0.5],
+        "draw_1": [0.15, 0.25, 0.35, 0.45, 0.55],
+    })]
+    
+    population_data = IUData(
+        create_dummy_population_file_for_disease_with_years(Disease.LF, {
+            "AAA00001": {2010: 100, 2011: 110, 2012: 120}
+        }),
+        Disease.LF,
+        IUSelectionCriteria.ALL_IUS
+    )
+    
+    result = composite_run.build_composite_run(canonical_ius, population_data)
+    
+    # Should only contain years 2010-2012 (the intersection)
+    assert len(result) == 3
+    assert list(result["year_id"]) == [2010, 2011, 2012]
+    
+    # Check that the data corresponds to the trimmed years (not the original first years)
+    expected_prevalences = pd.DataFrame({
+        "draw_0": [0.3, 0.4, 0.5],  # Original values for years 2010-2012
+        "draw_1": [0.35, 0.45, 0.55],
+    })
+    
+    pdt.assert_frame_equal(
+        result[["draw_0", "draw_1"]].reset_index(drop=True),
+        expected_prevalences,
+        check_dtype=False
+    )
+
+
+def test_build_composite_run_with_year_mismatch_no_overlap_raises_error():
+    """Test build_composite_run raises error when no year overlap exists."""
+    # Simulation data spans 2000-2002, but metadata covers 2010-2012
+    canonical_ius = [pd.DataFrame({
+        "iu_name": ["AAA00001"] * 3,
+        "year_id": [2000, 2001, 2002],
+        "scenario": ["scenario_1"] * 3,
+        "country_code": ["AAA"] * 3,
+        "measure": ["processed_prevalence"] * 3,
+        "draw_0": [0.1, 0.2, 0.3],
+        "draw_1": [0.15, 0.25, 0.35],
+    })]
+    
+    population_data = IUData(
+        create_dummy_population_file_for_disease_with_years(Disease.LF, {
+            "AAA00001": {2010: 100, 2011: 110, 2012: 120}
+        }),
+        Disease.LF,
+        IUSelectionCriteria.ALL_IUS
+    )
+    
+    import pytest
+    with pytest.raises(ValueError, match="No overlap between simulation years and population metadata years"):
+        composite_run.build_composite_run(canonical_ius, population_data)
+
+
+def test_build_composite_run_with_metadata_extends_beyond_simulation():
+    """Test build_composite_run when metadata covers more years than simulation."""
+    # Simulation data spans 2010-2011, but metadata covers 2008-2015
+    canonical_ius = [pd.DataFrame({
+        "iu_name": ["AAA00001"] * 2,
+        "year_id": [2010, 2011],
+        "scenario": ["scenario_1"] * 2,
+        "country_code": ["AAA"] * 2,
+        "measure": ["processed_prevalence"] * 2,
+        "draw_0": [0.3, 0.4],
+        "draw_1": [0.35, 0.45],
+    })]
+    
+    population_data = IUData(
+        create_dummy_population_file_for_disease_with_years(Disease.LF, {
+            "AAA00001": {2008: 80, 2009: 90, 2010: 100, 2011: 110, 2012: 120, 2013: 130, 2014: 140, 2015: 150}
+        }),
+        Disease.LF,
+        IUSelectionCriteria.ALL_IUS
+    )
+    
+    result = composite_run.build_composite_run(canonical_ius, population_data)
+    
+    # Should contain all simulation years since they're all covered by metadata
+    assert len(result) == 2
+    assert list(result["year_id"]) == [2010, 2011]
+    
+    # Data should be unchanged since no trimming was needed
+    expected_prevalences = pd.DataFrame({
+        "draw_0": [0.3, 0.4],
+        "draw_1": [0.35, 0.45],
+    })
+    
+    pdt.assert_frame_equal(
+        result[["draw_0", "draw_1"]].reset_index(drop=True),
+        expected_prevalences,
+        check_dtype=False
+    )
+
+
 def test_build_composite_run_from_one_iu():
     canoncial_iu = pd.DataFrame(
         {
@@ -459,3 +621,143 @@ def _compute_prevalences_in_country(canonical_ius: List[pd.DataFrame],
         ))
 
     return pd.concat(result, axis=0)
+
+
+def test_compute_year_range_intersection_longitudinal_data_perfect_overlap():
+    """Test year range intersection with perfect overlap between simulation and metadata."""
+    canonical_ius = [pd.DataFrame({
+        "iu_name": ["AAA00001"] * 3,
+        "year_id": [2010, 2011, 2012],
+        "scenario": ["scenario_1"] * 3,
+        "country_code": ["AAA"] * 3,
+        "measure": ["processed_prevalence"] * 3,
+        "draw_0": [0.1, 0.2, 0.3],
+    })]
+    
+    population_data = IUData(
+        create_dummy_population_file_for_disease_with_years(Disease.LF, {
+            "AAA00001": {2010: 100, 2011: 110, 2012: 120}
+        }),
+        Disease.LF,
+        IUSelectionCriteria.ALL_IUS
+    )
+    
+    from endgame_postprocessing.post_processing.composite_run import _compute_year_range_intersection
+    result = _compute_year_range_intersection(canonical_ius, population_data)
+    
+    assert result == (2010, 2012)
+
+
+def test_compute_year_range_intersection_longitudinal_data_partial_overlap():
+    """Test year range intersection with partial overlap - simulation extends beyond metadata."""
+    canonical_ius = [pd.DataFrame({
+        "iu_name": ["AAA00001"] * 5,
+        "year_id": [2008, 2009, 2010, 2011, 2012],
+        "scenario": ["scenario_1"] * 5,
+        "country_code": ["AAA"] * 5,
+        "measure": ["processed_prevalence"] * 5,
+        "draw_0": [0.1, 0.2, 0.3, 0.4, 0.5],
+    })]
+    
+    population_data = IUData(
+        create_dummy_population_file_for_disease_with_years(Disease.LF, {
+            "AAA00001": {2010: 100, 2011: 110, 2012: 120}
+        }),
+        Disease.LF,
+        IUSelectionCriteria.ALL_IUS
+    )
+    
+    from endgame_postprocessing.post_processing.composite_run import _compute_year_range_intersection
+    result = _compute_year_range_intersection(canonical_ius, population_data)
+    
+    assert result == (2010, 2012)
+
+
+def test_compute_year_range_intersection_longitudinal_data_metadata_extends_beyond():
+    """Test year range intersection where metadata extends beyond simulation."""
+    canonical_ius = [pd.DataFrame({
+        "iu_name": ["AAA00001"] * 2,
+        "year_id": [2010, 2011],
+        "scenario": ["scenario_1"] * 2,
+        "country_code": ["AAA"] * 2,
+        "measure": ["processed_prevalence"] * 2,
+        "draw_0": [0.1, 0.2],
+    })]
+    
+    population_data = IUData(
+        create_dummy_population_file_for_disease_with_years(Disease.LF, {
+            "AAA00001": {2008: 80, 2009: 90, 2010: 100, 2011: 110, 2012: 120}
+        }),
+        Disease.LF,
+        IUSelectionCriteria.ALL_IUS
+    )
+    
+    from endgame_postprocessing.post_processing.composite_run import _compute_year_range_intersection
+    result = _compute_year_range_intersection(canonical_ius, population_data)
+    
+    assert result == (2010, 2011)
+
+
+def test_compute_year_range_intersection_longitudinal_data_no_overlap():
+    """Test year range intersection with no overlap between simulation and metadata."""
+    canonical_ius = [pd.DataFrame({
+        "iu_name": ["AAA00001"] * 2,
+        "year_id": [2000, 2001],
+        "scenario": ["scenario_1"] * 2,
+        "country_code": ["AAA"] * 2,
+        "measure": ["processed_prevalence"] * 2,
+        "draw_0": [0.1, 0.2],
+    })]
+    
+    population_data = IUData(
+        create_dummy_population_file_for_disease_with_years(Disease.LF, {
+            "AAA00001": {2010: 100, 2011: 110, 2012: 120}
+        }),
+        Disease.LF,
+        IUSelectionCriteria.ALL_IUS
+    )
+    
+    from endgame_postprocessing.post_processing.composite_run import _compute_year_range_intersection
+    result = _compute_year_range_intersection(canonical_ius, population_data)
+    
+    assert result is None
+
+
+def test_compute_year_range_intersection_non_longitudinal_data():
+    """Test year range intersection with non-longitudinal metadata data."""
+    canonical_ius = [pd.DataFrame({
+        "iu_name": ["AAA00001"] * 3,
+        "year_id": [2010, 2011, 2012],
+        "scenario": ["scenario_1"] * 3,
+        "country_code": ["AAA"] * 3,
+        "measure": ["processed_prevalence"] * 3,
+        "draw_0": [0.1, 0.2, 0.3],
+    })]
+    
+    population_data = IUData(
+        create_dummy_population_file_for_disease(Disease.LF, {"AAA00001": 100}),
+        Disease.LF,
+        IUSelectionCriteria.ALL_IUS
+    )
+    
+    from endgame_postprocessing.post_processing.composite_run import _compute_year_range_intersection
+    result = _compute_year_range_intersection(canonical_ius, population_data)
+    
+    # For non-longitudinal data, should return the simulation year range
+    assert result == (2010, 2012)
+
+
+def test_compute_year_range_intersection_empty_canonical_ius():
+    """Test year range intersection with empty canonical IUs list."""
+    canonical_ius = []
+    
+    population_data = IUData(
+        create_dummy_population_file_for_disease(Disease.LF, {"AAA00001": 100}),
+        Disease.LF,
+        IUSelectionCriteria.ALL_IUS
+    )
+    
+    from endgame_postprocessing.post_processing.composite_run import _compute_year_range_intersection
+    result = _compute_year_range_intersection(canonical_ius, population_data)
+    
+    assert result is None

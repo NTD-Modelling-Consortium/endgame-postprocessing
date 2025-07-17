@@ -1,11 +1,96 @@
 import itertools
-from typing import List, Dict
+from typing import List, Dict, Tuple, Optional
 
 import numpy as np
 import pandas as pd
 
 from endgame_postprocessing.post_processing import canonical_columns
 from endgame_postprocessing.post_processing.iu_data import IUData
+
+
+def _compute_year_range_intersection(canonical_iu_runs: List[pd.DataFrame], iu_data: IUData) -> Optional[Tuple[int, int]]:
+    """
+    Compute the intersection of simulation years and metadata years.
+    
+    Args:
+        canonical_iu_runs (List[pd.DataFrame]): List of simulation IU DataFrames
+        iu_data (IUData): Population metadata object
+        
+    Returns:
+        Optional[Tuple[int, int]]: (min_year, max_year) intersection, or None if no intersection
+        
+    Example:
+        ```python
+        # Simulation years: 2000-2025, Metadata years: 2010-2030
+        intersection = _compute_year_range_intersection(canonical_ius, iu_data)
+        # Returns: (2010, 2025)
+        ```
+    """
+    if not canonical_iu_runs:
+        return None
+        
+    # Get simulation year range
+    simulation_years = set(canonical_iu_runs[0][canonical_columns.YEAR_ID])
+    sim_min = min(simulation_years)
+    sim_max = max(simulation_years)
+    
+    # For non-longitudinal data, any simulation year range is valid
+    if not iu_data.is_longitudinal:
+        return (sim_min, sim_max)
+    
+    # Get metadata year range
+    year_range = iu_data.year_range
+    if not year_range:  # Empty dict for non-longitudinal
+        return (sim_min, sim_max)
+    
+    metadata_min = year_range['min']
+    metadata_max = year_range['max']
+    
+    # Compute intersection
+    intersection_min = max(sim_min, metadata_min)
+    intersection_max = min(sim_max, metadata_max)
+    
+    # Return None if no valid intersection
+    if intersection_min > intersection_max:
+        return None
+        
+    return (intersection_min, intersection_max)
+
+
+def _trim_canonical_ius_to_year_range(canonical_iu_runs: List[pd.DataFrame], year_range: Tuple[int, int]) -> List[pd.DataFrame]:
+    """
+    Trim canonical IU runs to only include years within the specified range.
+    
+    Args:
+        canonical_iu_runs (List[pd.DataFrame]): List of simulation IU DataFrames
+        year_range (Tuple[int, int]): (min_year, max_year) to include
+        
+    Returns:
+        List[pd.DataFrame]: Trimmed DataFrames containing only years in the range
+        
+    Example:
+        ```python
+        # Original data: years 2008-2012, trim to 2010-2012
+        trimmed = _trim_canonical_ius_to_year_range(canonical_ius, (2010, 2012))
+        # Returns: DataFrames with only years 2010, 2011, 2012
+        ```
+    """
+    min_year, max_year = year_range
+    
+    trimmed_ius = []
+    for iu_df in canonical_iu_runs:
+        # Filter to only include years within the range
+        year_mask = (
+            (iu_df[canonical_columns.YEAR_ID] >= min_year) & 
+            (iu_df[canonical_columns.YEAR_ID] <= max_year)
+        )
+        trimmed_df = iu_df[year_mask].copy().reset_index(drop=True)
+        
+        # Only include if there are still rows after filtering
+        if not trimmed_df.empty:
+            trimmed_ius.append(trimmed_df)
+    
+    return trimmed_ius
 
 
 def _get_priority_populations(ius: List[pd.DataFrame], iu_metadata: IUData):
@@ -133,6 +218,16 @@ def build_composite_run(
     Returns:
         pd.DataFrame: Composite prevalence data aggregated across all IUs
     """
+    # Trim simulation data to match metadata year range for longitudinal data
+    year_intersection = _compute_year_range_intersection(canonical_iu_runs, iu_data)
+    if year_intersection is None:
+        raise ValueError("No overlap between simulation years and population metadata years")
+    
+    canonical_iu_runs = _trim_canonical_ius_to_year_range(canonical_iu_runs, year_intersection)
+    
+    if not canonical_iu_runs:
+        raise ValueError("No IU data remaining after trimming to metadata year range")
+    
     # Assumptions: same number of draws in each IU run
     # Same year IDs in each one
     draw_column_names, all_ius_draws = canonical_columns.extract_draws(canonical_iu_runs)
