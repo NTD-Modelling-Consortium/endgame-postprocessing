@@ -141,7 +141,7 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
         fixedup_meta_data_file,
         pipeline_config.disease,
         iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
-        simulated_IUs=all_ius,
+        simulated_ius=all_ius
     )
 
     all_iu_data = (
