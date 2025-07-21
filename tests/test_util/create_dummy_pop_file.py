@@ -1,12 +1,14 @@
 from pathlib import Path
-from typing import Dict, Optional, Union, TypeAlias, List
+from typing import Dict, Optional, TypeAlias
 
 import more_itertools as miter
 import pandas as pd
 
-from endgame_postprocessing.post_processing import iu_data, canonical_columns
+from endgame_postprocessing.post_processing import iu_data
 from endgame_postprocessing.post_processing.disease import Disease
-from endgame_postprocessing.post_processing.iu_data import _get_priority_population_column_for_disease
+from endgame_postprocessing.post_processing.iu_data import (
+    _get_priority_population_column_for_disease
+)
 
 DEFAULT_POPULATION_SIZE = 10000
 
@@ -19,18 +21,21 @@ IUPopulationData = IUPopulationMap | IUYearlyPopulationMap
 DiseasePopulationData: TypeAlias = Dict[Disease, IUPopulationData]
 
 
-def create_population_metadata_file_with_yearly_data(raw_data_csv: Path,
-                                                     iuid_column: str,
-                                                     country_code_column: str,
-                                                     year_column: str,
-                                                     population_column: str,
-                                                     disease: Disease,
-                                                     save_to_file: Path | None = "PopulationMetadatafile.csv") -> pd.DataFrame:
+def create_population_metadata_file_with_yearly_data(
+    raw_data_csv: Path,
+    iuid_column: str,
+    country_code_column: str,
+    year_column: str,
+    population_column: str,
+    disease: Disease,
+    save_to_file: Path | None = "PopulationMetadatafile.csv"
+) -> pd.DataFrame:
     """
     Create a population metadata file with canonical structure from a raw data CSV file.
     Args:
         raw_data_csv: CSV file containing raw IU-wise population numbers (potentially yearly)
-        Note: Automatically constructs an "IU_CODE" column from the `country_code_column` and `iuid_column`.
+        Note: Automatically constructs an "IU_CODE" column from the
+        `country_code_column` and `iuid_column`.
 
     Returns:
         pandas DataFrame containing the population data
@@ -41,7 +46,9 @@ def create_population_metadata_file_with_yearly_data(raw_data_csv: Path,
     missing_columns = required_columns - set(input_data.columns)
 
     if missing_columns:
-        raise ValueError(f"Missing required columns in the input data: {', '.join(missing_columns)}")
+        raise ValueError(
+            f"Missing required columns in the input data: {', '.join(missing_columns)}"
+        )
 
     # Sort the input_data DataFrame by the iuid column
     input_data.sort_values(by=[iuid_column, year_column], ascending=[True, True], inplace=True)
@@ -61,7 +68,9 @@ def create_population_metadata_file_with_yearly_data(raw_data_csv: Path,
     input_data.rename(columns=column_mapping, inplace=True)
 
     # Create IU_CODE column in [A-Z]{3}[0-9]{5} format
-    input_data["IU_CODE"] = input_data["ADMIN0ISO3"] + input_data[iuid_column].astype(str).str.zfill(5)
+    input_data["IU_CODE"] = (
+        input_data["ADMIN0ISO3"] + input_data[iuid_column].astype(str).str.zfill(5)
+    )
 
     input_data = input_data[["IU_CODE", "Year", "ADMIN0ISO3", priority_population_column_disease]]
     if save_to_file is not None:
@@ -70,10 +79,13 @@ def create_population_metadata_file_with_yearly_data(raw_data_csv: Path,
     return input_data
 
 
-def create_dummy_population_file(disease_data: DiseasePopulationData,
-                                 save_to_file: Optional[Path] = "PopulationMetadatafile.csv") -> pd.DataFrame:
+def create_dummy_population_file(
+    disease_data: DiseasePopulationData,
+    save_to_file: Optional[Path] = "PopulationMetadatafile.csv"
+) -> pd.DataFrame:
     """
-    Create a dummy population metadata file for multiple diseases, supporting both yearly and non-yearly population data.
+    Create a dummy population metadata file for multiple diseases,
+    supporting both yearly and non-yearly population data.
 
     Args:
         disease_data: A dictionary mapping Disease to a dictionary of IU_CODE -> population data.
@@ -123,8 +135,10 @@ def create_dummy_population_file(disease_data: DiseasePopulationData,
     return _create_without_yearly_info(disease_data, save_to_file)
 
 
-def _create_without_yearly_info(disease_data: DiseasePopulationData,
-                                save_to_file: Optional[Path] = "PopulationMetadatafile.csv") -> pd.DataFrame:
+def _create_without_yearly_info(
+    disease_data: DiseasePopulationData,
+    save_to_file: Optional[Path] = "PopulationMetadatafile.csv"
+) -> pd.DataFrame:
     iu_codes = set()
     for iu_pop_map in disease_data.values():
         iu_codes.update(iu_pop_map.keys())
@@ -152,8 +166,10 @@ def _create_without_yearly_info(disease_data: DiseasePopulationData,
     return meta_data
 
 
-def _create_with_yearly_info(disease_data: DiseasePopulationData,
-                             save_to_file: Optional[Path] = "PopulationMetadatafile.csv") -> pd.DataFrame:
+def _create_with_yearly_info(
+    disease_data: DiseasePopulationData,
+    save_to_file: Optional[Path] = "PopulationMetadatafile.csv"
+) -> pd.DataFrame:
     iu_ypm: IUYearlyPopulationMap = miter.first(list(disease_data.values()))
     iu_codes = sorted(set(iu_ypm.keys()))
     years = sorted(set(miter.first(list(iu_ypm.values())).keys()))
@@ -164,7 +180,9 @@ def _create_with_yearly_info(disease_data: DiseasePopulationData,
         admin0iso3 = iu_code[:3]
 
         for disease, iu_pop_map in disease_data.items():
-            priority_pop_col_name = f"Priority_Population_{iu_data._get_capitalised_disease(disease)}"
+            priority_pop_col_name = (
+                f"Priority_Population_{iu_data._get_capitalised_disease(disease)}"
+            )
             yearly_pop_sizes = iu_pop_map.get(iu_code, {})
 
             for year in years:
@@ -189,9 +207,11 @@ def _create_with_yearly_info(disease_data: DiseasePopulationData,
     return meta_data
 
 
-def create_dummy_population_file_for_disease(disease: Disease,
-                                             ius_population_map: IUPopulationMap,
-                                             save_to_file: Optional[Path] = "PopulationMetadatafile.csv"):
+def create_dummy_population_file_for_disease(
+    disease: Disease,
+    ius_population_map: IUPopulationMap,
+    save_to_file: Optional[Path] = "PopulationMetadatafile.csv"
+):
     """Create a simple, non-yearly, population file for a single disease.
     Notes:
         Exists for backwards compatibility.
@@ -199,9 +219,11 @@ def create_dummy_population_file_for_disease(disease: Disease,
     return create_dummy_population_file({disease: ius_population_map}, save_to_file)
 
 
-def create_dummy_population_file_for_disease_with_years(disease: Disease,
-                                                        iu_yearly_population_map: IUYearlyPopulationMap,
-                                                        save_to_file: Optional[Path] = "PopulationMetadatafile.csv"):
+def create_dummy_population_file_for_disease_with_years(
+    disease: Disease,
+    iu_yearly_population_map: IUYearlyPopulationMap,
+    save_to_file: Optional[Path] = "PopulationMetadatafile.csv"
+):
     """Create a population file with yearly sizes for every IU, and a single disease.
 
     Notes:

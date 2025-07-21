@@ -1,4 +1,3 @@
-import itertools
 from pathlib import Path
 
 import more_itertools
@@ -33,7 +32,10 @@ def test_iu_data_get_priority_population_iu_missing_raises_exception():
 def test_iu_data_without_valid_priority_population_column_raises_exception():
     with pytest.raises(Exception) as e:
         metadata = create_dummy_population_file_for_disease(Disease.LF, {})
-        metadata.rename(columns={"Priority_Population_LF": "Priority_Population_InvalidDisease"}, inplace=True)
+        metadata.rename(
+            columns={"Priority_Population_LF": "Priority_Population_InvalidDisease"},
+            inplace=True
+        )
 
         IUData(metadata, disease=Disease.LF, iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
     assert e.match(
@@ -86,7 +88,9 @@ def test_iu_data_get_priority_population_iu_from_oncho_specific_year():
                          1996: 10}
     }, save_to_file=None)
 
-    iudata = IUData(meta_data, disease=Disease.ONCHO, iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
+    iudata = IUData(
+        meta_data, disease=Disease.ONCHO, iu_selection_criteria=IUSelectionCriteria.ALL_IUS
+    )
     yearly_population = iudata.get_priority_population_for_iu("AAAXXXX00001", 1996)
     assert iudata.is_longitudinal is True
     assert more_itertools.only(yearly_population) == 10
@@ -277,7 +281,7 @@ def test_get_population_for_country_yearly():
     iu_data = IUData(metadata, Disease.LF, IUSelectionCriteria.ALL_IUS)
     population_data = list(iu_data.get_priority_population_for_country("AAA"))
 
-    assert type(population_data) == list
+    assert isinstance(population_data, list)
     assert population_data == [
         sum([100, 300, 500]),  # 1995
         sum([200, 400, 600]),  # 1996
@@ -329,9 +333,11 @@ def test_get_africa_population_yearly():
         iu_yearly_population_map=iu_yearly_population_map,
     )
 
-    iu_data = IUData(metadata, disease=Disease.LF, iu_selection_criteria=IUSelectionCriteria.ALL_IUS)
+    iu_data = IUData(
+        metadata, disease=Disease.LF, iu_selection_criteria=IUSelectionCriteria.ALL_IUS
+    )
     population_data = list(iu_data.get_priority_population_for_africa())
-    assert type(population_data) == list
+    assert isinstance(population_data, list)
     assert population_data == [
         sum([100, 300, 500, 700]),  # 1995
         sum([200, 400, 600, 800]),  # 1996
@@ -374,8 +380,14 @@ def test_simulated_ius_includes_simulated_iu():
         Disease.ONCHO: {"AAA00001": 100, "AAA00002": 200, "AAA00003": 300, "BBB00001": 400},
     })
     assert (
-            next(IUData(metadata, disease=Disease.ONCHO, iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
-                   simulated_ius=["AAA00001", "BBB00001"]).get_priority_population_for_africa())
+            next(
+                IUData(
+                    metadata,
+                    disease=Disease.ONCHO,
+                    iu_selection_criteria=IUSelectionCriteria.SIMULATED_IUS,
+                    simulated_ius={"AAA00001", "BBB00001"}
+                ).get_priority_population_for_africa()
+            )
             == 500
     )
 
@@ -401,7 +413,10 @@ def test_create_yearly_population_metadatafile_from_raw_data(fs: FakeFilesystem)
                                                                  save_to_file=None)
 
     # Verify the data matches what we expect after filtering for sex="both"
-    raw_data_df = pd.read_csv(path_to_raw_data, usecols=["IU_ID", "year_id", "adj_pop", "ihme_loc_id", "sex"])
+    raw_data_df = pd.read_csv(
+        path_to_raw_data,
+        usecols=["IU_ID", "year_id", "adj_pop", "ihme_loc_id", "sex"]
+    )
     raw_data_df.sort_values(by=["IU_ID", "year_id"], inplace=True, ascending=[True, True])
     raw_data_df = raw_data_df[raw_data_df["sex"] == "both"]
     raw_data_df.drop(columns=["sex"], inplace=True)
