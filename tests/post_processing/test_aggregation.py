@@ -497,3 +497,99 @@ def test_filter_to_maximum_year_range_for_all_ius_with_nas():
     assert len(result) == len(expected)
     for res, exp in zip(result, expected):
         pdt.assert_frame_equal(res, exp)
+
+
+
+def test_compute_delta_years_aggregated_basic():
+    """Test basic delta years computation with simple data."""
+    # Create test data for two scenarios and two IUs
+    canonical_ius = [
+        # IU1, scenario_1 (reference)
+        pd.DataFrame({
+            "scenario": ["scenario_1"] * 3,
+            "iu_name": ["IU001"] * 3,
+            "country_code": ["AAA"] * 3,
+            "year_id": [2021, 2022, 2023],
+            "measure": ["processed_prevalence"] * 3,
+            "draw_0": [0.02, 0.015, 0.005],  # Goes below 0.01 in year 2023
+            "draw_1": [0.025, 0.008, 0.003],  # Goes below 0.01 in year 2022
+        }),
+        # IU2, scenario_1 (reference)
+        pd.DataFrame({
+            "scenario": ["scenario_1"] * 3,
+            "iu_name": ["IU002"] * 3,
+            "country_code": ["AAA"] * 3,
+            "year_id": [2021, 2022, 2023],
+            "measure": ["processed_prevalence"] * 3,
+            "draw_0": [0.03, 0.02, 0.005],   # Goes below 0.01 in year 2023
+            "draw_1": [0.015, 0.008, 0.003], # Goes below 0.01 in year 2022
+        }),
+        # IU1, scenario_2
+        pd.DataFrame({
+            "scenario": ["scenario_2"] * 3,
+            "iu_name": ["IU001"] * 3,
+            "country_code": ["AAA"] * 3,
+            "year_id": [2021, 2022, 2023],
+            "measure": ["processed_prevalence"] * 3,
+            "draw_0": [0.025, 0.02, 0.008],  # Goes below 0.01 in year 2023
+            "draw_1": [0.02, 0.015, 0.005],  # Goes below 0.01 in year 2023 (1 year later)
+        }),
+        # IU2, scenario_2
+        pd.DataFrame({
+            "scenario": ["scenario_2"] * 3,
+            "iu_name": ["IU002"] * 3,
+            "country_code": ["AAA"] * 3,
+            "year_id": [2021, 2022, 2023],
+            "measure": ["processed_prevalence"] * 3,
+            "draw_0": [0.035, 0.025, 0.008], # Goes below 0.01 in year 2023
+            "draw_1": [0.02, 0.01, 0.005],   # Goes below 0.01 in year 2023 (1 year later)
+        }),
+    ]
+    
+    result = aggregation.compute_delta_years_aggregated(
+        canonical_ius, 
+        threshold=0.01, 
+        reference_scenario="scenario_1"
+    )
+    
+    # Expected results:
+    # - Reference scenario (scenario_1) should have all deltas = 0
+    # - scenario_2: draw_0 should be 0 (both reach threshold in same year)
+    # - scenario_2: draw_1 should be 1 (reaches threshold 1 year later)
+    
+    expected = pd.DataFrame([
+        # scenario_1 results (reference, all zeros)
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_1", "measure": "delta_years_scenario_1", "draw_0": 0, "draw_1": 0},
+        {"iu_name": "IU002", "country_code": "AAA", "scenario": "scenario_1", "measure": "delta_years_scenario_1", "draw_0": 0, "draw_1": 0},
+        # scenario_2 results
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_2", "measure": "delta_years_scenario_1", "draw_0": 0, "draw_1": 1},
+        {"iu_name": "IU002", "country_code": "AAA", "scenario": "scenario_2", "measure": "delta_years_scenario_1", "draw_0": 0, "draw_1": 1},
+    ])
+    
+    # Sort both dataframes for comparison
+    result_sorted = result.sort_values(["scenario", "iu_name"]).reset_index(drop=True)
+    expected_sorted = expected.sort_values(["scenario", "iu_name"]).reset_index(drop=True)
+    
+    pdt.assert_frame_equal(result_sorted, expected_sorted)
+
+
+def test_compute_delta_years_aggregated_missing_reference_scenario():
+    """Test that function raises error when reference scenario is missing."""
+    canonical_ius = [
+        pd.DataFrame({
+            "scenario": ["scenario_2"] * 2,
+            "iu_name": ["IU001"] * 2,
+            "country_code": ["AAA"] * 2,
+            "year_id": [2021, 2022],
+            "measure": ["processed_prevalence"] * 2,
+            "draw_0": [0.02, 0.005],
+        }),
+    ]
+    
+    with pytest.raises(ValueError, match="Reference scenario 'scenario_1' not found"):
+        aggregation.compute_delta_years_aggregated(
+            canonical_ius, 
+            threshold=0.01, 
+            reference_scenario="scenario_1"
+        )
+

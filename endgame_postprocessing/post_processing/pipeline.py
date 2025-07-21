@@ -17,6 +17,7 @@ from endgame_postprocessing.post_processing.aggregation import (
     single_country_aggregate,
     africa_composite,
     filter_to_maximum_year_range_for_all_ius,
+    compute_delta_years_aggregated,
 )
 from endgame_postprocessing.post_processing.aggregation import (
     iu_lvl_aggregate,
@@ -188,11 +189,14 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
         working_directory, all_country_aggregates, pipeline_config.disease
     )
 
+    canonical_ius, africa_composite_df = africa_composite(
+        working_directory, iu_meta_data,
+    )
+    
     africa_aggregates = (
         africa_lvl_aggregate(
-            *africa_composite(
-                working_directory, iu_meta_data,
-            ),
+            canonical_ius,
+            africa_composite_df,
             prevalence_threshold=pipeline_config.threshold,
             pct_runs_threshold=[0.9, 1.0],
         )
@@ -202,4 +206,13 @@ def pipeline(input_dir, working_directory, pipeline_config: PipelineConfig):
     )
     output_directory_structure.write_africa_stat_agg(
         working_directory, africa_aggregates, pipeline_config.disease
+    )
+    
+    # Compute delta years
+    delta_years_df = compute_delta_years_aggregated(
+        canonical_ius,
+        threshold=pipeline_config.threshold,
+    )
+    output_directory_structure.write_delta_years_agg(
+        working_directory, delta_years_df, pipeline_config.disease
     )

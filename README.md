@@ -146,6 +146,7 @@ Each row should correspond to a single IU.
         - combined-{disease}-iu-lvl-agg.csv (concatenation of [the per IU file](#per-iu--combined-iu-level-file-))
         - [combined-{disease}-country-lvl-agg.csv](#country-statistical-aggregates)
         - [combined-{disease}-africa-lvl-agg.csv](#africa-statistical-aggregates)
+        - [combined-{disease}-iu-lvl-delta-agg.csv](#delta-years-aggregates)
     - ius/
         - [{scenario_N}\_{IU code}\_post_processed.csv](#per-iu--combined-iu-level-file-)
         - ... for each IU, for each scenario
@@ -231,6 +232,26 @@ the `year_of_ius_passing_Xpct_under_threshold` is the year all simulated IUs rea
 - **pct_ius_with_Xpct_runs_under_threshold** - It is worked out by
   - for each year and IU, compute the proportion of draws below the threshold
   - compute proportion of IUs where `Xpct` of runs are under threshold 
+
+##### Delta Years Aggregates
+
+###### Columns
+
+- iu_name
+- country_code
+- scenario
+- measure
+- draw_0, draw_1, ..., draw_N - delta years for each simulation draw
+
+###### Measures
+
+- **delta_years_{reference_scenario}** - the difference in years between when each scenario reaches the elimination threshold compared to a reference scenario, computed for every simulation draw at the IU level. Values represent:
+  - **Positive values**: Scenario takes longer to reach elimination than the reference
+  - **Negative values**: Scenario reaches elimination faster than the reference
+  - **Zero values**: Scenario reaches elimination in the same year as the reference (always true for reference scenario)
+  - **-1 values**: Either the scenario or reference never reaches the threshold
+
+The reference scenario is automatically determined as the first scenario encountered in the data.
 
 ##### aggregation_info.json
 
