@@ -7,10 +7,18 @@ for disease elimination modeling. It reads canonical IU data files and produces
 a delta years CSV file showing the year differences when prevalence falls below
 a specified threshold for each scenario compared to a reference scenario.
 
-Delta years represent the difference in years between when each scenario reaches
-the elimination threshold compared to a reference scenario. A positive value means
-the scenario takes longer to reach elimination, while a negative value means it
-reaches elimination faster than the reference.
+Delta years computation produces two types of measures to handle cases where
+scenarios may not reach the threshold within the time range:
+
+For standard comparisons (both scenarios reach threshold):
+- Positive values: Scenario takes longer to reach elimination than the reference
+- Negative values: Scenario reaches elimination faster than the reference
+- Zero values: Scenario reaches elimination in the same year as the reference
+
+For scenarios that don't reach threshold (atleast_delta_years measures):
+- Positive values: Scenario takes at least this many years longer than the reference
+- Negative values: Scenario reaches elimination at least this many years faster than the reference
+- 999 values: Neither scenario reaches the threshold, making comparison impossible
 
 Usage:
     python compute_delta_years.py <canonical_dir> [options]
@@ -33,7 +41,7 @@ Output Format:
     - iu_name: Implementation Unit identifier
     - country_code: Country code for the IU
     - scenario: Scenario name
-    - measure: Always "delta_years_{reference_scenario}"
+    - measure: Either "delta_years_{reference_scenario}" or "atleast_delta_years_{reference_scenario}"
     - draw_0, draw_1, ..., draw_N: Delta years for each simulation draw
 
 Author: Generated for NTD Modelling Consortium
@@ -84,7 +92,6 @@ def load_canonical_ius(canonical_dir: str, scenarios: Optional[List[str]] = None
     
     # Use tqdm for progress tracking
     progress_bar = tqdm(file_infos, desc="Loading files", unit="file")
-    
     for file_info in progress_bar:
         # Filter by scenarios if specified
         if scenarios and file_info.scenario not in scenarios:

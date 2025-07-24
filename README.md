@@ -245,13 +245,19 @@ the `year_of_ius_passing_Xpct_under_threshold` is the year all simulated IUs rea
 
 ###### Measures
 
-- **delta_years_{reference_scenario}** - the difference in years between when each scenario reaches the elimination threshold compared to a reference scenario, computed for every simulation draw at the IU level. Values represent:
+The delta years computation produces two types of measures based on whether scenarios reach the elimination threshold within the time range:
+
+- **delta_years_{reference_scenario}** - Used when both the reference scenario and comparison scenario reach the elimination threshold within the time range. Values represent:
   - **Positive values**: Scenario takes longer to reach elimination than the reference
   - **Negative values**: Scenario reaches elimination faster than the reference
   - **Zero values**: Scenario reaches elimination in the same year as the reference (always true for reference scenario)
-  - **-1 values**: Either the scenario or reference never reaches the threshold
 
-The reference scenario is automatically determined as the first scenario encountered in the data.
+- **atleast_delta_years_{reference_scenario}** - Used when at least one scenario (reference or comparison) does not reach the elimination threshold within the time range. Values represent minimum bounds:
+  - **Positive values**: Scenario takes at least this many years longer than the reference
+  - **Negative values**: Scenario reaches elimination at least this many years faster than the reference
+  - **999 values**: Neither scenario reaches the threshold, making comparison impossible
+
+The reference scenario is automatically determined as the first scenario encountered in the data. Scenarios that don't reach the threshold within the time range are assumed to reach it at 2042 for computation purposes.
 
 ##### aggregation_info.json
 

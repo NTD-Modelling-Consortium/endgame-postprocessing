@@ -610,6 +610,13 @@ def compute_delta_years_aggregated(
     """
     Compute delta years between scenarios for every simulation draw at the IU level using vectorized operations.
     
+    This function handles cases where scenarios may not reach the elimination threshold within the
+    time range by using max(year_range)+1 as a proxy. It produces two types of measures:
+    - delta_years_{reference_scenario}: When both scenarios reach threshold within the time range
+    - atleast_delta_years_{reference_scenario}: When at least one scenario doesn't reach threshold
+    
+    Special case: When neither scenario reaches threshold, delta is set to np.inf.
+    
     Args:
         canonical_ius: List of canonical IU dataframes containing draw data
         threshold: Prevalence threshold for below-threshold analysis
@@ -619,7 +626,7 @@ def compute_delta_years_aggregated(
     Returns:
         DataFrame with delta years data in the required format:
         - Columns: iu_name, country_code, scenario, measure, draw_0, draw_1, ..., draw_{n}
-        - Rows: one per IU per scenario with delta_years_{reference_scenario} measure
+        - Rows: one per IU per scenario with appropriate delta years measure
     """
     # Group canonical IUs by scenario using itertools.groupby like existing code
     ius_by_scenario = itertools.groupby(
@@ -668,6 +675,7 @@ def compute_delta_years_aggregated(
     # Get years from first IU
     years_array = first_scenario_ius[0][canonical_columns.YEAR_ID].unique()
     years_array.sort()
+    MAX_YEAR = 2042
     
     # Create 4D array: [scenarios, IUs, years, draws]
     data_4d = np.zeros((num_scenarios, num_ius, num_years, num_draws))
@@ -690,29 +698,41 @@ def compute_delta_years_aggregated(
     # Convert indices to actual years
     years_below_threshold = years_array[first_below_indices]  # shape: [scenarios, IUs, draws]
     
-    # Set -1 where no year reaches threshold
-    years_below_threshold = np.where(has_below_threshold, years_below_threshold, -1)
+    # Set MAX_YEAR where no year reaches threshold
+    years_below_threshold = np.where(has_below_threshold, years_below_threshold, MAX_YEAR)
     
     # Compute delta years: difference from reference scenario
     ref_years = years_below_threshold[ref_scenario_idx]  # shape: [IUs, draws]
     delta_years_4d = years_below_threshold - ref_years[np.newaxis, :, :]  # broadcast to [scenarios, IUs, draws]
     
-    # Handle invalid cases (where either reference or current scenario never reaches threshold)
-    ref_invalid = ref_years == -1
-    current_invalid = years_below_threshold == -1
-    invalid_mask = ref_invalid[np.newaxis, :, :] | current_invalid
+    # Handle special case where both scenarios don't reach threshold
+    ref_not_reached = ref_years == MAX_YEAR
+    current_not_reached = years_below_threshold == MAX_YEAR
+    both_not_reached = ref_not_reached[np.newaxis, :, :] & current_not_reached
     
-    delta_years_4d = np.where(invalid_mask, -1, delta_years_4d)
+    # Set to inf where both scenarios don't reach threshold
+    delta_years_4d = np.where(both_not_reached, np.inf, delta_years_4d)
+    
+    # Determine which measure to use for each scenario-IU-draw
+    # Use "atleast_" prefix when at least one scenario doesn't reach threshold
+    either_not_reached = ref_not_reached[np.newaxis, :, :] | current_not_reached
     
     # Set reference scenario to 0
     delta_years_4d[ref_scenario_idx] = 0
     
     # Convert back to DataFrame format
     results = []
-    measure_name = f"delta_years_{reference_scenario}"
     
     for scenario_idx, scenario in enumerate(scenarios):
         for iu_idx, (iu_name, country_code) in enumerate(iu_metadata):
+            # Determine the appropriate measure name based on whether any draws have "atleast" cases
+            # We need to check if any draw for this scenario-IU pair needs the "atleast" measure
+            needs_atleast = np.any(either_not_reached[scenario_idx, iu_idx, :])
+            
+            measure_name = f"delta_years_{reference_scenario}"
+            if needs_atleast:
+                measure_name = f"atleast_{measure_name}"
+            
             row_data = {
                 canonical_columns.IU_NAME: iu_name,
                 canonical_columns.COUNTRY_CODE: country_code,
@@ -723,7 +743,8 @@ def compute_delta_years_aggregated(
             # Add draw data
             for draw_idx in range(num_draws):
                 delta_value = delta_years_4d[scenario_idx, iu_idx, draw_idx]
-                row_data[f"draw_{draw_idx}"] = int(delta_value)
+                # Handle inf values - convert to a large integer or keep as float
+                row_data[f"draw_{draw_idx}"] = 999 if np.isinf(delta_value) else int(delta_value)
             
             results.append(row_data)
     

@@ -8,11 +8,17 @@ The `compute_delta_years.py` script analyzes canonical IU (Implementation Unit) 
 
 ### What are Delta Years?
 
-Delta years represent the year difference between when a scenario reaches the prevalence elimination threshold compared to a reference scenario:
+Delta years represent the year difference between when a scenario reaches the prevalence elimination threshold compared to a reference scenario. The computation produces two types of measures to handle cases where scenarios may not reach the threshold within the time range:
+
+**For standard comparisons (both scenarios reach threshold):**
 - **Positive values**: Scenario takes longer to reach elimination than the reference
-- **Negative values**: Scenario reaches elimination faster than the reference  
+- **Negative values**: Scenario reaches elimination faster than the reference
 - **Zero values**: Scenario reaches elimination in the same year as the reference
-- **-1 values**: Either the scenario or reference never reaches the threshold
+
+**For scenarios that don't reach threshold (atleast_delta_years measures):**
+- **Positive values**: Scenario takes at least this many years longer than the reference
+- **Negative values**: Scenario reaches elimination at least this many years faster than the reference
+- **999 values**: Neither scenario reaches the threshold, making comparison impossible
 
 ## Usage
 
@@ -100,7 +106,7 @@ The output CSV contains the following columns:
 | `iu_name` | Implementation Unit identifier |
 | `country_code` | Country code for the IU |
 | `scenario` | Scenario name |
-| `measure` | Always "delta_years_{reference_scenario}" |
+| `measure` | Either "delta_years_{reference_scenario}" or "atleast_delta_years_{reference_scenario}" |
 | `draw_0, draw_1, ..., draw_N` | Delta years for each simulation draw |
 
 ### Sample Output
@@ -108,10 +114,14 @@ The output CSV contains the following columns:
 ```csv
 iu_name,country_code,scenario,measure,draw_0,draw_1,draw_2,...
 AAA00001,AAA,scenario_1,delta_years_scenario_1,0,0,0,...
-AAA00001,AAA,scenario_2,delta_years_scenario_1,2,-1,3,...
-AAA00002,AAA,scenario_1,delta_years_scenario_1,0,0,0,...
-AAA00002,AAA,scenario_2,delta_years_scenario_1,1,1,0,...
+AAA00001,AAA,scenario_2,delta_years_scenario_1,2,1,3,...
+AAA00002,AAA,scenario_1,atleast_delta_years_scenario_1,0,0,0,...
+AAA00002,AAA,scenario_2,atleast_delta_years_scenario_1,999,5,2,...
 ```
+
+**Note**: The measure name indicates the reliability of the comparison:
+- `delta_years_*`: Both scenarios reach the threshold within the time range
+- `atleast_delta_years_*`: At least one scenario doesn't reach the threshold (values represent minimum bounds)
 
 ## Example Scripts
 
