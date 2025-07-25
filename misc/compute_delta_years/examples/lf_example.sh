@@ -15,6 +15,9 @@ echo "Output file: $OUTPUT_FILE"
 
 # LF analysis with standard 1% threshold
 # Auto-detects reference scenario from available scenarios
+# Output will contain two measure types per IU-scenario:
+# - delta_years_*: draws where both scenarios reach threshold
+# - atleast_delta_years_*: draws where at least one scenario doesn't reach threshold
 python misc/compute_delta_years/compute_delta_years.py \
     "$CANONICAL_DIR" \
     --threshold 0.01 \

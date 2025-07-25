@@ -111,17 +111,28 @@ The output CSV contains the following columns:
 
 ### Sample Output
 
-```csv
-iu_name,country_code,scenario,measure,draw_0,draw_1,draw_2,...
-AAA00001,AAA,scenario_1,delta_years_scenario_1,0,0,0,...
-AAA00001,AAA,scenario_2,delta_years_scenario_1,2,1,3,...
-AAA00002,AAA,scenario_1,atleast_delta_years_scenario_1,0,0,0,...
-AAA00002,AAA,scenario_2,atleast_delta_years_scenario_1,999,5,2,...
-```
+The output shows how individual draws are assigned to different measure types based on whether both scenarios reach the threshold:
 
-**Note**: The measure name indicates the reliability of the comparison:
-- `delta_years_*`: Both scenarios reach the threshold within the time range
-- `atleast_delta_years_*`: At least one scenario doesn't reach the threshold (values represent minimum bounds)
+| IU Name | Country | Scenario | Measure Type | draw_0 | draw_1 | draw_2 | draw_3 | draw_4 | Description |
+|---------|---------|----------|--------------|--------|--------|--------|--------|--------|-------------|
+| AAA00001 | AAA | scenario_1 | delta_years_scenario_1 | 0 | 0 | 0 | 0 | 0 | Reference scenario (always 0) |
+| AAA00001 | AAA | scenario_1 | atleast_delta_years_scenario_1 | - | - | - | - | - | No draws assigned (reference) |
+| AAA00001 | AAA | scenario_2 | delta_years_scenario_1 | 2 | 1 | - | 0 | 3 | Draws 0,1,3,4: both reach threshold |
+| AAA00001 | AAA | scenario_2 | atleast_delta_years_scenario_1 | - | - | 3 | - | - | Draw 2: one scenario doesn't reach |
+| AAA00002 | AAA | scenario_1 | delta_years_scenario_1 | 0 | 0 | 0 | 0 | 0 | Reference scenario (always 0) |
+| AAA00002 | AAA | scenario_1 | atleast_delta_years_scenario_1 | - | - | - | - | - | No draws assigned (reference) |
+| AAA00002 | AAA | scenario_2 | delta_years_scenario_1 | - | - | - | - | - | No draws where both reach threshold |
+| AAA00002 | AAA | scenario_2 | atleast_delta_years_scenario_1 | 999 | 5 | 2 | 7 | 4 | All draws: at least one doesn't reach |
+
+**Key patterns:**
+- **Empty cells (-)**: Draw not assigned to this measure type
+- **Reference scenario**: Always has delta_years values of 0, atleast_delta_years empty
+- **999 values**: Neither scenario reaches threshold for that draw
+- **Each draw appears in exactly one measure type per IU-scenario combination**
+
+**Note**: Each IU-scenario combination produces two rows (one for each measure type), with individual simulation draws assigned to the appropriate measure based on whether both scenarios reach the threshold for that specific draw:
+- `delta_years_*`: Both scenarios reach the threshold within the time range for that draw
+- `atleast_delta_years_*`: At least one scenario doesn't reach the threshold for that draw (values represent minimum bounds)
 
 ## Example Scripts
 

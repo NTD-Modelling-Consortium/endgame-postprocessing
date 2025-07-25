@@ -7,15 +7,15 @@ for disease elimination modeling. It reads canonical IU data files and produces
 a delta years CSV file showing the year differences when prevalence falls below
 a specified threshold for each scenario compared to a reference scenario.
 
-Delta years computation produces two types of measures to handle cases where
-scenarios may not reach the threshold within the time range:
+Delta years computation produces two types of measures, with each simulation draw
+individually assigned based on whether both scenarios reach the threshold for that specific draw:
 
-For standard comparisons (both scenarios reach threshold):
+For standard comparisons (both scenarios reach threshold for that draw):
 - Positive values: Scenario takes longer to reach elimination than the reference
 - Negative values: Scenario reaches elimination faster than the reference
 - Zero values: Scenario reaches elimination in the same year as the reference
 
-For scenarios that don't reach threshold (atleast_delta_years measures):
+For scenarios that don't reach threshold (atleast_delta_years measures for that draw):
 - Positive values: Scenario takes at least this many years longer than the reference
 - Negative values: Scenario reaches elimination at least this many years faster than the reference
 - 999 values: Neither scenario reaches the threshold, making comparison impossible

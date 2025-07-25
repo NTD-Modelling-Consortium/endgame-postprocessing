@@ -14,6 +14,9 @@ echo "Input directory: $CANONICAL_DIR"
 echo "Output file: $OUTPUT_FILE"
 
 # Basic computation with standard 1% threshold for oncho
+# Output will contain two measure types per IU-scenario:
+# - delta_years_*: draws where both scenarios reach threshold
+# - atleast_delta_years_*: draws where at least one scenario doesn't reach threshold
 python misc/compute_delta_years/compute_delta_years.py \
     "$CANONICAL_DIR" \
     --threshold 0.01 \

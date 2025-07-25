@@ -15,6 +15,9 @@ echo "Output file: $OUTPUT_FILE"
 
 # Trachoma analysis with 5% threshold (standard for trachoma)
 # Trachoma often uses scenarios like scenario_1_5, scenario_2, etc.
+# Output will contain two measure types per IU-scenario:
+# - delta_years_*: draws where both scenarios reach threshold
+# - atleast_delta_years_*: draws where at least one scenario doesn't reach threshold
 python misc/compute_delta_years/compute_delta_years.py \
     "$CANONICAL_DIR" \
     --threshold 0.05 \

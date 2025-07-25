@@ -560,10 +560,14 @@ def test_compute_delta_years_aggregated_basic():
     expected = pd.DataFrame([
         # scenario_1 results (reference, all zeros)
         {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_1", "measure": "delta_years_scenario_1", "draw_0": 0, "draw_1": 0},
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_1", "measure": "atleast_delta_years_scenario_1", "draw_0": np.nan, "draw_1": np.nan},
         {"iu_name": "IU002", "country_code": "AAA", "scenario": "scenario_1", "measure": "delta_years_scenario_1", "draw_0": 0, "draw_1": 0},
+        {"iu_name": "IU002", "country_code": "AAA", "scenario": "scenario_1", "measure": "atleast_delta_years_scenario_1", "draw_0": np.nan, "draw_1": np.nan},
         # scenario_2 results
         {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_2", "measure": "delta_years_scenario_1", "draw_0": 0, "draw_1": 1},
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_2", "measure": "atleast_delta_years_scenario_1", "draw_0": np.nan, "draw_1": np.nan},
         {"iu_name": "IU002", "country_code": "AAA", "scenario": "scenario_2", "measure": "delta_years_scenario_1", "draw_0": 0, "draw_1": 1},
+        {"iu_name": "IU002", "country_code": "AAA", "scenario": "scenario_2", "measure": "atleast_delta_years_scenario_1", "draw_0": np.nan, "draw_1": np.nan},
     ])
     
     # Sort both dataframes for comparison
@@ -592,4 +596,233 @@ def test_compute_delta_years_aggregated_missing_reference_scenario():
             threshold=0.01, 
             reference_scenario="scenario_1"
         )
+
+
+def test_compute_delta_years_aggregated_scenario2_ref_reaches_comp_doesnt():
+    """Test Scenario 2: Reference reaches threshold, comparison doesn't."""
+    canonical_ius = [
+        # IU1, scenario_1 (reference) - reaches threshold
+        pd.DataFrame({
+            "scenario": ["scenario_1"] * 3,
+            "iu_name": ["IU001"] * 3,
+            "country_code": ["AAA"] * 3,
+            "year_id": [2021, 2022, 2023],
+            "measure": ["processed_prevalence"] * 3,
+            "draw_0": [0.02, 0.015, 0.005],  # Goes below 0.01 in year 2023
+            "draw_1": [0.025, 0.008, 0.003],  # Goes below 0.01 in year 2022
+        }),
+        # IU1, scenario_2 - never reaches threshold
+        pd.DataFrame({
+            "scenario": ["scenario_2"] * 3,
+            "iu_name": ["IU001"] * 3,
+            "country_code": ["AAA"] * 3,
+            "year_id": [2021, 2022, 2023],
+            "measure": ["processed_prevalence"] * 3,
+            "draw_0": [0.05, 0.04, 0.03],  # Never goes below 0.01
+            "draw_1": [0.06, 0.05, 0.04],  # Never goes below 0.01
+        }),
+    ]
+    
+    result = aggregation.compute_delta_years_aggregated(
+        canonical_ius, 
+        threshold=0.01, 
+        reference_scenario="scenario_1"
+    )
+    
+    # Expected: Reference scenario gets 0 in delta_years (since it reaches threshold)
+    # Comparison scenario gets atleast_delta_years since it doesn't reach threshold
+    expected = pd.DataFrame([
+        # scenario_1 (reference) - reaches threshold, so goes in delta_years
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_1", "measure": "delta_years_scenario_1", "draw_0": 0, "draw_1": 0},
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_1", "measure": "atleast_delta_years_scenario_1", "draw_0": np.nan, "draw_1": np.nan},
+        # scenario_2 - doesn't reach threshold, so goes in atleast_delta_years
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_2", "measure": "delta_years_scenario_1", "draw_0": np.nan, "draw_1": np.nan},
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_2", "measure": "atleast_delta_years_scenario_1", "draw_0": 19, "draw_1": 20},  # 2042 - 2023, 2042 - 2022
+    ])
+    
+    result_sorted = result.sort_values(["scenario", "iu_name", "measure"]).reset_index(drop=True)
+    expected_sorted = expected.sort_values(["scenario", "iu_name", "measure"]).reset_index(drop=True)
+    
+    pdt.assert_frame_equal(result_sorted, expected_sorted)
+
+
+def test_compute_delta_years_aggregated_scenario3_ref_doesnt_reach_comp_does():
+    """Test Scenario 3: Reference doesn't reach threshold, comparison does."""
+    canonical_ius = [
+        # IU1, scenario_1 (reference) - never reaches threshold
+        pd.DataFrame({
+            "scenario": ["scenario_1"] * 3,
+            "iu_name": ["IU001"] * 3,
+            "country_code": ["AAA"] * 3,
+            "year_id": [2021, 2022, 2023],
+            "measure": ["processed_prevalence"] * 3,
+            "draw_0": [0.05, 0.04, 0.03],  # Never goes below 0.01
+            "draw_1": [0.06, 0.05, 0.04],  # Never goes below 0.01
+        }),
+        # IU1, scenario_2 - reaches threshold
+        pd.DataFrame({
+            "scenario": ["scenario_2"] * 3,
+            "iu_name": ["IU001"] * 3,
+            "country_code": ["AAA"] * 3,
+            "year_id": [2021, 2022, 2023],
+            "measure": ["processed_prevalence"] * 3,
+            "draw_0": [0.02, 0.015, 0.005],  # Goes below 0.01 in year 2023
+            "draw_1": [0.025, 0.008, 0.003],  # Goes below 0.01 in year 2022
+        }),
+    ]
+    
+    result = aggregation.compute_delta_years_aggregated(
+        canonical_ius, 
+        threshold=0.01, 
+        reference_scenario="scenario_1"
+    )
+    
+    # Expected: All draws should use atleast_delta_years measure
+    # Delta should be year_reached - MAX_YEAR(2042) for each draw (negative values)
+    expected = pd.DataFrame([
+        # scenario_1 (reference)
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_1", "measure": "delta_years_scenario_1", "draw_0": np.nan, "draw_1": np.nan},
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_1", "measure": "atleast_delta_years_scenario_1", "draw_0": 0, "draw_1": 0},
+        # scenario_2
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_2", "measure": "delta_years_scenario_1", "draw_0": np.nan, "draw_1": np.nan},
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_2", "measure": "atleast_delta_years_scenario_1", "draw_0": -19, "draw_1": -20},  # 2023 - 2042, 2022 - 2042
+    ])
+    
+    result_sorted = result.sort_values(["scenario", "iu_name", "measure"]).reset_index(drop=True)
+    expected_sorted = expected.sort_values(["scenario", "iu_name", "measure"]).reset_index(drop=True)
+    
+    pdt.assert_frame_equal(result_sorted, expected_sorted)
+
+
+def test_compute_delta_years_aggregated_scenario4_neither_reaches():
+    """Test Scenario 4: Neither scenario reaches threshold."""
+    canonical_ius = [
+        # IU1, scenario_1 (reference) - never reaches threshold
+        pd.DataFrame({
+            "scenario": ["scenario_1"] * 3,
+            "iu_name": ["IU001"] * 3,
+            "country_code": ["AAA"] * 3,
+            "year_id": [2021, 2022, 2023],
+            "measure": ["processed_prevalence"] * 3,
+            "draw_0": [0.05, 0.04, 0.03],  # Never goes below 0.01
+            "draw_1": [0.06, 0.05, 0.04],  # Never goes below 0.01
+        }),
+        # IU1, scenario_2 - never reaches threshold
+        pd.DataFrame({
+            "scenario": ["scenario_2"] * 3,
+            "iu_name": ["IU001"] * 3,
+            "country_code": ["AAA"] * 3,
+            "year_id": [2021, 2022, 2023],
+            "measure": ["processed_prevalence"] * 3,
+            "draw_0": [0.07, 0.06, 0.05],  # Never goes below 0.01
+            "draw_1": [0.08, 0.07, 0.06],  # Never goes below 0.01
+        }),
+    ]
+    
+    result = aggregation.compute_delta_years_aggregated(
+        canonical_ius, 
+        threshold=0.01, 
+        reference_scenario="scenario_1"
+    )
+    
+    # Expected: All draws should use atleast_delta_years measure
+    # Delta should be 999 (inf converted to 999) for all non-reference scenarios
+    expected = pd.DataFrame([
+        # scenario_1 (reference)
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_1", "measure": "delta_years_scenario_1", "draw_0": np.nan, "draw_1": np.nan},
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_1", "measure": "atleast_delta_years_scenario_1", "draw_0": 0, "draw_1": 0},
+        # scenario_2
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_2", "measure": "delta_years_scenario_1", "draw_0": np.nan, "draw_1": np.nan},
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_2", "measure": "atleast_delta_years_scenario_1", "draw_0": 999, "draw_1": 999},  # inf -> 999
+    ])
+    
+    result_sorted = result.sort_values(["scenario", "iu_name", "measure"]).reset_index(drop=True)
+    expected_sorted = expected.sort_values(["scenario", "iu_name", "measure"]).reset_index(drop=True)
+    
+    pdt.assert_frame_equal(result_sorted, expected_sorted)
+
+
+def test_compute_delta_years_aggregated_scenario5_mixed_comprehensive():
+    """Test Scenario 5: Comprehensive mixed behavior within and across draws."""
+    canonical_ius = [
+        # IU1, scenario_1 (reference) - mixed behavior
+        pd.DataFrame({
+            "scenario": ["scenario_1"] * 4,
+            "iu_name": ["IU001"] * 4,
+            "country_code": ["AAA"] * 4,
+            "year_id": [2021, 2022, 2023, 2024],
+            "measure": ["processed_prevalence"] * 4,
+            "draw_0": [0.02, 0.015, 0.005, 0.003],  # Goes below 0.01 in year 2023
+            "draw_1": [0.025, 0.02, 0.015, 0.012],  # Never goes below 0.01
+            "draw_2": [0.03, 0.008, 0.006, 0.004],  # Goes below 0.01 in year 2022
+        }),
+        # IU2, scenario_1 (reference) - all reach threshold
+        pd.DataFrame({
+            "scenario": ["scenario_1"] * 4,
+            "iu_name": ["IU002"] * 4,
+            "country_code": ["AAA"] * 4,
+            "year_id": [2021, 2022, 2023, 2024],
+            "measure": ["processed_prevalence"] * 4,
+            "draw_0": [0.015, 0.008, 0.005, 0.003],  # Goes below 0.01 in year 2022
+            "draw_1": [0.02, 0.015, 0.008, 0.005],   # Goes below 0.01 in year 2023
+            "draw_2": [0.025, 0.02, 0.008, 0.003],   # Goes below 0.01 in year 2023
+        }),
+        # IU1, scenario_2 - different mixed behavior
+        pd.DataFrame({
+            "scenario": ["scenario_2"] * 4,
+            "iu_name": ["IU001"] * 4,
+            "country_code": ["AAA"] * 4,
+            "year_id": [2021, 2022, 2023, 2024],
+            "measure": ["processed_prevalence"] * 4,
+            "draw_0": [0.025, 0.02, 0.015, 0.008],  # Goes below 0.01 in year 2024
+            "draw_1": [0.02, 0.015, 0.008, 0.006],  # Goes below 0.01 in year 2023
+            "draw_2": [0.03, 0.025, 0.02, 0.015],   # Never goes below 0.01
+        }),
+        # IU2, scenario_2 - none reach threshold
+        pd.DataFrame({
+            "scenario": ["scenario_2"] * 4,
+            "iu_name": ["IU002"] * 4,
+            "country_code": ["AAA"] * 4,
+            "year_id": [2021, 2022, 2023, 2024],
+            "measure": ["processed_prevalence"] * 4,
+            "draw_0": [0.05, 0.04, 0.03, 0.02],   # Never goes below 0.01
+            "draw_1": [0.06, 0.05, 0.04, 0.03],   # Never goes below 0.01
+            "draw_2": [0.07, 0.06, 0.05, 0.04],   # Never goes below 0.01
+        }),
+    ]
+    
+    result = aggregation.compute_delta_years_aggregated(
+        canonical_ius, 
+        threshold=0.01, 
+        reference_scenario="scenario_1"
+    )
+    
+    # Expected results with complex mixed behavior:
+    expected = pd.DataFrame([
+        # IU001, scenario_1 (reference)
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_1", "measure": "delta_years_scenario_1", 
+         "draw_0": 0, "draw_1": np.nan, "draw_2": 0},
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_1", "measure": "atleast_delta_years_scenario_1", 
+         "draw_0": np.nan, "draw_1": 0, "draw_2": np.nan},
+        # IU001, scenario_2
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_2", "measure": "delta_years_scenario_1", 
+         "draw_0": 1, "draw_1": np.nan, "draw_2": np.nan},  # 2024-2023=1
+        {"iu_name": "IU001", "country_code": "AAA", "scenario": "scenario_2", "measure": "atleast_delta_years_scenario_1", 
+         "draw_0": np.nan, "draw_1": -19, "draw_2": 20},  # 2023-2042=-19, 2042-2022=20 since scenario_2 doesn't reach for draw_2
+        # IU002, scenario_1 (reference)
+        {"iu_name": "IU002", "country_code": "AAA", "scenario": "scenario_1", "measure": "delta_years_scenario_1", 
+         "draw_0": 0, "draw_1": 0, "draw_2": 0},
+        {"iu_name": "IU002", "country_code": "AAA", "scenario": "scenario_1", "measure": "atleast_delta_years_scenario_1", 
+         "draw_0": np.nan, "draw_1": np.nan, "draw_2": np.nan},
+        # IU002, scenario_2
+        {"iu_name": "IU002", "country_code": "AAA", "scenario": "scenario_2", "measure": "delta_years_scenario_1", 
+         "draw_0": np.nan, "draw_1": np.nan, "draw_2": np.nan},
+        {"iu_name": "IU002", "country_code": "AAA", "scenario": "scenario_2", "measure": "atleast_delta_years_scenario_1", 
+         "draw_0": 20, "draw_1": 19, "draw_2": 19},  # 2042-2022=20, 2042-2023=19, 2042-2023=19
+    ])
+    
+    result_sorted = result.sort_values(["iu_name", "scenario", "measure"]).reset_index(drop=True)
+    expected_sorted = expected.sort_values(["iu_name", "scenario", "measure"]).reset_index(drop=True)
+    
+    pdt.assert_frame_equal(result_sorted, expected_sorted)
 
