@@ -146,6 +146,7 @@ Each row should correspond to a single IU.
         - combined-{disease}-iu-lvl-agg.csv (concatenation of [the per IU file](#per-iu--combined-iu-level-file-))
         - [combined-{disease}-country-lvl-agg.csv](#country-statistical-aggregates)
         - [combined-{disease}-africa-lvl-agg.csv](#africa-statistical-aggregates)
+        - [combined-{disease}-iu-lvl-delta-agg.csv](#delta-years-aggregates)
     - ius/
         - [{scenario_N}\_{IU code}\_post_processed.csv](#per-iu--combined-iu-level-file-)
         - ... for each IU, for each scenario
@@ -231,6 +232,32 @@ the `year_of_ius_passing_Xpct_under_threshold` is the year all simulated IUs rea
 - **pct_ius_with_Xpct_runs_under_threshold** - It is worked out by
   - for each year and IU, compute the proportion of draws below the threshold
   - compute proportion of IUs where `Xpct` of runs are under threshold 
+
+##### Delta Years Aggregates
+
+###### Columns
+
+- iu_name
+- country_code
+- scenario
+- measure
+- draw_0, draw_1, ..., draw_N - delta years for each simulation draw
+
+###### Measures
+
+The delta years computation produces two types of measures, with each simulation draw individually assigned based on whether scenarios reach the elimination threshold within the time range for that specific draw:
+
+- **delta_years_{reference_scenario}** - Used when both the reference scenario and comparison scenario reach the elimination threshold within the time range for that specific draw. Values represent:
+  - **Positive values**: Scenario takes longer to reach elimination than the reference
+  - **Negative values**: Scenario reaches elimination faster than the reference
+  - **Zero values**: Scenario reaches elimination in the same year as the reference (always true for reference scenario)
+
+- **atleast_delta_years_{reference_scenario}** - Used when at least one scenario (reference or comparison) does not reach the elimination threshold within the time range for that specific draw. Values represent minimum bounds:
+  - **Positive values**: Scenario takes at least this many years longer than the reference
+  - **Negative values**: Scenario reaches elimination at least this many years faster than the reference
+  - **999 values**: Neither scenario reaches the threshold, making comparison impossible
+
+Each IU-scenario combination produces two rows (one for each measure type), with simulation draws populated in the appropriate row based on their individual behavior. The reference scenario is automatically determined as the first scenario encountered in the data. Scenarios that don't reach the threshold within the time range are assumed to reach it at 2042 for computation purposes.
 
 ##### aggregation_info.json
 

@@ -87,6 +87,15 @@ def write_meta_data_file(root_dir, iu_metadata_file):
         f"{root_dir}/iu_metadata.csv", index=False, float_format="%g"
     )
 
+def write_delta_years_agg(
+    root_dir, delta_years_df: pd.DataFrame, disease: Disease
+):
+    file_name = f"combined-{disease.name.lower()}-iu-lvl-delta-agg.csv"
+    path = Path(f"{root_dir}/aggregated/")
+    path.mkdir(parents=True, exist_ok=True)
+    delta_years_df.to_csv(f"{path}/{file_name}", index=False, float_format="%g")
+
+
 def write_results_metadata_file(root_dir, results_meta_data):
     file_name = "aggregation_info.json"
     with open(f"{root_dir}/{file_name}", "w") as file:
