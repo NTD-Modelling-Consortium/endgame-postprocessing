@@ -1,0 +1,21 @@
+{
+    "disease": "oncho",
+    "threshold": 0.01,
+    "default_scenario": "scenario_1i",
+    "overridden_ius": {
+        "scenario_1j": [
+            "AAA00002",
+            "AAA00007",
+            "BBB00004"
+        ]
+    },
+    "scenario_name": "scenario_1",
+    "cannonicalize": {
+        "input_dir": "tests/end_to_end/oncho_mixed/example_input_data/oncho",
+        "output_dir": "tests/end_to_end/oncho_mixed/example_input_data/input",
+        "historic_dir": "tests/end_to_end/oncho_mixed/example_input_data/historic-oncho",
+        "historic_prefix": "output_full_MTP_",
+        "start_year": 1975,
+        "stop_year": 2041
+    }
+}

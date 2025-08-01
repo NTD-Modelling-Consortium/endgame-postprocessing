@@ -15,6 +15,10 @@ from typing import List, Tuple, Callable, Optional, Dict
 import pandas as pd
 import yaml
 
+from endgame_postprocessing.model_wrappers.oncho.testRun import canonicalise_raw_oncho_results
+from endgame_postprocessing.model_wrappers.lf.testRun import canonicalise_raw_lf_results
+from endgame_postprocessing.model_wrappers.sch.run_sch import canonicalise_raw_sch_results, canonicalise_raw_sth_results
+from endgame_postprocessing.model_wrappers.trachoma.run_trach import canonicalise_raw_trachoma_results
 from endgame_postprocessing.post_processing import pipeline, output_directory_structure
 from endgame_postprocessing.post_processing.disease import Disease
 from endgame_postprocessing.post_processing.generation_metadata import produce_generation_metadata
@@ -40,6 +44,7 @@ class MixedScenariosDescription:
     default_scenario: Optional[str]
     overridden_ius: Dict[str, List[str]]
     scenario_name: str
+    cannonicalize: Optional[dict] = None
 
     @staticmethod
     def from_dict(data: Dict) -> "MixedScenariosDescription":
@@ -49,6 +54,7 @@ class MixedScenariosDescription:
             default_scenario=data.get("default_scenario"),
             overridden_ius=data["overridden_ius"],
             scenario_name=data["scenario_name"],
+            cannonicalize=data.get("cannonicalize", None)
         )
 
     def to_dict(self) -> Dict:
@@ -58,6 +64,7 @@ class MixedScenariosDescription:
             "default_scenario": self.default_scenario,
             "overridden_ius": self.overridden_ius,
             "scenario_name": self.scenario_name,
+            "cannonicalize": self.cannonicalize
         }
 
     @staticmethod
@@ -164,6 +171,17 @@ def _load_mixed_scenarios_desc(mixed_scenarios_desc_file: Path) -> MixedScenario
 
     return MixedScenariosDescription.from_dict(mixed_scenarios_desc)
 
+def _get_cannonicalize_function_by_disease(disease: Disease):
+    if disease == Disease.ONCHO:
+        return canonicalise_raw_oncho_results
+    elif disease == Disease.LF:
+        return canonicalise_raw_lf_results
+    elif disease == Disease.STH:
+        return canonicalise_raw_sth_results
+    elif disease == Disease.SCH:
+        return canonicalise_raw_sch_results
+    elif disease == Disease.TRACHOMA:
+        return canonicalise_raw_trachoma_results
 
 def _get_pipeline_config_from_scenario_file(
     mixed_scenarios_desc: MixedScenariosDescription,
@@ -379,6 +397,12 @@ def main():
     except Exception as e:
         print(f"Unexpected error: {e}")
         return
+    pipeline_config = _get_pipeline_config_from_scenario_file(mixed_scenarios_desc)
+    with CollectAndPrintWarnings() as collected_warnings_cannonical:
+        if mixed_scenarios_desc.cannonicalize is not None:
+            _get_cannonicalize_function_by_disease(pipeline_config.disease)(
+                **mixed_scenarios_desc.cannonicalize
+            )
 
     try:
         input_directory = _validate_working_directory(working_directory, mixed_scenarios_desc)
@@ -404,7 +428,7 @@ def main():
 
     pipeline_config = _get_pipeline_config_from_scenario_file(mixed_scenarios_desc)
 
-    with CollectAndPrintWarnings() as collected_warnings:
+    with CollectAndPrintWarnings() as collected_warnings_pipeline:
         pipeline.pipeline(
             input_directory,
             output_directory,
@@ -412,7 +436,9 @@ def main():
         )
 
         output_directory_structure.write_results_metadata_file(
-            output_directory, produce_generation_metadata(warnings=collected_warnings)
+            output_directory, produce_generation_metadata(
+                warnings=collected_warnings_cannonical + collected_warnings_pipeline
+            )
         )
 
     t_finish = time.time()
